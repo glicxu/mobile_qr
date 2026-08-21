@@ -17,6 +17,7 @@ import 'features/history/application/qr_clipboard.dart';
 import 'features/history/application/history_controller.dart';
 import 'features/history/presentation/history_page.dart';
 import 'features/monetization/application/customization_entitlement.dart';
+import 'features/scan/application/inbound_image_share.dart';
 import 'features/scan/presentation/qr_scanner_page.dart';
 import 'features/secure_qr/application/secure_qr_loader.dart';
 import 'features/secure_qr/domain/secure_qr_service.dart';
@@ -28,12 +29,14 @@ class DaliQrApp extends StatelessWidget {
     this.secureQrService,
     this.historyController,
     this.customizationEntitlement,
+    this.inboundImageShare,
     super.key,
   });
 
   final SecureQrService? secureQrService;
   final HistoryController? historyController;
   final CustomizationEntitlement? customizationEntitlement;
+  final InboundImageShareSource? inboundImageShare;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +50,7 @@ class DaliQrApp extends StatelessWidget {
         secureQrService: secureQrService,
         historyController: historyController,
         customizationEntitlement: customizationEntitlement,
+        inboundImageShare: inboundImageShare,
       ),
     );
   }
@@ -57,12 +61,14 @@ class DaliQrHome extends StatefulWidget {
     this.secureQrService,
     this.historyController,
     this.customizationEntitlement,
+    this.inboundImageShare,
     super.key,
   });
 
   final SecureQrService? secureQrService;
   final HistoryController? historyController;
   final CustomizationEntitlement? customizationEntitlement;
+  final InboundImageShareSource? inboundImageShare;
 
   @override
   State<DaliQrHome> createState() => _DaliQrHomeState();
@@ -73,6 +79,8 @@ class _DaliQrHomeState extends State<DaliQrHome> {
   late final Future<SecureQrService> _secureQrService;
   Future<HistoryController>? _historyController;
   late final Future<CustomizationEntitlement> _customizationEntitlement;
+  late final InboundImageShareSource _inboundImageShare;
+  String? _sharedImagePath;
 
   @override
   void initState() {
@@ -89,6 +97,21 @@ class _DaliQrHomeState extends State<DaliQrHome> {
     _customizationEntitlement = suppliedEntitlement == null
         ? StoreCustomizationEntitlement.open()
         : Future.value(suppliedEntitlement);
+    _inboundImageShare = widget.inboundImageShare ?? InboundImageShare();
+    unawaited(_inboundImageShare.start(_receiveSharedImage));
+  }
+
+  void _receiveSharedImage(String path) {
+    if (!mounted) return;
+    setState(() {
+      _sharedImagePath = path;
+      _selectedIndex = 1;
+    });
+  }
+
+  void _sharedImageConsumed(String path) {
+    if (!mounted || _sharedImagePath != path) return;
+    setState(() => _sharedImagePath = null);
   }
 
   Future<HistoryController> _loadHistory() {
@@ -125,6 +148,7 @@ class _DaliQrHomeState extends State<DaliQrHome> {
 
   @override
   void dispose() {
+    _inboundImageShare.dispose();
     if (widget.historyController == null) {
       unawaited(_historyController?.then((controller) => controller.dispose()));
     }
@@ -171,6 +195,8 @@ class _DaliQrHomeState extends State<DaliQrHome> {
             1 => QrScannerPage(
               secureQrService: service,
               onScanned: _recordScanned,
+              sharedImagePath: _sharedImagePath,
+              onSharedImageConsumed: _sharedImageConsumed,
             ),
             _ => FutureBuilder<HistoryController>(
               future: _loadHistory(),

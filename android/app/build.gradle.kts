@@ -15,7 +15,7 @@ if (hasReleaseSigning) {
 }
 
 android {
-    namespace = "com.dali.dali_qr"
+    namespace = "com.dalifin.qr"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -25,7 +25,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.dali.dali_qr"
+        applicationId = "com.dalifin.qr"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

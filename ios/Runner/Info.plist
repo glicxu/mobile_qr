@@ -9,13 +9,24 @@
 	<key>NSContactsUsageDescription</key>
 	<string>Dali QR uses contacts access only when you choose to add a scanned contact.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Dali QR uses a selected image only to create your custom QR emblem.</string>
+	<string>Dali QR uses only the image you select to scan a QR code or create a custom QR emblem.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Dali QR</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>daliqr</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

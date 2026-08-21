@@ -1,9 +1,10 @@
-package com.dali.dali_qr
+package com.dalifin.qr
 
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.provider.CalendarContract
 import android.provider.ContactsContract
 import android.provider.Settings
@@ -14,8 +15,26 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
 class MainActivity : FlutterActivity() {
+    private var inboundShareChannel: MethodChannel? = null
+    private var pendingSharedImagePath: String? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        inboundShareChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "dali_qr/inbound_share",
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                if (call.method != "takeInitialImage") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                result.success(pendingSharedImagePath)
+                pendingSharedImagePath = null
+            }
+        }
+        receiveSharedImage(intent, notifyFlutter = false)
+
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "dali_qr/clipboard",
@@ -109,5 +128,49 @@ class MainActivity : FlutterActivity() {
                 result.error("route_failed", error.message, null)
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        receiveSharedImage(intent, notifyFlutter = true)
+    }
+
+    private fun receiveSharedImage(intent: Intent?, notifyFlutter: Boolean) {
+        if (intent?.action != Intent.ACTION_SEND ||
+            intent.type?.startsWith("image/") != true
+        ) {
+            return
+        }
+
+        val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return
+        try {
+            pendingSharedImagePath?.let { File(it).delete() }
+            val sharedImage = File.createTempFile("dali_shared_qr_", ".image", cacheDir)
+            contentResolver.openInputStream(uri).use { input ->
+                requireNotNull(input) { "The shared image could not be opened." }
+                sharedImage.outputStream().use(input::copyTo)
+            }
+            pendingSharedImagePath = sharedImage.absolutePath
+            if (notifyFlutter) notifyFlutterOfSharedImage(sharedImage.absolutePath)
+        } catch (_: Exception) {
+            pendingSharedImagePath = null
+        }
+    }
+
+    private fun notifyFlutterOfSharedImage(path: String) {
+        inboundShareChannel?.invokeMethod(
+            "sharedImage",
+            path,
+            object : MethodChannel.Result {
+                override fun success(result: Any?) {
+                    if (pendingSharedImagePath == path) pendingSharedImagePath = null
+                }
+
+                override fun error(code: String, message: String?, details: Any?) = Unit
+
+                override fun notImplemented() = Unit
+            },
+        )
     }
 }

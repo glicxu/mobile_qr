@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../create/application/qr_encoder.dart';
@@ -15,6 +17,8 @@ final class QrScannerPage extends StatefulWidget {
   const QrScannerPage({
     required this.secureQrService,
     this.onScanned,
+    this.sharedImagePath,
+    this.onSharedImageConsumed,
     super.key,
   });
 
@@ -26,6 +30,8 @@ final class QrScannerPage extends StatefulWidget {
     Uint8List? qrPngBytes,
   })?
   onScanned;
+  final String? sharedImagePath;
+  final ValueChanged<String>? onSharedImageConsumed;
 
   @override
   State<QrScannerPage> createState() => _QrScannerPageState();
@@ -42,9 +48,34 @@ class _QrScannerPageState extends State<QrScannerPage> {
     facing: CameraFacing.back,
     returnImage: false,
   );
+  final ImagePicker _imagePicker = ImagePicker();
 
   String? _decodedText;
   bool _handlingDetection = false;
+  bool _importingImage = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleSharedImage(widget.sharedImagePath);
+  }
+
+  @override
+  void didUpdateWidget(covariant QrScannerPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.sharedImagePath != oldWidget.sharedImagePath) {
+      _scheduleSharedImage(widget.sharedImagePath);
+    }
+  }
+
+  void _scheduleSharedImage(String? path) {
+    if (path == null || path.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.sharedImagePath != path) return;
+      widget.onSharedImageConsumed?.call(path);
+      unawaited(_scanImagePath(path, deleteAfterScan: true));
+    });
+  }
 
   @override
   void dispose() {
@@ -55,18 +86,15 @@ class _QrScannerPageState extends State<QrScannerPage> {
   void _handleDetection(BarcodeCapture capture) {
     if (_handlingDetection) return;
 
-    String? text;
-    for (final barcode in capture.barcodes) {
-      final candidate = barcode.rawValue;
-      if (candidate != null && candidate.isNotEmpty) {
-        text = candidate;
-        break;
-      }
-    }
+    final text = firstQrPayload(capture);
     if (text == null) return;
 
     _handlingDetection = true;
     unawaited(_controller.pause());
+    _completeDetection(text);
+  }
+
+  void _completeDetection(String text) {
     setState(() => _decodedText = text);
     final onScanned = widget.onScanned;
     if (onScanned != null) {
@@ -89,6 +117,89 @@ class _QrScannerPageState extends State<QrScannerPage> {
           qrPngBytes: qrPngBytes,
         ),
       );
+    }
+  }
+
+  Future<void> _importImage() async {
+    if (_handlingDetection || _importingImage) return;
+
+    setState(() => _importingImage = true);
+    _handlingDetection = true;
+    try {
+      await _controller.pause();
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        requestFullMetadata: false,
+      );
+      if (image == null) {
+        await _resumeAfterImport();
+        return;
+      }
+      await _scanImagePath(image.path);
+    } on Object {
+      await _showImageScanError();
+    }
+  }
+
+  Future<void> _scanImagePath(
+    String path, {
+    bool deleteAfterScan = false,
+  }) async {
+    if (!_handlingDetection) {
+      _handlingDetection = true;
+      if (mounted) setState(() => _importingImage = true);
+      try {
+        await _controller.pause();
+      } on Object {
+        // Image analysis does not require a running camera.
+      }
+    }
+
+    try {
+      final capture = await _controller.analyzeImage(path);
+      if (!mounted) return;
+      final text = capture == null ? null : firstQrPayload(capture);
+      if (text == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No readable QR code was found in that image.'),
+          ),
+        );
+        await _resumeAfterImport();
+        return;
+      }
+
+      setState(() => _importingImage = false);
+      _completeDetection(text);
+    } on Object {
+      await _showImageScanError();
+    } finally {
+      if (deleteAfterScan) {
+        try {
+          await File(path).delete();
+        } on Object {
+          // Shared images live in cache and may already have been reclaimed.
+        }
+      }
+    }
+  }
+
+  Future<void> _showImageScanError() async {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('The selected image could not be scanned.')),
+    );
+    await _resumeAfterImport();
+  }
+
+  Future<void> _resumeAfterImport() async {
+    if (!mounted) return;
+    setState(() => _importingImage = false);
+    _handlingDetection = false;
+    try {
+      await _controller.start();
+    } on Object {
+      // The scanner widget reports camera startup failures in its error UI.
     }
   }
 
@@ -132,7 +243,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
             errorBuilder: (context, error) => _ScannerError(error: error),
           ),
           const IgnorePointer(child: _ScannerGuide()),
-          const Align(
+          Align(
             alignment: Alignment.bottomCenter,
             child: SafeArea(
               minimum: EdgeInsets.all(24),
@@ -142,11 +253,31 @@ class _QrScannerPageState extends State<QrScannerPage> {
                   borderRadius: BorderRadius.all(Radius.circular(12)),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Text(
-                    'Point the camera at a QR code. Nothing is opened or sent.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white),
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Point the camera at a QR code. Nothing is opened or sent.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(height: 8),
+                      FilledButton.tonalIcon(
+                        onPressed: _importingImage ? null : _importImage,
+                        icon: _importingImage
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.image_outlined),
+                        label: Text(
+                          _importingImage ? 'Reading image...' : 'Choose image',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -264,6 +395,16 @@ class _QrScannerPageState extends State<QrScannerPage> {
       ),
     );
   }
+}
+
+@visibleForTesting
+String? firstQrPayload(BarcodeCapture capture) {
+  for (final barcode in capture.barcodes) {
+    if (barcode.format != BarcodeFormat.qrCode) continue;
+    final candidate = barcode.rawValue;
+    if (candidate != null && candidate.isNotEmpty) return candidate;
+  }
+  return null;
 }
 
 final class _ScannerError extends StatelessWidget {

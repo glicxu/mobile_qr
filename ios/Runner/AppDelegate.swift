@@ -10,7 +10,10 @@ import EventKitUI
     CNContactViewControllerDelegate, EKEventEditViewDelegate {
   private var qrClipboardChannel: FlutterMethodChannel?
   private var qrRoutingChannel: FlutterMethodChannel?
+  private var inboundShareChannel: FlutterMethodChannel?
   private let eventStore = EKEventStore()
+  private let sharedAppGroup = "group.com.dalifin.qr.shared"
+  private let sharedImageKey = "pendingSharedImagePath"
 
   override func application(
     _ application: UIApplication,
@@ -105,6 +108,50 @@ import EventKitUI
       }
     }
     qrRoutingChannel = routingChannel
+
+    let inboundChannel = FlutterMethodChannel(
+      name: "dali_qr/inbound_share",
+      binaryMessenger: registrar.messenger()
+    )
+    inboundChannel.setMethodCallHandler { [weak self] call, result in
+      guard call.method == "takeInitialImage" else {
+        result(FlutterMethodNotImplemented)
+        return
+      }
+      result(self?.takePendingSharedImage())
+    }
+    inboundShareChannel = inboundChannel
+  }
+
+  func notifySharedImageAvailable() {
+    guard let path = pendingSharedImagePath() else { return }
+    inboundShareChannel?.invokeMethod("sharedImage", arguments: path) {
+      [weak self] result in
+      if result == nil {
+        self?.clearPendingSharedImage(path)
+      }
+    }
+  }
+
+  private func pendingSharedImagePath() -> String? {
+    guard
+      let path = UserDefaults(suiteName: sharedAppGroup)?.string(forKey: sharedImageKey),
+      FileManager.default.fileExists(atPath: path)
+    else { return nil }
+    return path
+  }
+
+  private func takePendingSharedImage() -> String? {
+    guard let path = pendingSharedImagePath() else { return nil }
+    clearPendingSharedImage(path)
+    return path
+  }
+
+  private func clearPendingSharedImage(_ path: String) {
+    guard
+      UserDefaults(suiteName: sharedAppGroup)?.string(forKey: sharedImageKey) == path
+    else { return }
+    UserDefaults(suiteName: sharedAppGroup)?.removeObject(forKey: sharedImageKey)
   }
 
   func contactViewController(
