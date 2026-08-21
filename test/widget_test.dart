@@ -8,10 +8,24 @@ import 'package:dali_qr/features/secure_qr/domain/public_suffix_list.dart';
 import 'package:dali_qr/features/secure_qr/domain/secure_qr_service.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets('generates and displays a QR code', (tester) async {
+    String? copiedText;
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        copiedText =
+            (call.arguments as Map<Object?, Object?>)['text'] as String?;
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
     final secureQrService = SecureQrService(PublicSuffixList.parse('com'));
     final historyController = HistoryController(
       DriftQrHistoryRepository(
@@ -42,7 +56,14 @@ void main() {
 
     expect(find.text('https://example.com/'), findsOneWidget);
     expect(find.text('XIH-000'), findsOneWidget);
-    expect(find.text('Secure QR · example.com'), findsOneWidget);
+    expect(find.text('Secure QR - example.com'), findsOneWidget);
+    expect(find.text('Copy QR image'), findsOneWidget);
+    expect(find.text('Share QR image'), findsOneWidget);
+    expect(find.byTooltip('Copy verification code'), findsOneWidget);
+    await tester.tap(find.byTooltip('Copy verification code'));
+    await tester.pump();
+    expect(copiedText, 'XIH-000');
+    expect(find.text('Verification code copied.'), findsOneWidget);
     expect(find.textContaining('UTF-8 bytes'), findsNothing);
     expect(find.textContaining('full-payload'), findsNothing);
     expect(find.textContaining('mask '), findsNothing);

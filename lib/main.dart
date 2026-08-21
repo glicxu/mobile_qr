@@ -446,6 +446,14 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
     if (mounted) _recordedCurrentQr = true;
   }
 
+  Future<void> _copyVerificationCode(String code) async {
+    await Clipboard.setData(ClipboardData(text: code));
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Verification code copied.')));
+  }
+
   Future<bool> _ensureExportAllowed() async {
     if (_decorationMode != QrCenterDecorationMode.customImage ||
         widget.customizationEntitlement.isUnlocked) {
@@ -634,18 +642,31 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
                 ),
                 const SizedBox(height: 16),
                 if (_verification case final verification?) ...[
-                  Text(
-                    verification.code,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 4,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        verification.code,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.displaySmall
+                            ?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 4,
+                            ),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        onPressed: () =>
+                            unawaited(_copyVerificationCode(verification.code)),
+                        icon: const Icon(Icons.copy_outlined),
+                        tooltip: 'Copy verification code',
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     verification is SecureQrResult
-                        ? 'Secure QR · ${verification.registrableDomain}'
+                        ? 'Secure QR - ${verification.registrableDomain}'
                         : 'Content comparison code',
                     textAlign: TextAlign.center,
                   ),
@@ -664,23 +685,24 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
                   ),
                 ],
                 const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     OutlinedButton.icon(
                       onPressed: _exporting
                           ? null
                           : () => unawaited(_export(copy: true)),
                       icon: const Icon(Icons.copy_outlined),
-                      label: const Text('Copy'),
+                      label: const Text('Copy QR image'),
                     ),
-                    const SizedBox(width: 12),
                     FilledButton.icon(
                       onPressed: _exporting
                           ? null
                           : () => unawaited(_export(copy: false)),
                       icon: const Icon(Icons.share_outlined),
-                      label: const Text('Share'),
+                      label: const Text('Share QR image'),
                     ),
                   ],
                 ),
