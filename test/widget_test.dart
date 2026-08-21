@@ -2,6 +2,7 @@ import 'package:dali_qr/features/history/application/history_controller.dart';
 import 'package:dali_qr/features/history/data/drift_qr_history_repository.dart';
 import 'package:dali_qr/features/history/data/history_database.dart';
 import 'package:dali_qr/features/history/domain/qr_history.dart';
+import 'package:dali_qr/features/monetization/application/customization_entitlement.dart';
 import 'package:dali_qr/main.dart';
 import 'package:dali_qr/features/secure_qr/domain/public_suffix_list.dart';
 import 'package:dali_qr/features/secure_qr/domain/secure_qr_service.dart';
@@ -24,9 +25,10 @@ void main() {
       DaliQrApp(
         secureQrService: secureQrService,
         historyController: historyController,
+        customizationEntitlement: _TestEntitlement(),
       ),
     );
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.text('Generate QR code'));
     await tester.pumpAndSettle();
@@ -84,7 +86,10 @@ void main() {
     final secureQrService = SecureQrService(PublicSuffixList.parse('com'));
     await tester.pumpWidget(
       MaterialApp(
-        home: QrGenerationSpikePage(secureQrService: secureQrService),
+        home: QrGenerationSpikePage(
+          secureQrService: secureQrService,
+          customizationEntitlement: _TestEntitlement(),
+        ),
       ),
     );
     await tester.pump();
@@ -112,7 +117,10 @@ void main() {
     final secureQrService = SecureQrService(PublicSuffixList.parse('com'));
     await tester.pumpWidget(
       MaterialApp(
-        home: QrGenerationSpikePage(secureQrService: secureQrService),
+        home: QrGenerationSpikePage(
+          secureQrService: secureQrService,
+          customizationEntitlement: _TestEntitlement(),
+        ),
       ),
     );
 
@@ -128,6 +136,29 @@ void main() {
     expect(find.text('Content comparison code'), findsOneWidget);
     expect(find.text(wifiPayload), findsOneWidget);
   });
+}
+
+final class _TestEntitlement extends CustomizationEntitlement {
+  @override
+  bool get isBusy => false;
+
+  @override
+  bool get isStoreAvailable => false;
+
+  @override
+  bool get isUnlocked => false;
+
+  @override
+  String? get message => null;
+
+  @override
+  String? get price => null;
+
+  @override
+  Future<void> purchase() async {}
+
+  @override
+  Future<void> restore() async {}
 }
 
 final class _MemoryHistorySettings implements HistorySettingsStore {

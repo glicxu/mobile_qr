@@ -123,7 +123,7 @@ final class QrPngRenderer {
         return;
       case QrCenterDecorationMode.daliIcon:
         final bytes = decoration.iconPngBytes;
-        final icon = bytes == null ? null : image_lib.decodePng(bytes);
+        final icon = bytes == null ? null : image_lib.decodeImage(bytes);
         if (icon == null) throw ArgumentError('Invalid Dali icon PNG.');
         image_lib.compositeImage(
           canvas,
@@ -132,6 +132,28 @@ final class QrPngRenderer {
           dstY: startY,
           dstW: extent,
           dstH: extent,
+          blend: image_lib.BlendMode.alpha,
+        );
+      case QrCenterDecorationMode.customImage:
+        final bytes = decoration.iconPngBytes;
+        final selectedImage = bytes == null
+            ? null
+            : image_lib.decodeImage(bytes);
+        if (selectedImage == null) {
+          throw ArgumentError('The selected emblem image could not be read.');
+        }
+        final inset = modulePixelSize;
+        final imageExtent = extent - inset * 2;
+        final cropped = image_lib.copyResizeCropSquare(
+          selectedImage,
+          size: imageExtent,
+          interpolation: image_lib.Interpolation.cubic,
+        );
+        image_lib.compositeImage(
+          canvas,
+          cropped,
+          dstX: startX + inset,
+          dstY: startY + inset,
           blend: image_lib.BlendMode.alpha,
         );
       case QrCenterDecorationMode.verificationCode:

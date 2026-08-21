@@ -113,6 +113,11 @@ Unlimited basic creation encourages distribution.
 
 The primary consumer monetization feature should be customization of the QR center.
 
+In this plan, **custom center emblem** means artwork supplied by the user, such
+as a personal image or organization logo. The built-in Dali icon and built-in
+verification-code badge remain free to export because they support recognition,
+verification, and distribution of the Dali format.
+
 A standard free QR may look like:
 
 ```text
@@ -247,7 +252,7 @@ Per-QR pricing would discourage experimentation and sharing.
 | Save/share QR | ✓ | ✓ |
 | Standard QR appearance | ✓ | ✓ |
 | Preview center emblem | ✓ | ✓ |
-| Export QR with center emblem | — | ✓ |
+| Export QR with custom emblem | — | ✓ |
 | Custom logo/image | — | ✓ |
 | Additional emblem styles | — | ✓ |
 
@@ -344,8 +349,8 @@ Users can put information directly inside QR codes:
 
 For example:
 
-> **這首詞，不寫在紙上。**  
-> **掃一下，我送給你。**
+> **這首詞,不寫在紙上。**  
+> **掃一下,我送給你。**
 
 followed by the QR.
 
@@ -662,6 +667,27 @@ No 30-day expiration.
 No charge for security verification.
 
 No QR creation quota.
+
+## Initial Implementation
+
+The application uses one non-consumable store product:
+
+```text
+dali_secure_qr_custom_lifetime
+```
+
+The initial implementation follows these rules:
+
+- Users may select an image and generate a complete custom QR preview for free.
+- Copying, sharing, and history persistence of that custom output require the
+  lifetime entitlement.
+- Plain QR output, the Dali icon, and the verification-code badge remain free.
+- Every decorated QR is decoded internally and compared with the source payload
+  before export. The emblem area is reduced automatically when necessary.
+- The localized price comes from the active store; no price is hard-coded in
+  the application.
+- Purchase restoration is available from the unlock screen.
+- Scanned and generated payload content is never sent to the purchase provider.
 
 ---
 

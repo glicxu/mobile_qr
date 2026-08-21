@@ -11,6 +11,8 @@ content comparison, domain verification, and OS routing separate.
   content-comparison code
 - Unknown text and custom URI schemes as display-only content
 - Opt-in local history with copyable comparison codes and QR images
+- Free previews for custom center images, with export enabled by a lifetime
+  customization purchase
 
 External actions always require user confirmation. Unknown URI schemes never
 launch automatically. Wi-Fi passwords are hidden until explicitly revealed.
@@ -35,6 +37,22 @@ signing.
 ```text
 flutter build appbundle --release
 ```
+
+## Lifetime customization product
+
+Create a non-consumable product in both Google Play Console and App Store
+Connect using this exact identifier:
+
+```text
+dali_secure_qr_custom_lifetime
+```
+
+The store supplies the localized price. Custom QR previews remain available
+without purchase; copy, share, and history persistence of the customized image
+require the entitlement. Plain QR codes, Dali icon/code decorations, scanning,
+routing, and verification remain free. Test purchases using store sandbox or
+license-test accounts because an APK installed directly with ADB cannot load a
+normal Play product unless the app and account satisfy Play testing rules.
 
 ## Remaining release checks
 

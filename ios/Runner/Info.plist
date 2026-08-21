@@ -8,6 +8,8 @@
 	<string>Dali QR uses calendar access only when you choose to add a scanned event.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>Dali QR uses contacts access only when you choose to add a scanned contact.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Dali QR uses a selected image only to create your custom QR emblem.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-enum QrCenterDecorationMode { none, verificationCode, daliIcon }
+enum QrCenterDecorationMode { none, verificationCode, daliIcon, customImage }
 
 final class QrCenterDecoration {
   const QrCenterDecoration.verificationCode(this.verificationCode)
@@ -9,6 +9,10 @@ final class QrCenterDecoration {
 
   const QrCenterDecoration.daliIcon(this.iconPngBytes)
     : mode = QrCenterDecorationMode.daliIcon,
+      verificationCode = null;
+
+  const QrCenterDecoration.customImage(this.iconPngBytes)
+    : mode = QrCenterDecorationMode.customImage,
       verificationCode = null;
 
   final QrCenterDecorationMode mode;

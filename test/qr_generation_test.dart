@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dali_qr/features/create/application/qr_encoder.dart';
+import 'package:dali_qr/features/create/application/qr_png_validator.dart';
 import 'package:dali_qr/features/create/data/dart_qr_encoder.dart';
 import 'package:dali_qr/features/create/data/qr_png_renderer.dart';
 import 'package:dali_qr/features/create/domain/qr_center_decoration.dart';
@@ -17,6 +18,7 @@ void main() {
   const policy = UrlPayloadPolicy();
   const encoder = DartQrEncoder();
   const renderer = QrPngRenderer();
+  const validator = QrPngValidator();
 
   group('QR generation', () {
     for (final fixture in acceptedUrlFixtures) {
@@ -158,6 +160,25 @@ void main() {
           reason: 'Dali icon failed at ${coverage * 100} percent.',
         );
       }
+    });
+
+    test('custom center image is cropped and runtime validated', () {
+      const input = 'A custom message inside a Dali Secure QR';
+      final image = File('assets/dali_smart_code_icon.png').readAsBytesSync();
+      final matrix = encoder.encode(
+        input,
+        strength: QrEncodingStrength.decorated,
+      );
+      final png = renderer.render(
+        matrix,
+        centerDecoration: QrCenterDecoration.customImage(image),
+      );
+
+      expect(validator.containsExactPayload(png.bytes, input), isTrue);
+      expect(
+        validator.containsExactPayload(png.bytes, '$input changed'),
+        isFalse,
+      );
     });
 
     test('verification badge decodes across representative payload sizes', () {
