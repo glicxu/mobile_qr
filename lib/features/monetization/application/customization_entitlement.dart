@@ -15,12 +15,17 @@ abstract class CustomizationEntitlement extends ChangeNotifier {
   Future<void> restore();
 }
 
+abstract interface class DebugCustomizationEntitlement {
+  Future<void> unlockForTesting();
+}
+
 final class StoreCustomizationEntitlement extends ChangeNotifier
-    implements CustomizationEntitlement {
+    implements CustomizationEntitlement, DebugCustomizationEntitlement {
   StoreCustomizationEntitlement._(this._preferences, this._store);
 
   static const productId = 'dali_secure_qr_custom_lifetime';
   static const _unlockedPreference = 'customization_lifetime_unlocked';
+  static const _testUnlockedPreference = 'customization_test_unlocked';
 
   final SharedPreferences _preferences;
   final InAppPurchase _store;
@@ -58,7 +63,10 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
   String? get message => _message;
 
   Future<void> _initialize() async {
-    _isUnlocked = _preferences.getBool(_unlockedPreference) ?? false;
+    _isUnlocked =
+        (_preferences.getBool(_unlockedPreference) ?? false) ||
+        (kDebugMode &&
+            (_preferences.getBool(_testUnlockedPreference) ?? false));
     _subscription = _store.purchaseStream.listen(
       _handlePurchases,
       onError: (Object error) {
@@ -127,6 +135,17 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
       _message = 'Previous purchases could not be restored.';
       notifyListeners();
     }
+  }
+
+  @override
+  Future<void> unlockForTesting() async {
+    if (!kDebugMode) {
+      throw StateError('Test unlock is disabled in release builds.');
+    }
+    await _preferences.setBool(_testUnlockedPreference, true);
+    _isUnlocked = true;
+    _message = 'Lifetime customization unlocked for testing.';
+    notifyListeners();
   }
 
   Future<void> _handlePurchases(List<PurchaseDetails> purchases) async {

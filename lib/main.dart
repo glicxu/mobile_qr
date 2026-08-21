@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -544,46 +545,40 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
                 onSubmitted: (_) => _generate(),
               ),
               const SizedBox(height: 12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SegmentedButton<QrCenterDecorationMode>(
-                  showSelectedIcon: false,
-                  segments: const [
-                    ButtonSegment(
-                      value: QrCenterDecorationMode.none,
-                      icon: Icon(Icons.qr_code_2),
-                      label: Text('Plain'),
-                    ),
-                    ButtonSegment(
-                      value: QrCenterDecorationMode.verificationCode,
-                      icon: Icon(Icons.verified_outlined),
-                      label: Text('Code'),
-                    ),
-                    ButtonSegment(
-                      value: QrCenterDecorationMode.daliIcon,
-                      icon: Icon(Icons.shield_outlined),
-                      label: Text('Icon'),
-                    ),
-                    ButtonSegment(
-                      value: QrCenterDecorationMode.customImage,
-                      icon: Icon(Icons.add_photo_alternate_outlined),
-                      label: Text('Custom'),
-                    ),
-                  ],
-                  selected: {_decorationMode},
-                  onSelectionChanged: (selection) {
-                    final selected = selection.single;
-                    if (selected == QrCenterDecorationMode.customImage &&
-                        _customImageBytes == null) {
-                      unawaited(_pickCustomImage());
-                      return;
-                    }
-                    setState(() {
-                      _decorationMode = selected;
-                      _clearGeneratedOutput();
-                    });
-                  },
-                ),
+              SegmentedButton<QrCenterDecorationMode>(
+                expandedInsets: EdgeInsets.zero,
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(
+                    value: QrCenterDecorationMode.none,
+                    label: Text('Plain'),
+                  ),
+                  ButtonSegment(
+                    value: QrCenterDecorationMode.verificationCode,
+                    label: Text('Code'),
+                  ),
+                  ButtonSegment(
+                    value: QrCenterDecorationMode.daliIcon,
+                    label: Text('Dali'),
+                  ),
+                  ButtonSegment(
+                    value: QrCenterDecorationMode.customImage,
+                    label: Text('Custom'),
+                  ),
+                ],
+                selected: {_decorationMode},
+                onSelectionChanged: (selection) {
+                  final selected = selection.single;
+                  if (selected == QrCenterDecorationMode.customImage &&
+                      _customImageBytes == null) {
+                    unawaited(_pickCustomImage());
+                    return;
+                  }
+                  setState(() {
+                    _decorationMode = selected;
+                    _clearGeneratedOutput();
+                  });
+                },
               ),
               if (_decorationMode == QrCenterDecorationMode.customImage) ...[
                 const SizedBox(height: 12),
@@ -754,6 +749,17 @@ class _CustomizationUnlockSheet extends StatelessWidget {
                     : () => unawaited(entitlement.restore()),
                 child: const Text('Restore purchase'),
               ),
+              if (kDebugMode && entitlement is DebugCustomizationEntitlement)
+                TextButton.icon(
+                  onPressed: entitlement.isBusy
+                      ? null
+                      : () => unawaited(
+                          (entitlement as DebugCustomizationEntitlement)
+                              .unlockForTesting(),
+                        ),
+                  icon: const Icon(Icons.science_outlined),
+                  label: const Text('Unlock for testing'),
+                ),
             ],
           ),
         ),

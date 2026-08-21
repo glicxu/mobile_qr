@@ -51,7 +51,14 @@ void main() {
     expect(find.text('Custom QR lifetime'), findsOne);
     expect(find.text('Unlock for \$3.99'), findsOne);
     expect(find.text('Restore purchase'), findsOne);
+    expect(find.text('Unlock for testing'), findsOne);
     expect(recorded, 0);
+
+    await tester.tap(find.text('Unlock for testing'));
+    await tester.pumpAndSettle();
+
+    expect(entitlement.isUnlocked, isTrue);
+    expect(recorded, 1);
   });
 
   testWidgets('successful lifetime unlock releases custom export', (
@@ -118,7 +125,8 @@ final class _MemoryImagePicker extends ImagePicker {
   }
 }
 
-final class _TestEntitlement extends CustomizationEntitlement {
+final class _TestEntitlement extends CustomizationEntitlement
+    implements DebugCustomizationEntitlement {
   bool _unlocked = false;
 
   @override
@@ -144,4 +152,7 @@ final class _TestEntitlement extends CustomizationEntitlement {
 
   @override
   Future<void> restore() async {}
+
+  @override
+  Future<void> unlockForTesting() => purchase();
 }
