@@ -32,21 +32,28 @@ final class HistoryController extends ChangeNotifier {
   static const _urlPolicy = UrlPayloadPolicy();
 
   StreamSubscription<List<QrHistoryItem>>? _subscription;
-  List<QrHistoryItem> _items = const [];
+  List<QrHistoryItem> _allItems = const [];
   bool _enabled = false;
   HistoryRetention _retention = HistoryRetention.thirtyDays;
 
-  List<QrHistoryItem> get items => _items;
+  List<QrHistoryItem> get items =>
+      _allItems.where((item) => item.isInHistory).toList(growable: false);
+  List<QrHistoryItem> get savedItems {
+    final saved = _allItems
+        .where((item) => item.savedAtUtc != null)
+        .toList(growable: false);
+    saved.sort((a, b) => b.savedAtUtc!.compareTo(a.savedAtUtc!));
+    return saved;
+  }
+
   bool get enabled => _enabled;
   HistoryRetention get retention => _retention;
 
   Future<void> initialize() async {
     _enabled = await _settings.historyEnabled();
     _retention = await _settings.retention();
-    if (_enabled) {
-      await _deleteExpired();
-      _watch();
-    }
+    await _deleteExpired();
+    _watch();
     notifyListeners();
   }
 
@@ -55,17 +62,13 @@ final class HistoryController extends ChangeNotifier {
     await _settings.setHistoryEnabled(true);
     _enabled = true;
     await _deleteExpired();
-    _watch();
     notifyListeners();
   }
 
   Future<void> disable({required bool deleteExisting}) async {
     await _settings.setHistoryEnabled(false);
     _enabled = false;
-    await _subscription?.cancel();
-    _subscription = null;
-    if (deleteExisting) await _repository.clear();
-    _items = const [];
+    if (deleteExisting) await _repository.clearHistory();
     notifyListeners();
   }
 
@@ -117,6 +120,13 @@ final class HistoryController extends ChangeNotifier {
     required QrActivitySource source,
   }) async {
     if (!_enabled) return;
+    final existing = await _repository.findMostRecentByPayload(payload);
+    if (existing != null &&
+        !existing.isInHistory &&
+        existing.savedAtUtc != null) {
+      await _repository.setInHistory(existing.id, true);
+      return;
+    }
     ValidatedUrlPayload? urlPayload;
     try {
       urlPayload = _urlPolicy.validate(payload);
@@ -143,14 +153,71 @@ final class HistoryController extends ChangeNotifier {
     await _deleteExpired();
   }
 
-  Future<void> delete(String id) => _repository.delete(id);
+  Future<void> delete(String id) => _repository.removeFromHistory(id);
 
-  Future<void> clear() => _repository.clear();
+  Future<void> save(String id) => _repository.setSavedAt(id, _now().toUtc());
+
+  Future<void> removeFromSaved(String id) => _repository.removeFromSaved(id);
+
+  Future<void> savePayload({
+    required String payload,
+    String? verificationCode,
+    String? registrableDomain,
+    Uint8List? qrPngBytes,
+    required QrActivityKind activityKind,
+    required QrActivitySource source,
+  }) async {
+    final nowUtc = _now().toUtc();
+    final existing = await _repository.findMostRecentByPayload(payload);
+    if (existing != null) {
+      await _repository.setSavedAt(existing.id, nowUtc);
+      return;
+    }
+    ValidatedUrlPayload? urlPayload;
+    try {
+      urlPayload = _urlPolicy.validate(payload);
+    } on UrlPayloadValidationException {
+      // Saved QR codes may contain arbitrary text.
+    }
+    await _repository.save(
+      QrHistoryItem(
+        id: _newId(nowUtc),
+        activityKind: activityKind,
+        payloadKind: urlPayload == null
+            ? QrPayloadKind.text
+            : QrPayloadKind.url,
+        rawPayload: payload,
+        displayHost: urlPayload?.uri.host,
+        verificationCode: verificationCode,
+        registrableDomain: registrableDomain,
+        qrPngBytes: qrPngBytes,
+        source: source,
+        createdAtUtc: nowUtc,
+        isInHistory: false,
+        savedAtUtc: nowUtc,
+      ),
+    );
+  }
+
+  Future<void> updateMetadata(String id, {String? title, String? note}) {
+    return _repository.updateMetadata(
+      id,
+      title: _normalizeMetadata(title),
+      note: _normalizeMetadata(note),
+    );
+  }
+
+  static String? _normalizeMetadata(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  Future<void> clear() => _repository.clearHistory();
 
   void _watch() {
     unawaited(_subscription?.cancel());
     _subscription = _repository.watchRecent().listen((items) {
-      _items = items;
+      _allItems = items;
       notifyListeners();
     });
   }

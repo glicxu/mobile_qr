@@ -40,6 +40,79 @@ void main() {
 
     expect(find.byTooltip('Delete history item'), findsOneWidget);
   });
+
+  testWidgets('uses a custom title in the list and saves notes', (
+    tester,
+  ) async {
+    final repository = DriftQrHistoryRepository(
+      HistoryDatabase.forTesting(NativeDatabase.memory()),
+    );
+    await repository.save(_item('raw payload', DateTime.now().toUtc()));
+    final controller = HistoryController(repository, _EnabledHistorySettings());
+    await controller.initialize();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(home: HistoryPage(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('raw payload'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Edit'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Title'),
+      'Lunch menu',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Note'),
+      'Try the special',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lunch menu'), findsOneWidget);
+    expect(find.text('raw payload'), findsNothing);
+    final saved = controller.items.single;
+    expect(saved.title, 'Lunch menu');
+    expect(saved.note, 'Try the special');
+  });
+
+  testWidgets('warns that a saved QR remains when removed from history', (
+    tester,
+  ) async {
+    final repository = DriftQrHistoryRepository(
+      HistoryDatabase.forTesting(NativeDatabase.memory()),
+    );
+    await repository.save(
+      QrHistoryItem(
+        id: 'saved',
+        activityKind: QrActivityKind.scanned,
+        payloadKind: QrPayloadKind.text,
+        rawPayload: 'saved payload',
+        displayHost: null,
+        savedAtUtc: DateTime.now().toUtc(),
+        source: QrActivitySource.camera,
+        createdAtUtc: DateTime.now().toUtc(),
+      ),
+    );
+    final controller = HistoryController(repository, _EnabledHistorySettings());
+    await controller.initialize();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      MaterialApp(home: HistoryPage(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Delete history item'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Removing it from History will not remove'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Saved page'), findsOneWidget);
+  });
 }
 
 QrHistoryItem _item(String id, DateTime createdAtUtc) {

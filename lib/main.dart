@@ -15,7 +15,9 @@ import 'features/create/domain/qr_creation_payload_policy.dart';
 import 'features/create/domain/qr_matrix.dart';
 import 'features/history/application/qr_clipboard.dart';
 import 'features/history/application/history_controller.dart';
+import 'features/history/domain/qr_history.dart';
 import 'features/history/presentation/history_page.dart';
+import 'features/history/presentation/saved_page.dart';
 import 'features/monetization/application/customization_entitlement.dart';
 import 'features/scan/application/inbound_image_share.dart';
 import 'features/scan/presentation/qr_scanner_page.dart';
@@ -146,6 +148,38 @@ class _DaliQrHomeState extends State<DaliQrHome> {
     );
   }
 
+  Future<void> _saveCreated({
+    required String payload,
+    String? verificationCode,
+    String? registrableDomain,
+    Uint8List? qrPngBytes,
+  }) async {
+    await (await _loadHistory()).savePayload(
+      payload: payload,
+      verificationCode: verificationCode,
+      registrableDomain: registrableDomain,
+      qrPngBytes: qrPngBytes,
+      activityKind: QrActivityKind.created,
+      source: QrActivitySource.manual,
+    );
+  }
+
+  Future<void> _saveScanned({
+    required String payload,
+    String? verificationCode,
+    String? registrableDomain,
+    Uint8List? qrPngBytes,
+  }) async {
+    await (await _loadHistory()).savePayload(
+      payload: payload,
+      verificationCode: verificationCode,
+      registrableDomain: registrableDomain,
+      qrPngBytes: qrPngBytes,
+      activityKind: QrActivityKind.scanned,
+      source: QrActivitySource.camera,
+    );
+  }
+
   @override
   void dispose() {
     _inboundImageShare.dispose();
@@ -189,14 +223,30 @@ class _DaliQrHomeState extends State<DaliQrHome> {
                         secureQrService: service,
                         customizationEntitlement: entitlement,
                         onCreated: _recordCreated,
+                        onSave: _saveCreated,
                       );
               },
             ),
             1 => QrScannerPage(
               secureQrService: service,
               onScanned: _recordScanned,
+              onSave: _saveScanned,
               sharedImagePath: _sharedImagePath,
               onSharedImageConsumed: _sharedImageConsumed,
+            ),
+            2 => FutureBuilder<HistoryController>(
+              future: _loadHistory(),
+              builder: (context, historySnapshot) {
+                final controller = historySnapshot.data;
+                if (historySnapshot.hasError) {
+                  return const Center(
+                    child: Text('Saved QRs could not be loaded.'),
+                  );
+                }
+                return controller == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : SavedPage(controller: controller);
+              },
             ),
             _ => FutureBuilder<HistoryController>(
               future: _loadHistory(),
@@ -226,6 +276,11 @@ class _DaliQrHomeState extends State<DaliQrHome> {
             icon: Icon(Icons.qr_code_scanner),
             label: 'Scan',
           ),
+          NavigationDestination(
+            icon: Icon(Icons.bookmarks_outlined),
+            selectedIcon: Icon(Icons.bookmarks),
+            label: 'Saved',
+          ),
           NavigationDestination(icon: Icon(Icons.history), label: 'History'),
         ],
       ),
@@ -239,6 +294,7 @@ class QrGenerationSpikePage extends StatefulWidget {
     required this.customizationEntitlement,
     this.imagePicker,
     this.onCreated,
+    this.onSave,
     super.key,
   });
 
@@ -252,6 +308,13 @@ class QrGenerationSpikePage extends StatefulWidget {
     required Uint8List qrPngBytes,
   })?
   onCreated;
+  final Future<void> Function({
+    required String payload,
+    String? verificationCode,
+    String? registrableDomain,
+    Uint8List? qrPngBytes,
+  })?
+  onSave;
 
   @override
   State<QrGenerationSpikePage> createState() => _QrGenerationSpikePageState();
@@ -275,6 +338,8 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
   bool _generating = false;
   bool _exporting = false;
   bool _recordedCurrentQr = false;
+  bool _savedCurrentQr = false;
+  bool _savingCurrentQr = false;
 
   @override
   void initState() {
@@ -334,6 +399,7 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
     _verification = null;
     _renderedQrBytes = null;
     _recordedCurrentQr = false;
+    _savedCurrentQr = false;
   }
 
   Future<void> _generate() async {
@@ -387,6 +453,7 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
         _renderedQrBytes = png.bytes;
         _error = null;
         _recordedCurrentQr = false;
+        _savedCurrentQr = false;
       });
       if (_decorationMode != QrCenterDecorationMode.customImage ||
           widget.customizationEntitlement.isUnlocked) {
@@ -478,6 +545,44 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Verification code copied.')));
+  }
+
+  Future<void> _saveCurrentQr() async {
+    final onSave = widget.onSave;
+    final payload = _payload;
+    final bytes = _renderedQrBytes;
+    if (onSave == null ||
+        payload == null ||
+        bytes == null ||
+        _savedCurrentQr ||
+        _savingCurrentQr) {
+      return;
+    }
+    setState(() => _savingCurrentQr = true);
+    try {
+      final verification = _verification;
+      await onSave(
+        payload: payload.value,
+        verificationCode: verification?.code,
+        registrableDomain: verification is SecureQrResult
+            ? verification.registrableDomain
+            : null,
+        qrPngBytes: bytes,
+      );
+      if (!mounted) return;
+      setState(() => _savedCurrentQr = true);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('QR saved.')));
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('The QR could not be saved.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingCurrentQr = false);
+    }
   }
 
   Future<bool> _ensureExportAllowed() async {
@@ -722,6 +827,23 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
                           : () => unawaited(_export(copy: true)),
                       icon: const Icon(Icons.copy_outlined),
                       label: const Text('Copy QR image'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _savingCurrentQr || _savedCurrentQr
+                          ? null
+                          : () => unawaited(_saveCurrentQr()),
+                      icon: Icon(
+                        _savedCurrentQr
+                            ? Icons.bookmark_added
+                            : Icons.bookmark_add_outlined,
+                      ),
+                      label: Text(
+                        _savingCurrentQr
+                            ? 'Saving...'
+                            : _savedCurrentQr
+                            ? 'Saved'
+                            : 'Save QR',
+                      ),
                     ),
                     FilledButton.icon(
                       onPressed: _exporting

@@ -102,6 +102,27 @@ void main() {
     expect(item.qrPngBytes, [7, 8, 9]);
   });
 
+  test('title and note can be added, changed, and cleared', () async {
+    await controller.enable();
+    await controller.recordScanned(payload: 'plain scanned text');
+    final id = (await repository.watchRecent().first).single.id;
+
+    await controller.updateMetadata(
+      id,
+      title: '  Grocery receipt  ',
+      note: '  Paid in cash  ',
+    );
+
+    var item = (await repository.watchRecent().first).single;
+    expect(item.title, 'Grocery receipt');
+    expect(item.note, 'Paid in cash');
+
+    await controller.updateMetadata(id, title: ' ', note: '');
+    item = (await repository.watchRecent().first).single;
+    expect(item.title, isNull);
+    expect(item.note, isNull);
+  });
+
   test('turning history off can preserve or delete existing rows', () async {
     await controller.enable();
     await controller.recordCreated(
@@ -118,6 +139,88 @@ void main() {
     await controller.disable(deleteExisting: true);
     expect(await repository.watchRecent().first, isEmpty);
   });
+
+  test('saving works while history is off', () async {
+    await controller.savePayload(
+      payload: 'useful value',
+      activityKind: QrActivityKind.scanned,
+      source: QrActivitySource.camera,
+    );
+
+    final item = (await repository.watchRecent().first).single;
+    expect(item.isInHistory, isFalse);
+    expect(item.savedAtUtc, isNotNull);
+    expect(controller.items, isEmpty);
+    expect(controller.savedItems.single.rawPayload, 'useful value');
+  });
+
+  test('removing a saved item from history preserves it in Saved', () async {
+    await controller.enable();
+    await controller.recordScanned(payload: 'saved scan');
+    final item = (await repository.watchRecent().first).single;
+    await controller.save(item.id);
+    await controller.delete(item.id);
+
+    final remaining = (await repository.watchRecent().first).single;
+    expect(remaining.isInHistory, isFalse);
+    expect(remaining.savedAtUtc, isNotNull);
+  });
+
+  test('clearing history preserves saved QRs', () async {
+    await controller.enable();
+    await controller.recordScanned(payload: 'keep me');
+    final saved = (await repository.watchRecent().first).single;
+    await controller.save(saved.id);
+    await controller.recordScanned(payload: 'discard me');
+
+    await controller.clear();
+
+    final remaining = (await repository.watchRecent().first).single;
+    expect(remaining.rawPayload, 'keep me');
+    expect(remaining.isInHistory, isFalse);
+    expect(remaining.savedAtUtc, isNotNull);
+  });
+
+  test('retention removes a saved QR only from history', () async {
+    await repository.save(
+      QrHistoryItem(
+        id: 'old-saved',
+        activityKind: QrActivityKind.created,
+        payloadKind: QrPayloadKind.text,
+        rawPayload: 'old saved value',
+        displayHost: null,
+        savedAtUtc: DateTime.utc(2026, 8, 2),
+        source: QrActivitySource.manual,
+        createdAtUtc: DateTime.utc(2026, 8, 1),
+      ),
+    );
+    await controller.enable();
+    await controller.setRetention(HistoryRetention.sevenDays);
+
+    final remaining = (await repository.watchRecent().first).single;
+    expect(remaining.isInHistory, isFalse);
+    expect(remaining.savedAtUtc, isNotNull);
+  });
+
+  test(
+    'removing from Saved retains history or deletes a saved-only QR',
+    () async {
+      await controller.enable();
+      await controller.recordScanned(payload: 'history and saved');
+      var item = (await repository.watchRecent().first).single;
+      await controller.save(item.id);
+      await controller.removeFromSaved(item.id);
+
+      item = (await repository.watchRecent().first).single;
+      expect(item.isInHistory, isTrue);
+      expect(item.savedAtUtc, isNull);
+
+      await controller.save(item.id);
+      await controller.delete(item.id);
+      await controller.removeFromSaved(item.id);
+      expect(await repository.watchRecent().first, isEmpty);
+    },
+  );
 }
 
 final class _MemoryHistorySettings implements HistorySettingsStore {

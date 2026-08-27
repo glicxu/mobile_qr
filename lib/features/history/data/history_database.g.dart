@@ -62,6 +62,50 @@ class $HistoryEntriesTable extends HistoryEntries
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isInHistoryMeta = const VerificationMeta(
+    'isInHistory',
+  );
+  @override
+  late final GeneratedColumn<bool> isInHistory = GeneratedColumn<bool>(
+    'is_in_history',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_in_history" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _savedAtUtcMeta = const VerificationMeta(
+    'savedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> savedAtUtc = GeneratedColumn<DateTime>(
+    'saved_at_utc',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _verificationCodeMeta = const VerificationMeta(
     'verificationCode',
   );
@@ -123,6 +167,10 @@ class $HistoryEntriesTable extends HistoryEntries
     payloadKind,
     rawPayload,
     displayHost,
+    title,
+    note,
+    isInHistory,
+    savedAtUtc,
     verificationCode,
     registrableDomain,
     qrPngBytes,
@@ -182,6 +230,36 @@ class $HistoryEntriesTable extends HistoryEntries
         displayHost.isAcceptableOrUnknown(
           data['display_host']!,
           _displayHostMeta,
+        ),
+      );
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('is_in_history')) {
+      context.handle(
+        _isInHistoryMeta,
+        isInHistory.isAcceptableOrUnknown(
+          data['is_in_history']!,
+          _isInHistoryMeta,
+        ),
+      );
+    }
+    if (data.containsKey('saved_at_utc')) {
+      context.handle(
+        _savedAtUtcMeta,
+        savedAtUtc.isAcceptableOrUnknown(
+          data['saved_at_utc']!,
+          _savedAtUtcMeta,
         ),
       );
     }
@@ -260,6 +338,22 @@ class $HistoryEntriesTable extends HistoryEntries
         DriftSqlType.string,
         data['${effectivePrefix}display_host'],
       ),
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      ),
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      ),
+      isInHistory: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_in_history'],
+      )!,
+      savedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}saved_at_utc'],
+      ),
       verificationCode: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}verification_code'],
@@ -295,6 +389,10 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
   final int payloadKind;
   final String rawPayload;
   final String? displayHost;
+  final String? title;
+  final String? note;
+  final bool isInHistory;
+  final DateTime? savedAtUtc;
   final String? verificationCode;
   final String? registrableDomain;
   final Uint8List? qrPngBytes;
@@ -306,6 +404,10 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     required this.payloadKind,
     required this.rawPayload,
     this.displayHost,
+    this.title,
+    this.note,
+    required this.isInHistory,
+    this.savedAtUtc,
     this.verificationCode,
     this.registrableDomain,
     this.qrPngBytes,
@@ -321,6 +423,16 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     map['raw_payload'] = Variable<String>(rawPayload);
     if (!nullToAbsent || displayHost != null) {
       map['display_host'] = Variable<String>(displayHost);
+    }
+    if (!nullToAbsent || title != null) {
+      map['title'] = Variable<String>(title);
+    }
+    if (!nullToAbsent || note != null) {
+      map['note'] = Variable<String>(note);
+    }
+    map['is_in_history'] = Variable<bool>(isInHistory);
+    if (!nullToAbsent || savedAtUtc != null) {
+      map['saved_at_utc'] = Variable<DateTime>(savedAtUtc);
     }
     if (!nullToAbsent || verificationCode != null) {
       map['verification_code'] = Variable<String>(verificationCode);
@@ -345,6 +457,14 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       displayHost: displayHost == null && nullToAbsent
           ? const Value.absent()
           : Value(displayHost),
+      title: title == null && nullToAbsent
+          ? const Value.absent()
+          : Value(title),
+      note: note == null && nullToAbsent ? const Value.absent() : Value(note),
+      isInHistory: Value(isInHistory),
+      savedAtUtc: savedAtUtc == null && nullToAbsent
+          ? const Value.absent()
+          : Value(savedAtUtc),
       verificationCode: verificationCode == null && nullToAbsent
           ? const Value.absent()
           : Value(verificationCode),
@@ -370,6 +490,10 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       payloadKind: serializer.fromJson<int>(json['payloadKind']),
       rawPayload: serializer.fromJson<String>(json['rawPayload']),
       displayHost: serializer.fromJson<String?>(json['displayHost']),
+      title: serializer.fromJson<String?>(json['title']),
+      note: serializer.fromJson<String?>(json['note']),
+      isInHistory: serializer.fromJson<bool>(json['isInHistory']),
+      savedAtUtc: serializer.fromJson<DateTime?>(json['savedAtUtc']),
       verificationCode: serializer.fromJson<String?>(json['verificationCode']),
       registrableDomain: serializer.fromJson<String?>(
         json['registrableDomain'],
@@ -388,6 +512,10 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       'payloadKind': serializer.toJson<int>(payloadKind),
       'rawPayload': serializer.toJson<String>(rawPayload),
       'displayHost': serializer.toJson<String?>(displayHost),
+      'title': serializer.toJson<String?>(title),
+      'note': serializer.toJson<String?>(note),
+      'isInHistory': serializer.toJson<bool>(isInHistory),
+      'savedAtUtc': serializer.toJson<DateTime?>(savedAtUtc),
       'verificationCode': serializer.toJson<String?>(verificationCode),
       'registrableDomain': serializer.toJson<String?>(registrableDomain),
       'qrPngBytes': serializer.toJson<Uint8List?>(qrPngBytes),
@@ -402,6 +530,10 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     int? payloadKind,
     String? rawPayload,
     Value<String?> displayHost = const Value.absent(),
+    Value<String?> title = const Value.absent(),
+    Value<String?> note = const Value.absent(),
+    bool? isInHistory,
+    Value<DateTime?> savedAtUtc = const Value.absent(),
     Value<String?> verificationCode = const Value.absent(),
     Value<String?> registrableDomain = const Value.absent(),
     Value<Uint8List?> qrPngBytes = const Value.absent(),
@@ -413,6 +545,10 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     payloadKind: payloadKind ?? this.payloadKind,
     rawPayload: rawPayload ?? this.rawPayload,
     displayHost: displayHost.present ? displayHost.value : this.displayHost,
+    title: title.present ? title.value : this.title,
+    note: note.present ? note.value : this.note,
+    isInHistory: isInHistory ?? this.isInHistory,
+    savedAtUtc: savedAtUtc.present ? savedAtUtc.value : this.savedAtUtc,
     verificationCode: verificationCode.present
         ? verificationCode.value
         : this.verificationCode,
@@ -438,6 +574,14 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       displayHost: data.displayHost.present
           ? data.displayHost.value
           : this.displayHost,
+      title: data.title.present ? data.title.value : this.title,
+      note: data.note.present ? data.note.value : this.note,
+      isInHistory: data.isInHistory.present
+          ? data.isInHistory.value
+          : this.isInHistory,
+      savedAtUtc: data.savedAtUtc.present
+          ? data.savedAtUtc.value
+          : this.savedAtUtc,
       verificationCode: data.verificationCode.present
           ? data.verificationCode.value
           : this.verificationCode,
@@ -462,6 +606,10 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           ..write('payloadKind: $payloadKind, ')
           ..write('rawPayload: $rawPayload, ')
           ..write('displayHost: $displayHost, ')
+          ..write('title: $title, ')
+          ..write('note: $note, ')
+          ..write('isInHistory: $isInHistory, ')
+          ..write('savedAtUtc: $savedAtUtc, ')
           ..write('verificationCode: $verificationCode, ')
           ..write('registrableDomain: $registrableDomain, ')
           ..write('qrPngBytes: $qrPngBytes, ')
@@ -478,6 +626,10 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     payloadKind,
     rawPayload,
     displayHost,
+    title,
+    note,
+    isInHistory,
+    savedAtUtc,
     verificationCode,
     registrableDomain,
     $driftBlobEquality.hash(qrPngBytes),
@@ -493,6 +645,10 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           other.payloadKind == this.payloadKind &&
           other.rawPayload == this.rawPayload &&
           other.displayHost == this.displayHost &&
+          other.title == this.title &&
+          other.note == this.note &&
+          other.isInHistory == this.isInHistory &&
+          other.savedAtUtc == this.savedAtUtc &&
           other.verificationCode == this.verificationCode &&
           other.registrableDomain == this.registrableDomain &&
           $driftBlobEquality.equals(other.qrPngBytes, this.qrPngBytes) &&
@@ -506,6 +662,10 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
   final Value<int> payloadKind;
   final Value<String> rawPayload;
   final Value<String?> displayHost;
+  final Value<String?> title;
+  final Value<String?> note;
+  final Value<bool> isInHistory;
+  final Value<DateTime?> savedAtUtc;
   final Value<String?> verificationCode;
   final Value<String?> registrableDomain;
   final Value<Uint8List?> qrPngBytes;
@@ -518,6 +678,10 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     this.payloadKind = const Value.absent(),
     this.rawPayload = const Value.absent(),
     this.displayHost = const Value.absent(),
+    this.title = const Value.absent(),
+    this.note = const Value.absent(),
+    this.isInHistory = const Value.absent(),
+    this.savedAtUtc = const Value.absent(),
     this.verificationCode = const Value.absent(),
     this.registrableDomain = const Value.absent(),
     this.qrPngBytes = const Value.absent(),
@@ -531,6 +695,10 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     required int payloadKind,
     required String rawPayload,
     this.displayHost = const Value.absent(),
+    this.title = const Value.absent(),
+    this.note = const Value.absent(),
+    this.isInHistory = const Value.absent(),
+    this.savedAtUtc = const Value.absent(),
     this.verificationCode = const Value.absent(),
     this.registrableDomain = const Value.absent(),
     this.qrPngBytes = const Value.absent(),
@@ -549,6 +717,10 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     Expression<int>? payloadKind,
     Expression<String>? rawPayload,
     Expression<String>? displayHost,
+    Expression<String>? title,
+    Expression<String>? note,
+    Expression<bool>? isInHistory,
+    Expression<DateTime>? savedAtUtc,
     Expression<String>? verificationCode,
     Expression<String>? registrableDomain,
     Expression<Uint8List>? qrPngBytes,
@@ -562,6 +734,10 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
       if (payloadKind != null) 'payload_kind': payloadKind,
       if (rawPayload != null) 'raw_payload': rawPayload,
       if (displayHost != null) 'display_host': displayHost,
+      if (title != null) 'title': title,
+      if (note != null) 'note': note,
+      if (isInHistory != null) 'is_in_history': isInHistory,
+      if (savedAtUtc != null) 'saved_at_utc': savedAtUtc,
       if (verificationCode != null) 'verification_code': verificationCode,
       if (registrableDomain != null) 'registrable_domain': registrableDomain,
       if (qrPngBytes != null) 'qr_png_bytes': qrPngBytes,
@@ -577,6 +753,10 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     Value<int>? payloadKind,
     Value<String>? rawPayload,
     Value<String?>? displayHost,
+    Value<String?>? title,
+    Value<String?>? note,
+    Value<bool>? isInHistory,
+    Value<DateTime?>? savedAtUtc,
     Value<String?>? verificationCode,
     Value<String?>? registrableDomain,
     Value<Uint8List?>? qrPngBytes,
@@ -590,6 +770,10 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
       payloadKind: payloadKind ?? this.payloadKind,
       rawPayload: rawPayload ?? this.rawPayload,
       displayHost: displayHost ?? this.displayHost,
+      title: title ?? this.title,
+      note: note ?? this.note,
+      isInHistory: isInHistory ?? this.isInHistory,
+      savedAtUtc: savedAtUtc ?? this.savedAtUtc,
       verificationCode: verificationCode ?? this.verificationCode,
       registrableDomain: registrableDomain ?? this.registrableDomain,
       qrPngBytes: qrPngBytes ?? this.qrPngBytes,
@@ -616,6 +800,18 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     }
     if (displayHost.present) {
       map['display_host'] = Variable<String>(displayHost.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (isInHistory.present) {
+      map['is_in_history'] = Variable<bool>(isInHistory.value);
+    }
+    if (savedAtUtc.present) {
+      map['saved_at_utc'] = Variable<DateTime>(savedAtUtc.value);
     }
     if (verificationCode.present) {
       map['verification_code'] = Variable<String>(verificationCode.value);
@@ -646,6 +842,10 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
           ..write('payloadKind: $payloadKind, ')
           ..write('rawPayload: $rawPayload, ')
           ..write('displayHost: $displayHost, ')
+          ..write('title: $title, ')
+          ..write('note: $note, ')
+          ..write('isInHistory: $isInHistory, ')
+          ..write('savedAtUtc: $savedAtUtc, ')
           ..write('verificationCode: $verificationCode, ')
           ..write('registrableDomain: $registrableDomain, ')
           ..write('qrPngBytes: $qrPngBytes, ')
@@ -675,6 +875,10 @@ typedef $$HistoryEntriesTableCreateCompanionBuilder =
       required int payloadKind,
       required String rawPayload,
       Value<String?> displayHost,
+      Value<String?> title,
+      Value<String?> note,
+      Value<bool> isInHistory,
+      Value<DateTime?> savedAtUtc,
       Value<String?> verificationCode,
       Value<String?> registrableDomain,
       Value<Uint8List?> qrPngBytes,
@@ -689,6 +893,10 @@ typedef $$HistoryEntriesTableUpdateCompanionBuilder =
       Value<int> payloadKind,
       Value<String> rawPayload,
       Value<String?> displayHost,
+      Value<String?> title,
+      Value<String?> note,
+      Value<bool> isInHistory,
+      Value<DateTime?> savedAtUtc,
       Value<String?> verificationCode,
       Value<String?> registrableDomain,
       Value<Uint8List?> qrPngBytes,
@@ -728,6 +936,26 @@ class $$HistoryEntriesTableFilterComposer
 
   ColumnFilters<String> get displayHost => $composableBuilder(
     column: $table.displayHost,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isInHistory => $composableBuilder(
+    column: $table.isInHistory,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get savedAtUtc => $composableBuilder(
+    column: $table.savedAtUtc,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -791,6 +1019,26 @@ class $$HistoryEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isInHistory => $composableBuilder(
+    column: $table.isInHistory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get savedAtUtc => $composableBuilder(
+    column: $table.savedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get verificationCode => $composableBuilder(
     column: $table.verificationCode,
     builder: (column) => ColumnOrderings(column),
@@ -846,6 +1094,22 @@ class $$HistoryEntriesTableAnnotationComposer
 
   GeneratedColumn<String> get displayHost => $composableBuilder(
     column: $table.displayHost,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<bool> get isInHistory => $composableBuilder(
+    column: $table.isInHistory,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get savedAtUtc => $composableBuilder(
+    column: $table.savedAtUtc,
     builder: (column) => column,
   );
 
@@ -915,6 +1179,10 @@ class $$HistoryEntriesTableTableManager
                 Value<int> payloadKind = const Value.absent(),
                 Value<String> rawPayload = const Value.absent(),
                 Value<String?> displayHost = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> isInHistory = const Value.absent(),
+                Value<DateTime?> savedAtUtc = const Value.absent(),
                 Value<String?> verificationCode = const Value.absent(),
                 Value<String?> registrableDomain = const Value.absent(),
                 Value<Uint8List?> qrPngBytes = const Value.absent(),
@@ -927,6 +1195,10 @@ class $$HistoryEntriesTableTableManager
                 payloadKind: payloadKind,
                 rawPayload: rawPayload,
                 displayHost: displayHost,
+                title: title,
+                note: note,
+                isInHistory: isInHistory,
+                savedAtUtc: savedAtUtc,
                 verificationCode: verificationCode,
                 registrableDomain: registrableDomain,
                 qrPngBytes: qrPngBytes,
@@ -941,6 +1213,10 @@ class $$HistoryEntriesTableTableManager
                 required int payloadKind,
                 required String rawPayload,
                 Value<String?> displayHost = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<String?> note = const Value.absent(),
+                Value<bool> isInHistory = const Value.absent(),
+                Value<DateTime?> savedAtUtc = const Value.absent(),
                 Value<String?> verificationCode = const Value.absent(),
                 Value<String?> registrableDomain = const Value.absent(),
                 Value<Uint8List?> qrPngBytes = const Value.absent(),
@@ -953,6 +1229,10 @@ class $$HistoryEntriesTableTableManager
                 payloadKind: payloadKind,
                 rawPayload: rawPayload,
                 displayHost: displayHost,
+                title: title,
+                note: note,
+                isInHistory: isInHistory,
+                savedAtUtc: savedAtUtc,
                 verificationCode: verificationCode,
                 registrableDomain: registrableDomain,
                 qrPngBytes: qrPngBytes,

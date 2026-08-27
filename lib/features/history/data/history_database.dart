@@ -9,6 +9,10 @@ class HistoryEntries extends Table {
   IntColumn get payloadKind => integer()();
   TextColumn get rawPayload => text()();
   TextColumn get displayHost => text().nullable()();
+  TextColumn get title => text().nullable()();
+  TextColumn get note => text().nullable()();
+  BoolColumn get isInHistory => boolean().withDefault(const Constant(true))();
+  DateTimeColumn get savedAtUtc => dateTime().nullable()();
   TextColumn get verificationCode => text().nullable()();
   TextColumn get registrableDomain => text().nullable()();
   BlobColumn get qrPngBytes => blob().nullable()();
@@ -26,7 +30,7 @@ final class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase.forTesting(super.connection);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -42,6 +46,14 @@ final class HistoryDatabase extends _$HistoryDatabase {
           historyEntries.registrableDomain,
         );
         await migrator.addColumn(historyEntries, historyEntries.qrPngBytes);
+      }
+      if (from < 3) {
+        await migrator.addColumn(historyEntries, historyEntries.title);
+        await migrator.addColumn(historyEntries, historyEntries.note);
+      }
+      if (from < 4) {
+        await migrator.addColumn(historyEntries, historyEntries.isInHistory);
+        await migrator.addColumn(historyEntries, historyEntries.savedAtUtc);
       }
     },
   );

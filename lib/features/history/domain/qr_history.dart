@@ -25,6 +25,10 @@ final class QrHistoryItem {
     required this.payloadKind,
     required this.rawPayload,
     required this.displayHost,
+    this.title,
+    this.note,
+    this.isInHistory = true,
+    this.savedAtUtc,
     this.verificationCode,
     this.registrableDomain,
     this.qrPngBytes,
@@ -37,6 +41,10 @@ final class QrHistoryItem {
   final QrPayloadKind payloadKind;
   final String rawPayload;
   final String? displayHost;
+  final String? title;
+  final String? note;
+  final bool isInHistory;
+  final DateTime? savedAtUtc;
   final String? verificationCode;
   final String? registrableDomain;
   final Uint8List? qrPngBytes;
@@ -47,9 +55,14 @@ final class QrHistoryItem {
 abstract interface class QrHistoryRepository {
   Stream<List<QrHistoryItem>> watchRecent();
   Future<void> save(QrHistoryItem item);
-  Future<void> delete(String id);
+  Future<void> updateMetadata(String id, {String? title, String? note});
+  Future<QrHistoryItem?> findMostRecentByPayload(String payload);
+  Future<void> setSavedAt(String id, DateTime? savedAtUtc);
+  Future<void> setInHistory(String id, bool isInHistory);
+  Future<void> removeFromHistory(String id);
+  Future<void> removeFromSaved(String id);
   Future<void> deleteExpired(DateTime cutoffUtc);
-  Future<void> clear();
+  Future<void> clearHistory();
   Future<void> close();
 }
 

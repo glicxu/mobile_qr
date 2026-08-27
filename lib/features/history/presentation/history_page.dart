@@ -144,6 +144,8 @@ class _HistoryPageState extends State<HistoryPage> {
         .where((item) {
           if (query.isEmpty) return true;
           return item.rawPayload.toLowerCase().contains(query) ||
+              (item.title?.toLowerCase().contains(query) ?? false) ||
+              (item.note?.toLowerCase().contains(query) ?? false) ||
               (item.displayHost?.toLowerCase().contains(query) ?? false) ||
               (item.verificationCode?.toLowerCase().contains(query) ?? false);
         })
@@ -156,7 +158,7 @@ class _HistoryPageState extends State<HistoryPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: SearchBar(
             controller: _searchController,
-            hintText: 'Search host or text',
+            hintText: 'Search title, note, host, or text',
             leading: const Icon(Icons.search),
             trailing: [
               if (_searchController.text.isNotEmpty)
@@ -215,11 +217,19 @@ class _HistoryPageState extends State<HistoryPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.activityKind == QrActivityKind.created
-                      ? 'Created QR'
-                      : 'Scanned QR',
+                  item.title ??
+                      (item.activityKind == QrActivityKind.created
+                          ? 'Created QR'
+                          : 'Scanned QR'),
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
+                if (item.title != null)
+                  Text(
+                    item.activityKind == QrActivityKind.created
+                        ? 'Created QR'
+                        : 'Scanned QR',
+                    style: Theme.of(sheetContext).textTheme.bodySmall,
+                  ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: SingleChildScrollView(
@@ -291,6 +301,15 @@ class _HistoryPageState extends State<HistoryPage> {
                           SelectableText(detail),
                         ],
                         QrSensitiveDetail(payload: payload),
+                        if (item.note case final note?) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            'Note',
+                            style: Theme.of(sheetContext).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 4),
+                          SelectableText(note),
+                        ],
                         const SizedBox(height: 16),
                         Text(
                           'Raw content',
@@ -328,8 +347,38 @@ class _HistoryPageState extends State<HistoryPage> {
                     ),
                   ),
                 ),
-                Row(
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 4,
                   children: [
+                    if (item.savedAtUtc == null)
+                      TextButton.icon(
+                        onPressed: () async {
+                          await widget.controller.save(item.id);
+                          if (sheetContext.mounted) {
+                            Navigator.pop(sheetContext);
+                          }
+                          if (mounted) _showMessage('QR saved.');
+                        },
+                        icon: const Icon(Icons.bookmark_add_outlined),
+                        label: const Text('Save'),
+                      )
+                    else
+                      TextButton.icon(
+                        onPressed: null,
+                        icon: const Icon(Icons.bookmark_added),
+                        label: const Text('Saved'),
+                      ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        final updated = await _editMetadata(item);
+                        if (updated && sheetContext.mounted) {
+                          Navigator.pop(sheetContext);
+                        }
+                      },
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('Edit'),
+                    ),
                     TextButton.icon(
                       onPressed: () async {
                         if (!await _confirmDelete(
@@ -349,7 +398,6 @@ class _HistoryPageState extends State<HistoryPage> {
                         ).colorScheme.error,
                       ),
                     ),
-                    const Spacer(),
                     TextButton(
                       onPressed: () => Navigator.pop(sheetContext),
                       child: const Text('Close'),
@@ -362,6 +410,59 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
       ),
     );
+  }
+
+  Future<bool> _editMetadata(QrHistoryItem item) async {
+    var title = item.title ?? '';
+    var note = item.note ?? '';
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit history details'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                initialValue: title,
+                onChanged: (value) => title = value,
+                autofocus: true,
+                maxLength: 100,
+                decoration: const InputDecoration(
+                  labelText: 'Title',
+                  hintText: 'Displayed instead of raw content',
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                initialValue: note,
+                onChanged: (value) => note = value,
+                minLines: 3,
+                maxLines: 6,
+                maxLength: 1000,
+                decoration: const InputDecoration(
+                  labelText: 'Note',
+                  alignLabelWithHint: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (save != true) return false;
+    await widget.controller.updateMetadata(item.id, title: title, note: note);
+    return true;
   }
 
   Uint8List? _qrBytesFor(QrHistoryItem item) {
@@ -400,7 +501,9 @@ class _HistoryPageState extends State<HistoryPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear all history?'),
-        content: const Text('This permanently deletes every history entry.'),
+        content: const Text(
+          'This removes every history entry. QRs in Saved will remain available.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -426,7 +529,9 @@ class _HistoryPageState extends State<HistoryPage> {
       builder: (context) => AlertDialog(
         title: const Text('Delete history item?'),
         content: Text(
-          'This permanently deletes the ${item.activityKind == QrActivityKind.created ? 'created' : 'scanned'} QR entry.',
+          item.savedAtUtc == null
+              ? 'This permanently deletes the ${item.activityKind == QrActivityKind.created ? 'created' : 'scanned'} QR entry.'
+              : 'This QR is also in Saved. Removing it from History will not remove the saved copy. To delete it completely, remove it from the Saved page.',
         ),
         actions: [
           TextButton(
@@ -450,7 +555,7 @@ class _HistoryPageState extends State<HistoryPage> {
         title: const Text('Turn off history?'),
         content: const Text(
           'New activity will not be saved. Choose whether to keep or delete '
-          'the history already on this device.',
+          'the history already on this device. Saved QRs will not be deleted.',
         ),
         actions: [
           TextButton(
@@ -581,7 +686,7 @@ final class _HistoryTile extends StatelessWidget {
           child: Icon(created ? Icons.qr_code_2 : Icons.qr_code_scanner),
         ),
         title: Text(
-          item.displayHost ?? item.rawPayload,
+          item.title ?? item.displayHost ?? item.rawPayload,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

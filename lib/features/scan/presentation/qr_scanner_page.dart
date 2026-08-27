@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -17,6 +17,7 @@ final class QrScannerPage extends StatefulWidget {
   const QrScannerPage({
     required this.secureQrService,
     this.onScanned,
+    this.onSave,
     this.sharedImagePath,
     this.onSharedImageConsumed,
     super.key,
@@ -30,6 +31,13 @@ final class QrScannerPage extends StatefulWidget {
     Uint8List? qrPngBytes,
   })?
   onScanned;
+  final Future<void> Function({
+    required String payload,
+    String? verificationCode,
+    String? registrableDomain,
+    Uint8List? qrPngBytes,
+  })?
+  onSave;
   final String? sharedImagePath;
   final ValueChanged<String>? onSharedImageConsumed;
 
@@ -51,8 +59,12 @@ class _QrScannerPageState extends State<QrScannerPage> {
   final ImagePicker _imagePicker = ImagePicker();
 
   String? _decodedText;
+  Uint8List? _decodedQrPngBytes;
   bool _handlingDetection = false;
   bool _importingImage = false;
+  bool _saving = false;
+  bool _saved = false;
+  Future<void>? _recordingFuture;
 
   @override
   void initState() {
@@ -95,7 +107,11 @@ class _QrScannerPageState extends State<QrScannerPage> {
   }
 
   void _completeDetection(String text) {
-    setState(() => _decodedText = text);
+    setState(() {
+      _decodedText = text;
+      _saved = false;
+      _decodedQrPngBytes = null;
+    });
     final onScanned = widget.onScanned;
     if (onScanned != null) {
       final verification = widget.secureQrService.calculateForPayload(text);
@@ -107,16 +123,16 @@ class _QrScannerPageState extends State<QrScannerPage> {
       } on Object {
         // Very large or unsupported values can still be retained as text.
       }
-      unawaited(
-        onScanned(
-          payload: text,
-          verificationCode: verification?.code,
-          registrableDomain: verification is SecureQrResult
-              ? verification.registrableDomain
-              : null,
-          qrPngBytes: qrPngBytes,
-        ),
+      _decodedQrPngBytes = qrPngBytes;
+      _recordingFuture = onScanned(
+        payload: text,
+        verificationCode: verification?.code,
+        registrableDomain: verification is SecureQrResult
+            ? verification.registrableDomain
+            : null,
+        qrPngBytes: qrPngBytes,
       );
+      unawaited(_recordingFuture);
     }
   }
 
@@ -204,9 +220,52 @@ class _QrScannerPageState extends State<QrScannerPage> {
   }
 
   Future<void> _scanAgain() async {
-    setState(() => _decodedText = null);
+    setState(() {
+      _decodedText = null;
+      _decodedQrPngBytes = null;
+      _saved = false;
+    });
     _handlingDetection = false;
     await _controller.start();
+  }
+
+  Future<void> _copyRawContent(String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Raw content copied.')));
+  }
+
+  Future<void> _saveQr(String text) async {
+    final onSave = widget.onSave;
+    if (onSave == null || _saving || _saved) return;
+    setState(() => _saving = true);
+    try {
+      await _recordingFuture;
+      final verification = widget.secureQrService.calculateForPayload(text);
+      await onSave(
+        payload: text,
+        verificationCode: verification?.code,
+        registrableDomain: verification is SecureQrResult
+            ? verification.registrableDomain
+            : null,
+        qrPngBytes: _decodedQrPngBytes,
+      );
+      if (!mounted) return;
+      setState(() => _saved = true);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('QR saved.')));
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('The QR could not be saved.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -367,6 +426,32 @@ class _QrScannerPageState extends State<QrScannerPage> {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: SelectableText(text),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: _saving || _saved ? null : () => _saveQr(text),
+              icon: Icon(
+                _saved ? Icons.bookmark_added : Icons.bookmark_add_outlined,
+              ),
+              label: Text(
+                _saving
+                    ? 'Saving...'
+                    : _saved
+                    ? 'Saved'
+                    : 'Save QR',
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => _copyRawContent(text),
+              icon: const Icon(Icons.copy_outlined),
+              label: const Text('Copy raw content'),
             ),
           ),
           const SizedBox(height: 12),

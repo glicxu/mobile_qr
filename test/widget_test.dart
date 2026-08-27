@@ -69,6 +69,7 @@ void main() {
     expect(find.textContaining('mask '), findsNothing);
     expect(find.text('Create'), findsOneWidget);
     expect(find.text('Scan'), findsOneWidget);
+    expect(find.text('Saved'), findsOneWidget);
     expect(find.text('History'), findsOneWidget);
 
     await tester.tap(find.text('History'));
@@ -99,6 +100,13 @@ void main() {
     expect(find.byTooltip('Copy verification code'), findsOneWidget);
     expect(find.byTooltip('Copy payload'), findsOneWidget);
     expect(find.text('Open in browser'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Save'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Saved'));
+    await tester.pumpAndSettle();
+    expect(find.text('Saved QRs'), findsOneWidget);
+    expect(find.text('example.com'), findsOneWidget);
   });
 
   testWidgets('generates URLs without a domain as unverified QR content', (
