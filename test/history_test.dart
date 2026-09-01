@@ -80,9 +80,54 @@ void main() {
       ),
     );
     await controller.enable();
-    await controller.setRetention(HistoryRetention.sevenDays);
 
     expect(await repository.watchRecent().first, isEmpty);
+  });
+
+  test(
+    'free history ignores longer retention and keeps only 24 hours',
+    () async {
+      await repository.save(
+        QrHistoryItem(
+          id: 'old',
+          activityKind: QrActivityKind.scanned,
+          payloadKind: QrPayloadKind.text,
+          rawPayload: 'old scan',
+          displayHost: null,
+          source: QrActivitySource.camera,
+          createdAtUtc: DateTime.utc(2026, 8, 19, 11, 59),
+        ),
+      );
+
+      await controller.enable();
+      await controller.setRetention(HistoryRetention.forever);
+
+      expect(controller.retention, HistoryRetention.oneDay);
+      expect(settings.retentionValue, HistoryRetention.thirtyDays);
+      expect(await repository.watchRecent().first, isEmpty);
+    },
+  );
+
+  test('unlocked history can use longer retention', () async {
+    await repository.save(
+      QrHistoryItem(
+        id: 'week-old',
+        activityKind: QrActivityKind.scanned,
+        payloadKind: QrPayloadKind.text,
+        rawPayload: 'week old scan',
+        displayHost: null,
+        source: QrActivitySource.camera,
+        createdAtUtc: DateTime.utc(2026, 8, 13, 12),
+      ),
+    );
+
+    await controller.setExtendedHistoryUnlocked(true);
+    await controller.enable();
+    await controller.setRetention(HistoryRetention.thirtyDays);
+
+    expect(controller.retention, HistoryRetention.thirtyDays);
+    expect(settings.retentionValue, HistoryRetention.thirtyDays);
+    expect(await repository.watchRecent().first, hasLength(1));
   });
 
   test('scanned URLs retain verification and QR sharing data', () async {

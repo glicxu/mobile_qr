@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'features/create/application/qr_encoder.dart';
 import 'features/create/application/qr_png_validator.dart';
@@ -43,7 +44,7 @@ class DaliQrApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dali QR',
+      title: 'Dali Secure QR',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff315caa)),
         useMaterial3: true,
@@ -81,6 +82,7 @@ class _DaliQrHomeState extends State<DaliQrHome> {
   late final Future<SecureQrService> _secureQrService;
   Future<HistoryController>? _historyController;
   late final Future<CustomizationEntitlement> _customizationEntitlement;
+  Future<PackageInfo>? _packageInfo;
   late final InboundImageShareSource _inboundImageShare;
   String? _sharedImagePath;
 
@@ -118,6 +120,10 @@ class _DaliQrHomeState extends State<DaliQrHome> {
 
   Future<HistoryController> _loadHistory() {
     return _historyController ??= HistoryController.open();
+  }
+
+  Future<PackageInfo> _loadPackageInfo() {
+    return _packageInfo ??= PackageInfo.fromPlatform();
   }
 
   Future<void> _recordCreated({
@@ -248,7 +254,7 @@ class _DaliQrHomeState extends State<DaliQrHome> {
                     : SavedPage(controller: controller);
               },
             ),
-            _ => FutureBuilder<HistoryController>(
+            3 => FutureBuilder<HistoryController>(
               future: _loadHistory(),
               builder: (context, historySnapshot) {
                 final controller = historySnapshot.data;
@@ -259,7 +265,22 @@ class _DaliQrHomeState extends State<DaliQrHome> {
                 }
                 return controller == null
                     ? const Center(child: CircularProgressIndicator())
-                    : HistoryPage(controller: controller);
+                    : HistoryPage(
+                        controller: controller,
+                        customizationEntitlement: _customizationEntitlement,
+                      );
+              },
+            ),
+            _ => FutureBuilder<CustomizationEntitlement>(
+              future: _customizationEntitlement,
+              builder: (context, entitlementSnapshot) {
+                final entitlement = entitlementSnapshot.data;
+                return entitlement == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : SettingsPage(
+                        customizationEntitlement: entitlement,
+                        packageInfo: _loadPackageInfo(),
+                      );
               },
             ),
           };
@@ -282,6 +303,11 @@ class _DaliQrHomeState extends State<DaliQrHome> {
             label: 'Saved',
           ),
           NavigationDestination(icon: Icon(Icons.history), label: 'History'),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
     );
@@ -340,18 +366,27 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
   bool _recordedCurrentQr = false;
   bool _savedCurrentQr = false;
   bool _savingCurrentQr = false;
+  bool _hasQrContent = true;
 
   @override
   void initState() {
     super.initState();
     _imagePicker = widget.imagePicker ?? ImagePicker();
+    _controller.addListener(_syncQrContentState);
     unawaited(_recoverLostImage());
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_syncQrContentState);
     _controller.dispose();
     super.dispose();
+  }
+
+  void _syncQrContentState() {
+    final hasContent = _controller.text.isNotEmpty;
+    if (hasContent == _hasQrContent) return;
+    setState(() => _hasQrContent = hasContent);
   }
 
   Future<void> _recoverLostImage() async {
@@ -560,6 +595,7 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
     }
     setState(() => _savingCurrentQr = true);
     try {
+      if (!await _ensureExportAllowed()) return;
       final verification = _verification;
       await onSave(
         payload: payload.value,
@@ -680,7 +716,18 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
                   labelText: 'QR content',
                   errorText: _error,
                   border: const OutlineInputBorder(),
+                  suffixIcon: _hasQrContent
+                      ? IconButton(
+                          tooltip: 'Clear QR content',
+                          onPressed: () {
+                            _controller.clear();
+                            setState(_clearGeneratedOutput);
+                          },
+                          icon: const Icon(Icons.clear),
+                        )
+                      : null,
                 ),
+                onTapOutside: (_) => FocusScope.of(context).unfocus(),
                 onSubmitted: (_) => _generate(),
               ),
               const SizedBox(height: 12),
@@ -865,6 +912,216 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
   }
 }
 
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({
+    required this.customizationEntitlement,
+    required this.packageInfo,
+    super.key,
+  });
+
+  final CustomizationEntitlement customizationEntitlement;
+  final Future<PackageInfo> packageInfo;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: customizationEntitlement,
+      builder: (context, _) => Scaffold(
+        appBar: AppBar(title: const Text('Settings')),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              Text(
+                'Customization',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              _CustomizationStatus(entitlement: customizationEntitlement),
+              const SizedBox(height: 16),
+              _CustomizationPurchaseControls(
+                entitlement: customizationEntitlement,
+                showRefresh: true,
+              ),
+              const SizedBox(height: 32),
+              Text('App', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 12),
+              FutureBuilder<PackageInfo>(
+                future: packageInfo,
+                builder: (context, snapshot) {
+                  final info = snapshot.data;
+                  return Column(
+                    children: [
+                      _SettingsRow(
+                        label: 'Name',
+                        value: info?.appName ?? 'Dali Secure QR',
+                      ),
+                      _SettingsRow(
+                        label: 'Version',
+                        value: info == null
+                            ? 'Loading...'
+                            : '${info.version} (${info.buildNumber})',
+                      ),
+                      _SettingsRow(
+                        label: 'Package',
+                        value: info?.packageName ?? 'com.dalifin.qr',
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomizationStatus extends StatelessWidget {
+  const _CustomizationStatus({required this.entitlement});
+
+  final CustomizationEntitlement entitlement;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final unlocked = entitlement.isUnlocked;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border.all(color: colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              unlocked ? Icons.lock_open_outlined : Icons.lock_outline,
+              color: unlocked
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    unlocked
+                        ? 'Custom export unlocked'
+                        : 'Custom export locked',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    unlocked
+                        ? 'Custom-logo QR export and saving are available.'
+                        : 'Preview custom-logo QR codes for free. Purchase once to save, copy, or share them.',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CustomizationPurchaseControls extends StatelessWidget {
+  const _CustomizationPurchaseControls({
+    required this.entitlement,
+    this.showRefresh = false,
+  });
+
+  final CustomizationEntitlement entitlement;
+  final bool showRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (entitlement.message case final message?) ...[
+          Text(message),
+          const SizedBox(height: 12),
+        ],
+        FilledButton.icon(
+          onPressed: entitlement.isUnlocked || entitlement.isBusy
+              ? null
+              : () => unawaited(
+                  entitlement.price == null
+                      ? entitlement.refresh()
+                      : entitlement.purchase(),
+                ),
+          icon: entitlement.isBusy
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(
+                  entitlement.isUnlocked
+                      ? Icons.check_circle_outline
+                      : Icons.lock_open_outlined,
+                ),
+          label: Text(
+            entitlement.isUnlocked
+                ? 'Unlocked'
+                : entitlement.price == null
+                ? 'Lifetime unlock'
+                : 'Unlock for ${entitlement.price}',
+          ),
+        ),
+        TextButton(
+          onPressed: entitlement.isBusy || !entitlement.isStoreAvailable
+              ? null
+              : () => unawaited(entitlement.restore()),
+          child: const Text('Restore purchase'),
+        ),
+        if (showRefresh)
+          TextButton.icon(
+            onPressed: entitlement.isBusy
+                ? null
+                : () => unawaited(entitlement.refresh()),
+            icon: const Icon(Icons.sync_outlined),
+            label: const Text('Check store'),
+          ),
+      ],
+    );
+  }
+}
+
+class _SettingsRow extends StatelessWidget {
+  const _SettingsRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 88,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(child: SelectableText(value)),
+        ],
+      ),
+    );
+  }
+}
+
 class _CustomizationUnlockSheet extends StatelessWidget {
   const _CustomizationUnlockSheet({required this.entitlement});
 
@@ -894,31 +1151,7 @@ class _CustomizationUnlockSheet extends StatelessWidget {
                 Text(message),
               ],
               const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed:
-                    entitlement.isBusy ||
-                        !entitlement.isStoreAvailable ||
-                        entitlement.price == null
-                    ? null
-                    : () => unawaited(entitlement.purchase()),
-                icon: entitlement.isBusy
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.lock_open_outlined),
-                label: Text(
-                  entitlement.price == null
-                      ? 'Lifetime unlock'
-                      : 'Unlock for ${entitlement.price}',
-                ),
-              ),
-              TextButton(
-                onPressed: entitlement.isBusy || !entitlement.isStoreAvailable
-                    ? null
-                    : () => unawaited(entitlement.restore()),
-                child: const Text('Restore purchase'),
-              ),
+              _CustomizationPurchaseControls(entitlement: entitlement),
               if (kDebugMode && entitlement is DebugCustomizationEntitlement)
                 TextButton.icon(
                   onPressed: entitlement.isBusy

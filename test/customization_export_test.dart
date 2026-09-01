@@ -145,6 +145,9 @@ final class _TestEntitlement extends CustomizationEntitlement
   String? get price => '\$3.99';
 
   @override
+  Future<void> refresh() async {}
+
+  @override
   Future<void> purchase() async {
     _unlocked = true;
     notifyListeners();

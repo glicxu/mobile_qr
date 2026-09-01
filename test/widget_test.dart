@@ -165,6 +165,59 @@ void main() {
     expect(find.text('Content comparison code'), findsOneWidget);
     expect(find.text(wifiPayload), findsOneWidget);
   });
+
+  testWidgets('clears QR content from the text field clear button', (
+    tester,
+  ) async {
+    final secureQrService = SecureQrService(PublicSuffixList.parse('com'));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QrGenerationSpikePage(
+          secureQrService: secureQrService,
+          customizationEntitlement: _TestEntitlement(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byTooltip('Clear QR content'), findsOneWidget);
+    await tester.tap(find.byTooltip('Clear QR content'));
+    await tester.pump();
+
+    final textField = tester.widget<TextField>(find.byType(TextField));
+    expect(textField.controller?.text, isEmpty);
+    expect(find.byTooltip('Clear QR content'), findsNothing);
+  });
+
+  testWidgets('dismisses the QR content keyboard when tapping outside input', (
+    tester,
+  ) async {
+    final secureQrService = SecureQrService(PublicSuffixList.parse('com'));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: QrGenerationSpikePage(
+          secureQrService: secureQrService,
+          customizationEntitlement: _TestEntitlement(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byType(TextField));
+    await tester.pump();
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      isTrue,
+    );
+
+    await tester.tap(find.text('Generate QR code'));
+    await tester.pump();
+
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      isFalse,
+    );
+  });
 }
 
 final class _TestEntitlement extends CustomizationEntitlement {
@@ -182,6 +235,9 @@ final class _TestEntitlement extends CustomizationEntitlement {
 
   @override
   String? get price => null;
+
+  @override
+  Future<void> refresh() async {}
 
   @override
   Future<void> purchase() async {}

@@ -24,7 +24,9 @@ import EventKitUI
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-    let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "QrClipboard")
+    guard let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "QrClipboard") else {
+      return
+    }
     let channel = FlutterMethodChannel(
       name: "dali_qr/clipboard",
       binaryMessenger: registrar.messenger()
