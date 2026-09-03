@@ -39,6 +39,15 @@ migrate_working_dir/
 /artifacts/screenshots/ipad/
 /artifacts/tmp_asc_openapi/
 
+# Local UI and Play Console diagnostics.
+/artifacts/screenshots/edit-check.png
+/artifacts/screenshots/history-check.png
+/artifacts/screenshots/history-titled.png
+/artifacts/screenshots/history2.png
+/artifacts/screenshots/playstore_current.png
+/artifacts/screenshots/playstore_profile_home.png
+/artifacts/screenshots/saved-check.png
+
 # Symbolication related
 app.*.symbols
 
