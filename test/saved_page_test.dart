@@ -88,11 +88,5 @@ final class _DisabledSettings implements HistorySettingsStore {
   Future<bool> historyEnabled() async => false;
 
   @override
-  Future<HistoryRetention> retention() async => HistoryRetention.forever;
-
-  @override
   Future<void> setHistoryEnabled(bool enabled) async {}
-
-  @override
-  Future<void> setRetention(HistoryRetention retention) async {}
 }

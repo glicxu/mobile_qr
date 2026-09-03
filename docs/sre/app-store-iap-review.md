@@ -56,7 +56,7 @@ Primary review path:
 
 1. Open Dali Secure QR.
 2. Tap Settings.
-3. Under Customization, tap `Unlock for $3.99`.
+3. Under Customization, tap `Unlock lifetime customization`.
 4. Confirm that Apple's sandbox purchase sheet appears.
 
 Alternate path:
@@ -89,7 +89,7 @@ replacing the review screenshot.
 ## Known Good Review Note
 
 ```text
-Dali Secure QR Custom unlocks lifetime export of QR codes with a custom center image or logo. To locate the In-App Purchase: open Dali Secure QR, tap Settings in the bottom navigation, then under Customization tap Unlock for $3.99. The Apple sandbox purchase sheet appears for Dali Secure QR Custom. Alternative path: open the Create tab, enter QR content such as https://example.com, select Custom, choose any image from Photos, tap Generate QR code, then tap Share QR image or Copy QR image. The lifetime customization unlock is shown. Plain QR export and Secure QR verification remain free. The In-App Purchase is available for the United States storefront and is not restricted by device configuration.
+Dali Secure QR Custom unlocks lifetime export of QR codes with a custom center image or logo. To locate the In-App Purchase: open Dali Secure QR, tap Settings in the bottom navigation, then under Customization tap Unlock lifetime customization. The Apple sandbox purchase sheet appears for Dali Secure QR Custom and shows the current localized price. Alternative path: open the Create tab, enter QR content such as https://example.com, select Custom, choose any image from Photos, tap Generate QR code, then tap Share QR image or Copy QR image. The lifetime customization unlock is shown. Plain QR export and Secure QR verification remain free. The In-App Purchase is available for the United States storefront and is not restricted by device configuration.
 ```
 
 ## StoreKit Diagnostics

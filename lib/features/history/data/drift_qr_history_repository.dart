@@ -116,21 +116,6 @@ final class DriftQrHistoryRepository implements QrHistoryRepository {
   }
 
   @override
-  Future<void> deleteExpired(DateTime cutoffUtc) async {
-    await _database.transaction(() async {
-      final expired = _database.historyEntries.createdAtUtc.isSmallerThanValue(
-        cutoffUtc,
-      );
-      await (_database.delete(
-        _database.historyEntries,
-      )..where((row) => expired & row.savedAtUtc.isNull())).go();
-      await (_database.update(_database.historyEntries)
-            ..where((row) => expired & row.savedAtUtc.isNotNull()))
-          .write(const HistoryEntriesCompanion(isInHistory: Value(false)));
-    });
-  }
-
-  @override
   Future<void> clearHistory() async {
     await _database.transaction(() async {
       await (_database.delete(

@@ -681,11 +681,13 @@ The initial implementation follows these rules:
 - Users may select an image and generate a complete custom QR preview for free.
 - Copying, sharing, and history persistence of that custom output require the
   lifetime entitlement.
+- Free users can access one week of local QR history. Older entries are kept
+  on-device and become accessible with the lifetime entitlement.
 - Plain QR output, the Dali icon, and the verification-code badge remain free.
 - Every decorated QR is decoded internally and compared with the source payload
   before export. The emblem area is reduced automatically when necessary.
-- The localized price comes from the active store; no price is hard-coded in
-  the application.
+- The application does not display a price; the store confirmation sheet is
+  the authoritative source for the current localized price.
 - Purchase restoration is available from the unlock screen.
 - Scanned and generated payload content is never sent to the purchase provider.
 

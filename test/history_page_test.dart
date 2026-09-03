@@ -195,11 +195,21 @@ void main() {
     },
   );
 
-  testWidgets('free history shows a 24-hour retention lock', (tester) async {
+  testWidgets('free history keeps older entries and offers an unlock', (
+    tester,
+  ) async {
     final repository = DriftQrHistoryRepository(
       HistoryDatabase.forTesting(NativeDatabase.memory()),
     );
-    final controller = HistoryController(repository, _EnabledHistorySettings());
+    final now = DateTime.utc(2026, 9, 1, 12);
+    await repository.save(
+      _item('older entry', now.subtract(const Duration(days: 8))),
+    );
+    final controller = HistoryController(
+      repository,
+      _EnabledHistorySettings(),
+      now: () => now,
+    );
     await controller.initialize();
     addTearDown(controller.dispose);
 
@@ -213,9 +223,21 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(controller.retention, HistoryRetention.oneDay);
-    expect(find.byTooltip('History retention'), findsOneWidget);
-    expect(find.byTooltip('Longer history requires unlock'), findsOneWidget);
+    expect(controller.lockedItemCount, 1);
+    expect(find.text('1 older QR code is locked'), findsOneWidget);
+    expect(find.textContaining('Nothing was deleted.'), findsOneWidget);
+
+    await tester.tap(find.text('Unlock history'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Unlock your full history'), findsOneWidget);
+    expect(find.text('Unlock lifetime customization'), findsOneWidget);
+    expect(find.text('Restore purchases'), findsOneWidget);
+
+    Navigator.of(tester.element(find.text('Unlock your full history'))).pop();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
   });
 }
 
@@ -236,13 +258,7 @@ final class _EnabledHistorySettings implements HistorySettingsStore {
   Future<bool> historyEnabled() async => true;
 
   @override
-  Future<HistoryRetention> retention() async => HistoryRetention.forever;
-
-  @override
   Future<void> setHistoryEnabled(bool enabled) async {}
-
-  @override
-  Future<void> setRetention(HistoryRetention retention) async {}
 }
 
 final class _LockedEntitlement extends CustomizationEntitlement {

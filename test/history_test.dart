@@ -67,7 +67,7 @@ void main() {
     expect(scanned.qrPngBytes, [4, 5, 6]);
   });
 
-  test('retention removes expired entries', () async {
+  test('free history locks expired entries without deleting them', () async {
     await repository.save(
       QrHistoryItem(
         id: 'old',
@@ -81,34 +81,56 @@ void main() {
     );
     await controller.enable();
 
-    expect(await repository.watchRecent().first, isEmpty);
+    expect(await repository.watchRecent().first, hasLength(1));
+    expect(controller.items, isEmpty);
+    expect(controller.lockedItemCount, 1);
   });
 
-  test(
-    'free history ignores longer retention and keeps only 24 hours',
-    () async {
-      await repository.save(
-        QrHistoryItem(
-          id: 'old',
-          activityKind: QrActivityKind.scanned,
-          payloadKind: QrPayloadKind.text,
-          rawPayload: 'old scan',
-          displayHost: null,
-          source: QrActivitySource.camera,
-          createdAtUtc: DateTime.utc(2026, 8, 19, 11, 59),
-        ),
-      );
+  test('free history includes an entry exactly one week old', () async {
+    await repository.save(
+      QrHistoryItem(
+        id: 'boundary',
+        activityKind: QrActivityKind.scanned,
+        payloadKind: QrPayloadKind.text,
+        rawPayload: 'boundary scan',
+        displayHost: null,
+        source: QrActivitySource.camera,
+        createdAtUtc: DateTime.utc(2026, 8, 13, 12),
+      ),
+    );
 
-      await controller.enable();
-      await controller.setRetention(HistoryRetention.forever);
+    await controller.enable();
+    await pumpEventQueue();
 
-      expect(controller.retention, HistoryRetention.oneDay);
-      expect(settings.retentionValue, HistoryRetention.thirtyDays);
-      expect(await repository.watchRecent().first, isEmpty);
-    },
-  );
+    expect(controller.items.single.id, 'boundary');
+    expect(controller.lockedItemCount, 0);
+  });
 
-  test('unlocked history can use longer retention', () async {
+  test('unlocking reveals older history that was kept on device', () async {
+    await repository.save(
+      QrHistoryItem(
+        id: 'old',
+        activityKind: QrActivityKind.scanned,
+        payloadKind: QrPayloadKind.text,
+        rawPayload: 'old scan',
+        displayHost: null,
+        source: QrActivitySource.camera,
+        createdAtUtc: DateTime.utc(2026, 8, 1),
+      ),
+    );
+    await controller.enable();
+    await pumpEventQueue();
+
+    expect(controller.items, isEmpty);
+    expect(controller.lockedItemCount, 1);
+
+    await controller.setExtendedHistoryUnlocked(true);
+
+    expect(controller.items.single.rawPayload, 'old scan');
+    expect(controller.lockedItemCount, 0);
+  });
+
+  test('unlocked history can access older entries', () async {
     await repository.save(
       QrHistoryItem(
         id: 'week-old',
@@ -123,10 +145,10 @@ void main() {
 
     await controller.setExtendedHistoryUnlocked(true);
     await controller.enable();
-    await controller.setRetention(HistoryRetention.thirtyDays);
+    await pumpEventQueue();
 
-    expect(controller.retention, HistoryRetention.thirtyDays);
-    expect(settings.retentionValue, HistoryRetention.thirtyDays);
+    expect(controller.lockedItemCount, 0);
+    expect(controller.items, hasLength(1));
     expect(await repository.watchRecent().first, hasLength(1));
   });
 
@@ -226,7 +248,7 @@ void main() {
     expect(remaining.savedAtUtc, isNotNull);
   });
 
-  test('retention removes a saved QR only from history', () async {
+  test('saved QR remains accessible regardless of age', () async {
     await repository.save(
       QrHistoryItem(
         id: 'old-saved',
@@ -240,11 +262,12 @@ void main() {
       ),
     );
     await controller.enable();
-    await controller.setRetention(HistoryRetention.sevenDays);
 
     final remaining = (await repository.watchRecent().first).single;
-    expect(remaining.isInHistory, isFalse);
+    expect(remaining.isInHistory, isTrue);
     expect(remaining.savedAtUtc, isNotNull);
+    expect(controller.items.single.id, 'old-saved');
+    expect(controller.savedItems.single.id, 'old-saved');
   });
 
   test(
@@ -270,21 +293,12 @@ void main() {
 
 final class _MemoryHistorySettings implements HistorySettingsStore {
   bool enabled = false;
-  HistoryRetention retentionValue = HistoryRetention.thirtyDays;
 
   @override
   Future<bool> historyEnabled() async => enabled;
 
   @override
-  Future<HistoryRetention> retention() async => retentionValue;
-
-  @override
   Future<void> setHistoryEnabled(bool value) async {
     enabled = value;
-  }
-
-  @override
-  Future<void> setRetention(HistoryRetention value) async {
-    retentionValue = value;
   }
 }

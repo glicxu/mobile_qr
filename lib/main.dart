@@ -664,7 +664,9 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
                           );
                           if (cropped == null || !mounted) return;
                           setState(() => _customImageBytes = cropped);
-                          await widget.customCenterImageStore?.setImage(cropped);
+                          await widget.customCenterImageStore?.setImage(
+                            cropped,
+                          );
                         },
                         icon: const Icon(Icons.crop),
                         label: const Text('Crop'),
@@ -726,7 +728,6 @@ class SettingsPage extends StatelessWidget {
               const SizedBox(height: 16),
               _CustomizationPurchaseControls(
                 entitlement: customizationEntitlement,
-                showRefresh: true,
               ),
               if (customCenterImageStore != null) ...[
                 const SizedBox(height: 24),
@@ -782,38 +783,100 @@ class _CustomizationStatus extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
+        color: colorScheme.surfaceContainerLow,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
+        padding: const EdgeInsets.all(20),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              unlocked ? Icons.lock_open_outlined : Icons.lock_outline,
-              color: unlocked
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: unlocked
+                        ? colorScheme.primaryContainer
+                        : colorScheme.surfaceContainerHighest,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    unlocked
+                        ? Icons.workspace_premium_outlined
+                        : Icons.lock_outline,
+                    color: unlocked
+                        ? colorScheme.onPrimaryContainer
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Dali QR Custom',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: unlocked
+                        ? colorScheme.primaryContainer
+                        : colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        unlocked
+                            ? Icons.check_circle_outline
+                            : Icons.lock_outline,
+                        size: 16,
+                        color: unlocked
+                            ? colorScheme.onPrimaryContainer
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        unlocked ? 'Unlocked' : 'Locked',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: unlocked
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    unlocked
-                        ? 'Custom export unlocked'
-                        : 'Custom export locked',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    unlocked
-                        ? 'Custom-logo QR export and saving are available.'
-                        : 'Preview custom-logo QR codes for free. Purchase once to save, copy, or share them.',
-                  ),
-                ],
-              ),
+            const SizedBox(height: 16),
+            Text(
+              unlocked
+                  ? 'Your lifetime customization features are ready to use.'
+                  : 'Unlock once to make your QR codes more personal and keep them useful for longer.',
+            ),
+            const SizedBox(height: 20),
+            Text('Benefits', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            const _CustomizationBenefit(
+              icon: Icons.add_photo_alternate_outlined,
+              text: 'Add your own image or logo to QR codes',
+            ),
+            const SizedBox(height: 10),
+            const _CustomizationBenefit(
+              icon: Icons.ios_share_outlined,
+              text: 'Save, copy, and share your personalized QR codes',
+            ),
+            const SizedBox(height: 10),
+            const _CustomizationBenefit(
+              icon: Icons.history_outlined,
+              text: 'Keep and access your QR history for longer than one week',
             ),
           ],
         ),
@@ -822,14 +885,30 @@ class _CustomizationStatus extends StatelessWidget {
   }
 }
 
+class _CustomizationBenefit extends StatelessWidget {
+  const _CustomizationBenefit({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: colorScheme.primary),
+        const SizedBox(width: 12),
+        Expanded(child: Text(text)),
+      ],
+    );
+  }
+}
+
 class _CustomizationPurchaseControls extends StatelessWidget {
-  const _CustomizationPurchaseControls({
-    required this.entitlement,
-    this.showRefresh = false,
-  });
+  const _CustomizationPurchaseControls({required this.entitlement});
 
   final CustomizationEntitlement entitlement;
-  final bool showRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -860,26 +939,20 @@ class _CustomizationPurchaseControls extends StatelessWidget {
                 ),
           label: Text(
             entitlement.isUnlocked
-                ? 'Unlocked'
+                ? 'Lifetime customization unlocked'
                 : entitlement.price == null
-                ? 'Lifetime unlock'
-                : 'Unlock for ${entitlement.price}',
+                ? 'Check unlock availability'
+                : 'Unlock lifetime customization',
           ),
         ),
-        TextButton(
+        const SizedBox(height: 4),
+        OutlinedButton.icon(
           onPressed: entitlement.isBusy || !entitlement.isStoreAvailable
               ? null
               : () => unawaited(entitlement.restore()),
-          child: const Text('Restore purchase'),
+          icon: const Icon(Icons.restore_outlined),
+          label: const Text('Restore purchases'),
         ),
-        if (showRefresh)
-          TextButton.icon(
-            onPressed: entitlement.isBusy
-                ? null
-                : () => unawaited(entitlement.refresh()),
-            icon: const Icon(Icons.sync_outlined),
-            label: const Text('Check store'),
-          ),
       ],
     );
   }
@@ -993,10 +1066,15 @@ class _QrCenterImageSettings extends StatelessWidget {
                                     height: 56,
                                     fit: BoxFit.cover,
                                   )
-                                : Icon(
-                                    Icons.add_photo_alternate_outlined,
-                                    size: 28,
-                                    color: colorScheme.onSurfaceVariant,
+                                : Padding(
+                                    padding: const EdgeInsets.all(4),
+                                    child: Image.asset(
+                                      'assets/dali_smart_code_icon.png',
+                                      width: 48,
+                                      height: 48,
+                                      fit: BoxFit.contain,
+                                      semanticLabel: 'Default Dali center icon',
+                                    ),
                                   ),
                           ),
                         ),
@@ -1053,7 +1131,9 @@ class _QrCenterImageSettings extends StatelessWidget {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Custom center image updated.'),
+                                    content: Text(
+                                      'Custom center image updated.',
+                                    ),
                                   ),
                                 );
                               }

@@ -405,7 +405,7 @@ final class _SavedEmpty extends StatelessWidget {
             if (!searching) ...[
               const SizedBox(height: 8),
               const Text(
-                'Saved QRs stay here even when History is cleared or expires.',
+                'Saved QRs stay here even when History is cleared or older entries are locked.',
                 textAlign: TextAlign.center,
               ),
             ],

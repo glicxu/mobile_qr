@@ -60,7 +60,7 @@ class _HistoryPageState extends State<HistoryPage> {
     }
     final entitlement = await future;
     if (!mounted) return;
-    _customizationEntitlement = entitlement;
+    setState(() => _customizationEntitlement = entitlement);
     entitlement.addListener(_syncExtendedHistory);
     _syncExtendedHistory();
   }
@@ -101,36 +101,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
   List<Widget> _buildActions() {
     return [
-      PopupMenuButton<HistoryRetention>(
-        tooltip: 'History retention',
-        initialValue: widget.controller.retention,
-        enabled: widget.controller.extendedHistoryUnlocked,
-        onSelected: (value) {
-          unawaited(widget.controller.setRetention(value));
-        },
-        itemBuilder: (context) => HistoryRetention.values
-            .map(
-              (value) => CheckedPopupMenuItem(
-                value: value,
-                checked: value == widget.controller.retention,
-                child: Text('Keep for ${value.label.toLowerCase()}'),
-              ),
-            )
-            .toList(),
-        icon: const Icon(Icons.schedule_outlined),
-      ),
-      if (!widget.controller.extendedHistoryUnlocked)
-        IconButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Unlock customization for longer history.'),
-              ),
-            );
-          },
-          tooltip: 'Longer history requires unlock',
-          icon: const Icon(Icons.lock_clock_outlined),
-        ),
       PopupMenuButton<_HistoryMenuAction>(
         onSelected: (action) {
           switch (action) {
@@ -181,8 +151,9 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Free history keeps entries for 24 hours. Unlock customization '
-              'to keep local history longer.',
+              'Free history gives you access to entries for one week. Older '
+              'entries stay safely on this device and become available when '
+              'you unlock lifetime customization.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -199,8 +170,9 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _buildEnabledHistory() {
     final query = _searchController.text.trim().toLowerCase();
-    final sourceItems =
-        _savedOnly ? widget.controller.savedItems : widget.controller.items;
+    final sourceItems = _savedOnly
+        ? widget.controller.savedItems
+        : widget.controller.items;
     final items = sourceItems
         .where((item) {
           if (query.isEmpty) return true;
@@ -255,11 +227,19 @@ class _HistoryPageState extends State<HistoryPage> {
                 setState(() => _savedOnly = selection.first),
           ),
         ),
+        if (!_savedOnly && widget.controller.lockedItemCount > 0)
+          _LockedHistoryCard(
+            itemCount: widget.controller.lockedItemCount,
+            onUnlock: _customizationEntitlement == null
+                ? null
+                : () => unawaited(_showHistoryUnlock()),
+          ),
         Expanded(
           child: items.isEmpty
               ? _EmptyHistory(
                   searching: query.isNotEmpty,
                   savedOnly: _savedOnly,
+                  hasLockedItems: widget.controller.lockedItemCount > 0,
                 )
               : ListView(
                   padding: const EdgeInsets.only(bottom: 24),
@@ -293,6 +273,80 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _showHistoryUnlock() async {
+    final entitlement = _customizationEntitlement;
+    if (entitlement == null) return;
+
+    void closeWhenUnlocked() {
+      if (entitlement.isUnlocked && mounted) {
+        Navigator.of(context).pop();
+      }
+    }
+
+    entitlement.addListener(closeWhenUnlocked);
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => ListenableBuilder(
+          listenable: entitlement,
+          builder: (context, _) => SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Unlock your full history',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Your older QR codes are still stored privately on this '
+                    'device. Unlock lifetime customization to view and reuse '
+                    'them again.',
+                  ),
+                  if (entitlement.message case final message?) ...[
+                    const SizedBox(height: 12),
+                    Text(message),
+                  ],
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed:
+                        entitlement.isBusy ||
+                            !entitlement.isStoreAvailable ||
+                            entitlement.price == null
+                        ? null
+                        : () => unawaited(entitlement.purchase()),
+                    icon: entitlement.isBusy
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.lock_open_outlined),
+                    label: const Text('Unlock lifetime customization'),
+                  ),
+                  const SizedBox(height: 4),
+                  OutlinedButton.icon(
+                    onPressed:
+                        entitlement.isBusy || !entitlement.isStoreAvailable
+                        ? null
+                        : () => unawaited(entitlement.restore()),
+                    icon: const Icon(Icons.restore_outlined),
+                    label: const Text('Restore purchases'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    } finally {
+      entitlement.removeListener(closeWhenUnlocked);
+    }
   }
 
   Future<void> _showDetails(QrHistoryItem item) {
@@ -811,14 +865,72 @@ final class _HistoryTile extends StatelessWidget {
   }
 }
 
+final class _LockedHistoryCard extends StatelessWidget {
+  const _LockedHistoryCard({required this.itemCount, required this.onUnlock});
+
+  final int itemCount;
+  final VoidCallback? onUnlock;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final noun = itemCount == 1 ? 'QR code is' : 'QR codes are';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Card(
+        color: colorScheme.secondaryContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.lock_clock_outlined,
+                    color: colorScheme.onSecondaryContainer,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '$itemCount older $noun locked',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: colorScheme.onSecondaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Nothing was deleted. Unlock lifetime customization to view, '
+                'share, and reuse your full history.',
+                style: TextStyle(color: colorScheme.onSecondaryContainer),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: onUnlock,
+                icon: const Icon(Icons.lock_open_outlined),
+                label: const Text('Unlock history'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 final class _EmptyHistory extends StatelessWidget {
   const _EmptyHistory({
     required this.searching,
     this.savedOnly = false,
+    this.hasLockedItems = false,
   });
 
   final bool searching;
   final bool savedOnly;
+  final bool hasLockedItems;
 
   @override
   Widget build(BuildContext context) {
@@ -827,6 +939,8 @@ final class _EmptyHistory extends StatelessWidget {
       message = searching
           ? 'No saved history matches your search.'
           : 'No saved QR codes yet. Tap the bookmark icon on any item to save it.';
+    } else if (hasLockedItems && !searching) {
+      message = 'No QR activity from the past week.';
     } else {
       message = searching
           ? 'No history matches your search.'
@@ -835,10 +949,7 @@ final class _EmptyHistory extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-        ),
+        child: Text(message, textAlign: TextAlign.center),
       ),
     );
   }

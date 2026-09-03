@@ -115,7 +115,9 @@ The result screen is a trust boundary. It must display the decoded content befor
 - Group records by date and mark them as **Created** or **Scanned**.
 - Search locally by host or text.
 - Swipe/delete individual records and provide **Clear all history** with confirmation.
-- Default retention after opt-in: 30 days, configurable to 7 days, 30 days, 1 year, or forever.
+- Free users can access one week of history. Older entries remain stored locally
+  and become accessible after the lifetime customization unlock.
+- Saved QRs remain accessible regardless of age until the user deletes them.
 - Do not save imported source photos or camera frames.
 
 ---
@@ -609,15 +611,18 @@ CREATE INDEX idx_qr_activities_created
   ON qr_activities(created_at_utc DESC);
 ```
 
-Settings include `historyEnabled`, `retentionDays`, `defaultTab`, `hapticsEnabled`, and `hasSeenSafetyIntro`. Store settings separately from history.
+Settings include `historyEnabled`, `defaultTab`, `hapticsEnabled`, and `hasSeenSafetyIntro`. Store settings separately from history.
 
-### 13.3 Retention and deletion
+### 13.3 History access and deletion
 
-- Run retention cleanup at app start and after a history insert, not continuously.
-- Use a transaction for bulk deletion.
+- Never delete history automatically when the free access window ends.
+- Free users can access the most recent week; older entries remain stored and
+  are shown as locked without exposing their contents.
+- The lifetime customization unlock restores access to the full retained
+  history immediately.
 - **Clear all** deletes database rows and cached export files.
 - If history is disabled, immediately offer to delete existing records; do not assume the user intended deletion without confirmation.
-- Favorites may be exempt from automatic expiry only if the UI states this clearly.
+- Saved QRs remain accessible regardless of age until explicitly removed.
 
 ---
 
@@ -693,7 +698,7 @@ Runtime self-decoding of every export is optional and may be too expensive; buil
 - Payload byte ceilings and malformed URI inputs.
 - QR settings selection and matrix dimensions.
 - Scanner deduplication/state transitions.
-- Retention, favorites, and database migrations.
+- Free-history access gating, saved QRs, and database migrations.
 - Redacted logging: assert payloads never appear in logs.
 
 ### 16.2 QR conformance tests
@@ -734,7 +739,7 @@ Golden tests verify UI appearance but never replace decode tests.
 - Camera permission grant, denial, permanent denial, and Settings return.
 - Scan -> confirm -> OS launch mock for every allowed payload type.
 - Share PNG and cleanup temporary file.
-- Enable history -> create/scan -> restart -> search -> delete -> retention cleanup.
+- Enable history -> create/scan -> restart -> one-week access gate -> unlock -> search -> delete.
 - Offline cold start and first scan on Android.
 
 ### 16.5 Real-device matrix
@@ -820,7 +825,7 @@ Provide an in-app **Copy diagnostics** action that shows exactly what will be co
 
 ### Phase 2 - Local utility completion (2-3 weeks)
 
-- Opt-in Drift history with retention and deletion.
+- Opt-in Drift history with one-week free access, lifetime unlock, and explicit deletion.
 - Import QR from a system-selected image.
 - Plain text, email, phone, SMS, and geo classification with per-type confirmation.
 - SVG export.

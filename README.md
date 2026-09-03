@@ -10,7 +10,8 @@ content comparison, domain verification, and OS routing separate.
 - Email, telephone, SMS, location, Wi-Fi, vCard, and calendar payloads with a
   content-comparison code
 - Unknown text and custom URI schemes as display-only content
-- Opt-in local history with copyable comparison codes and QR images
+- Opt-in local history with one week of free access; older entries stay on the
+  device and unlock with lifetime customization
 - Free previews for custom center images, with export enabled by a lifetime
   customization purchase
 
@@ -47,12 +48,13 @@ Connect using this exact identifier:
 dali_secure_qr_custom_lifetime
 ```
 
-The store supplies the localized price. Custom QR previews remain available
-without purchase; copy, share, and history persistence of the customized image
-require the entitlement. Plain QR codes, Dali icon/code decorations, scanning,
-routing, and verification remain free. Test purchases using store sandbox or
-license-test accounts because an APK installed directly with ADB cannot load a
-normal Play product unless the app and account satisfy Play testing rules.
+The store purchase sheet supplies the current localized price; the app does not
+display a price. Custom QR previews remain available without purchase; copy,
+share, and history persistence of the customized image require the entitlement.
+Plain QR codes, Dali icon/code decorations, scanning, routing, and verification
+remain free. Test purchases using store sandbox or license-test accounts because
+an APK installed directly with ADB cannot load a normal Play product unless the
+app and account satisfy Play testing rules.
 
 ## Remaining release checks
 

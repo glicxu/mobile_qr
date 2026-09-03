@@ -7,7 +7,6 @@ final class SharedPreferencesHistorySettings implements HistorySettingsStore {
     : _preferences = preferences ?? SharedPreferencesAsync();
 
   static const _enabledKey = 'history.enabled';
-  static const _retentionKey = 'history.retention';
 
   final SharedPreferencesAsync _preferences;
 
@@ -19,19 +18,5 @@ final class SharedPreferencesHistorySettings implements HistorySettingsStore {
   @override
   Future<void> setHistoryEnabled(bool enabled) {
     return _preferences.setBool(_enabledKey, enabled);
-  }
-
-  @override
-  Future<HistoryRetention> retention() async {
-    final stored = await _preferences.getString(_retentionKey);
-    return HistoryRetention.values.firstWhere(
-      (value) => value.name == stored,
-      orElse: () => HistoryRetention.thirtyDays,
-    );
-  }
-
-  @override
-  Future<void> setRetention(HistoryRetention retention) {
-    return _preferences.setString(_retentionKey, retention.name);
   }
 }

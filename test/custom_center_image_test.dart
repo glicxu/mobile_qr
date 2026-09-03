@@ -52,6 +52,37 @@ final class _UnlockedEntitlement extends ChangeNotifier
   Future<void> restore() async {}
 }
 
+final class _LockedEntitlement extends ChangeNotifier
+    implements CustomizationEntitlement {
+  var purchaseCalls = 0;
+  var restoreCalls = 0;
+  var _unlocked = false;
+
+  @override
+  bool get isUnlocked => _unlocked;
+  @override
+  bool get isStoreAvailable => true;
+  @override
+  bool get isBusy => false;
+  @override
+  String? get message => null;
+  @override
+  String? get price => r'$1.99';
+  @override
+  Future<void> refresh() async {}
+  @override
+  Future<void> purchase() async {
+    purchaseCalls++;
+    _unlocked = true;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> restore() async {
+    restoreCalls++;
+  }
+}
+
 final _samplePng = Uint8List.fromList([
   137,
   80,
@@ -233,6 +264,52 @@ void main() {
     expect(store.customImageBytes, isNull);
   });
 
+  testWidgets('SettingsPage explains customization and offers purchase paths', (
+    tester,
+  ) async {
+    final entitlement = _LockedEntitlement();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SettingsPage(
+          customizationEntitlement: entitlement,
+          packageInfo: Future.value(
+            PackageInfo(
+              appName: 'Dali Secure QR',
+              packageName: 'com.dalifin.qr',
+              version: '1.1.0',
+              buildNumber: '1',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dali QR Custom'), findsOneWidget);
+    expect(find.text('Locked'), findsOneWidget);
+    expect(find.text('Benefits'), findsOneWidget);
+    expect(find.text('Add your own image or logo to QR codes'), findsOneWidget);
+    expect(
+      find.text('Save, copy, and share your personalized QR codes'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Keep and access your QR history for longer than one week'),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(find.text('Restore purchases'));
+    await tester.tap(find.text('Restore purchases'));
+    await tester.pump();
+    expect(entitlement.restoreCalls, 1);
+
+    await tester.tap(find.text('Unlock lifetime customization'));
+    await tester.pump();
+    expect(entitlement.purchaseCalls, 1);
+    expect(find.text('Unlocked'), findsOneWidget);
+    expect(find.text('Lifetime customization unlocked'), findsOneWidget);
+  });
+
   testWidgets('SettingsPage allows choosing and removing custom image', (
     tester,
   ) async {
@@ -262,9 +339,12 @@ void main() {
 
     expect(find.text('QR Center Image'), findsOneWidget);
     expect(find.text('Default Dali icon'), findsOneWidget);
+    expect(find.bySemanticsLabel('Default Dali center icon'), findsOneWidget);
     expect(find.text('Choose image'), findsOneWidget);
 
     // Tap Choose image -> opens ImageCropPage
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Choose image'));
     await tester.pumpAndSettle();
 
@@ -282,11 +362,14 @@ void main() {
     expect(find.text('Remove'), findsOneWidget);
 
     // Tap Remove
+    await tester.ensureVisible(find.text('Remove'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Remove'));
     await tester.pumpAndSettle();
 
     expect(store.hasCustomImage, isFalse);
     expect(find.text('Default Dali icon'), findsOneWidget);
+    expect(find.bySemanticsLabel('Default Dali center icon'), findsOneWidget);
     expect(find.text('Choose image'), findsOneWidget);
   });
 

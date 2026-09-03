@@ -51,7 +51,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Custom QR lifetime'), findsOne);
-    expect(find.text('Unlock for \$3.99'), findsOne);
+    expect(find.text('Unlock lifetime customization'), findsOne);
     expect(find.text('Restore purchase'), findsOne);
     expect(find.text('Unlock for testing'), findsOne);
     expect(recorded, 0);
@@ -98,7 +98,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Share QR image'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Unlock for \$3.99'));
+    await tester.tap(find.text('Unlock lifetime customization'));
     await tester.pumpAndSettle();
 
     expect(entitlement.isUnlocked, isTrue);
