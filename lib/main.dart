@@ -17,6 +17,7 @@ import 'features/history/application/history_controller.dart';
 import 'features/history/domain/qr_history.dart';
 import 'features/history/presentation/history_page.dart';
 import 'features/create/application/custom_center_image_store.dart';
+import 'features/create/presentation/image_crop_page.dart';
 import 'features/monetization/application/customization_entitlement.dart';
 import 'features/scan/application/inbound_image_share.dart';
 import 'features/scan/presentation/qr_scanner_page.dart';
@@ -434,11 +435,13 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
       if (selected == null) return;
       final bytes = await selected.readAsBytes();
       if (!mounted) return;
+      final cropped = await ImageCropPage.crop(context, imageBytes: bytes);
+      if (cropped == null || !mounted) return;
       setState(() {
-        _customImageBytes = bytes;
+        _customImageBytes = cropped;
         _decorationMode = QrCenterDecorationMode.customImage;
       });
-      await widget.customCenterImageStore?.setImage(bytes);
+      await widget.customCenterImageStore?.setImage(cropped);
     } on Object {
       if (!mounted) return;
       setState(() => _error = 'The selected image could not be opened.');
@@ -480,7 +483,8 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
           );
         case QrCenterDecorationMode.customImage:
           final bytes =
-              _customImageBytes ?? widget.customCenterImageStore?.customImageBytes;
+              _customImageBytes ??
+              widget.customCenterImageStore?.customImageBytes;
           if (bytes == null) {
             throw const FormatException(
               'Choose an image for the center emblem.',
@@ -651,6 +655,21 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
                             : 'Custom preview',
                       ),
                     ),
+                    if (_customImageBytes case final bytes?) ...[
+                      TextButton.icon(
+                        onPressed: () async {
+                          final cropped = await ImageCropPage.crop(
+                            context,
+                            imageBytes: bytes,
+                          );
+                          if (cropped == null || !mounted) return;
+                          setState(() => _customImageBytes = cropped);
+                          await widget.customCenterImageStore?.setImage(cropped);
+                        },
+                        icon: const Icon(Icons.crop),
+                        label: const Text('Crop'),
+                      ),
+                    ],
                     TextButton.icon(
                       onPressed: _pickCustomImage,
                       icon: const Icon(Icons.image_outlined),
@@ -915,7 +934,10 @@ class _QrCenterImageSettings extends StatelessWidget {
       );
       if (selected == null) return;
       final bytes = await selected.readAsBytes();
-      await store.setImage(bytes);
+      if (!context.mounted) return;
+      final cropped = await ImageCropPage.crop(context, imageBytes: bytes);
+      if (cropped == null || !context.mounted) return;
+      await store.setImage(cropped);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Custom center image updated.')),
@@ -994,7 +1016,8 @@ class _QrCenterImageSettings extends StatelessWidget {
                                 hasImage
                                     ? 'Used as the center emblem when generating QR codes.'
                                     : 'Add an image to display at the center of generated QR codes.',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
                                       color: colorScheme.onSurfaceVariant,
                                     ),
                               ),
@@ -1019,13 +1042,35 @@ class _QrCenterImageSettings extends StatelessWidget {
                         ),
                         if (hasImage) ...[
                           const SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              final cropped = await ImageCropPage.crop(
+                                context,
+                                imageBytes: bytes,
+                              );
+                              if (cropped == null || !context.mounted) return;
+                              await store.setImage(cropped);
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Custom center image updated.'),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.crop),
+                            label: const Text('Crop'),
+                          ),
+                          const SizedBox(width: 8),
                           TextButton.icon(
                             onPressed: () async {
                               await store.clearImage();
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Custom center image removed.'),
+                                    content: Text(
+                                      'Custom center image removed.',
+                                    ),
                                   ),
                                 );
                               }

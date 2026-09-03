@@ -37,6 +37,8 @@ void main() {
 
     await tester.tap(find.text('Custom'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Generate QR code'));
     await tester.pumpAndSettle();
 
@@ -87,6 +89,8 @@ void main() {
     );
 
     await tester.tap(find.text('Custom'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Generate QR code'));
     await tester.pumpAndSettle();

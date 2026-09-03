@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
 import 'package:dali_qr/features/create/application/custom_center_image_store.dart';
 import 'package:dali_qr/features/create/presentation/generated_qr_page.dart';
@@ -176,13 +176,21 @@ void main() {
     expect(find.text('Default Dali icon'), findsOneWidget);
     expect(find.text('Choose image'), findsOneWidget);
 
-    // Tap Choose image
+    // Tap Choose image -> opens ImageCropPage
     await tester.tap(find.text('Choose image'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Crop Center Image'), findsOneWidget);
+    expect(find.text('Apply'), findsOneWidget);
+
+    // Apply crop
+    await tester.tap(find.text('Apply'));
     await tester.pumpAndSettle();
 
     expect(store.hasCustomImage, isTrue);
     expect(find.text('Custom image active'), findsOneWidget);
     expect(find.text('Change image'), findsOneWidget);
+    expect(find.text('Crop'), findsOneWidget);
     expect(find.text('Remove'), findsOneWidget);
 
     // Tap Remove
