@@ -25,6 +25,8 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
   StoreCustomizationEntitlement._(this._preferences, this._store);
 
   static const productId = 'dali_secure_qr_custom_lifetime';
+  static const googlePlayProductId = 'dali_qr_lifetime_unlock';
+  static const productIds = {productId, googlePlayProductId};
   static const _unlockedPreference = 'customization_lifetime_unlocked';
   static const _testUnlockedPreference = 'customization_test_unlocked';
 
@@ -103,7 +105,7 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
         _message = 'Purchases are not available on this device.';
         return;
       }
-      final response = await _store.queryProductDetails({productId});
+      final response = await _store.queryProductDetails(productIds);
       if (kDebugMode) {
         debugPrint(
           'StoreKit product query: found=${response.productDetails.map((product) => product.id).toList()} '
@@ -195,6 +197,7 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
     String? message;
     for (final purchase in purchases) {
       if (purchase.productID != productId) continue;
+      if (!productIds.contains(purchase.productID)) continue;
       switch (purchase.status) {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
