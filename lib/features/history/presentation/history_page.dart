@@ -33,6 +33,7 @@ class _HistoryPageState extends State<HistoryPage> {
   static const _classifier = QrPayloadClassifier();
 
   final _searchController = TextEditingController();
+  bool _savedOnly = false;
   CustomizationEntitlement? _customizationEntitlement;
 
   @override
@@ -198,7 +199,9 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Widget _buildEnabledHistory() {
     final query = _searchController.text.trim().toLowerCase();
-    final items = widget.controller.items
+    final sourceItems =
+        _savedOnly ? widget.controller.savedItems : widget.controller.items;
+    final items = sourceItems
         .where((item) {
           if (query.isEmpty) return true;
           return item.rawPayload.toLowerCase().contains(query) ||
@@ -213,7 +216,7 @@ class _HistoryPageState extends State<HistoryPage> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: SearchBar(
             controller: _searchController,
             hintText: 'Search title, note, host, or text',
@@ -232,9 +235,32 @@ class _HistoryPageState extends State<HistoryPage> {
             onChanged: (_) => setState(() {}),
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(
+                value: false,
+                label: Text('All'),
+                icon: Icon(Icons.history),
+              ),
+              ButtonSegment(
+                value: true,
+                label: Text('Saved'),
+                icon: Icon(Icons.bookmark_outline),
+              ),
+            ],
+            selected: {_savedOnly},
+            onSelectionChanged: (selection) =>
+                setState(() => _savedOnly = selection.first),
+          ),
+        ),
         Expanded(
           child: items.isEmpty
-              ? _EmptyHistory(searching: query.isNotEmpty)
+              ? _EmptyHistory(
+                  searching: query.isNotEmpty,
+                  savedOnly: _savedOnly,
+                )
               : ListView(
                   padding: const EdgeInsets.only(bottom: 24),
                   children: [
@@ -247,6 +273,15 @@ class _HistoryPageState extends State<HistoryPage> {
                       for (final item in group.items)
                         _HistoryTile(
                           item: item,
+                          onToggleSaved: () async {
+                            if (item.savedAtUtc == null) {
+                              await widget.controller.save(item.id);
+                              _showMessage('QR saved.');
+                            } else {
+                              await widget.controller.removeFromSaved(item.id);
+                              _showMessage('Removed from Saved.');
+                            }
+                          },
                           confirmDelete: () => _confirmDelete(item),
                           onDelete: () => widget.controller.delete(item.id),
                           onOpen: () => _showDetails(item),
@@ -409,9 +444,15 @@ class _HistoryPageState extends State<HistoryPage> {
                       )
                     else
                       TextButton.icon(
-                        onPressed: null,
-                        icon: const Icon(Icons.bookmark_added),
-                        label: const Text('Saved'),
+                        onPressed: () async {
+                          await widget.controller.removeFromSaved(item.id);
+                          if (sheetContext.mounted) {
+                            Navigator.pop(sheetContext);
+                          }
+                          if (mounted) _showMessage('Removed from Saved.');
+                        },
+                        icon: const Icon(Icons.bookmark_remove_outlined),
+                        label: const Text('Unsave'),
                       ),
                     TextButton.icon(
                       onPressed: () async {
@@ -575,7 +616,7 @@ class _HistoryPageState extends State<HistoryPage> {
         content: Text(
           item.savedAtUtc == null
               ? 'This permanently deletes the ${item.activityKind == QrActivityKind.created ? 'created' : 'scanned'} QR entry.'
-              : 'This QR is also in Saved. Removing it from History will not remove the saved copy. To delete it completely, remove it from the Saved page.',
+              : 'This QR is marked as Saved. Deleting it will remove it permanently.',
         ),
         actions: [
           TextButton(
@@ -699,12 +740,14 @@ final class _DateHeader extends StatelessWidget {
 final class _HistoryTile extends StatelessWidget {
   const _HistoryTile({
     required this.item,
+    required this.onToggleSaved,
     required this.confirmDelete,
     required this.onDelete,
     required this.onOpen,
   });
 
   final QrHistoryItem item;
+  final VoidCallback onToggleSaved;
   final Future<bool> Function() confirmDelete;
   final Future<void> Function() onDelete;
   final VoidCallback onOpen;
@@ -716,6 +759,7 @@ final class _HistoryTile extends StatelessWidget {
         '${local.hour.toString().padLeft(2, '0')}:'
         '${local.minute.toString().padLeft(2, '0')}';
     final created = item.activityKind == QrActivityKind.created;
+    final isSaved = item.savedAtUtc != null;
     return Dismissible(
       key: ValueKey(item.id),
       direction: DismissDirection.endToStart,
@@ -744,6 +788,14 @@ final class _HistoryTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
+              onPressed: onToggleSaved,
+              tooltip: isSaved ? 'Remove from saved' : 'Save QR',
+              icon: Icon(
+                isSaved ? Icons.bookmark : Icons.bookmark_border_outlined,
+                color: isSaved ? Theme.of(context).colorScheme.primary : null,
+              ),
+            ),
+            IconButton(
               onPressed: () async {
                 if (await confirmDelete()) await onDelete();
               },
@@ -760,19 +812,31 @@ final class _HistoryTile extends StatelessWidget {
 }
 
 final class _EmptyHistory extends StatelessWidget {
-  const _EmptyHistory({required this.searching});
+  const _EmptyHistory({
+    required this.searching,
+    this.savedOnly = false,
+  });
 
   final bool searching;
+  final bool savedOnly;
 
   @override
   Widget build(BuildContext context) {
+    final String message;
+    if (savedOnly) {
+      message = searching
+          ? 'No saved history matches your search.'
+          : 'No saved QR codes yet. Tap the bookmark icon on any item to save it.';
+    } else {
+      message = searching
+          ? 'No history matches your search.'
+          : 'Created and scanned QR codes will appear here.';
+    }
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Text(
-          searching
-              ? 'No history matches your search.'
-              : 'Created and scanned QR codes will appear here.',
+          message,
           textAlign: TextAlign.center,
         ),
       ),

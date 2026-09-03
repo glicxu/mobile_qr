@@ -110,9 +110,13 @@ void main() {
 
     await tester.tap(find.widgetWithText(TextButton, 'Save'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Saved'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(SegmentedButton<bool>),
+        matching: find.text('Saved'),
+      ),
+    );
     await tester.pumpAndSettle();
-    expect(find.text('Saved QRs'), findsOneWidget);
     expect(find.text('example.com'), findsOneWidget);
   });
 

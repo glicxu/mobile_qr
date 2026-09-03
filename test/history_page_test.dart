@@ -113,11 +113,87 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.textContaining('Removing it from History will not remove'),
+      find.textContaining(
+        'This QR is marked as Saved. Deleting it will remove it permanently.',
+      ),
       findsOneWidget,
     );
-    expect(find.textContaining('Saved page'), findsOneWidget);
   });
+
+  testWidgets(
+    'filters by saved and toggles bookmark state from tile and sheet',
+    (tester) async {
+      final repository = DriftQrHistoryRepository(
+        HistoryDatabase.forTesting(NativeDatabase.memory()),
+      );
+      final now = DateTime(2026, 9, 1, 12, 0);
+      await repository.save(_item('item-1', now.toUtc()));
+      await repository.save(
+        QrHistoryItem(
+          id: 'item-2',
+          activityKind: QrActivityKind.created,
+          payloadKind: QrPayloadKind.text,
+          rawPayload: 'item-2-saved',
+          displayHost: null,
+          source: QrActivitySource.manual,
+          createdAtUtc: now.toUtc(),
+          savedAtUtc: now.toUtc(),
+        ),
+      );
+      final controller = HistoryController(
+        repository,
+        _EnabledHistorySettings(),
+        now: () => now,
+      );
+      await controller.initialize();
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(home: HistoryPage(controller: controller)),
+      );
+      await tester.pumpAndSettle();
+
+      // Both items visible initially under 'All'
+      expect(find.text('item-1'), findsOneWidget);
+      expect(find.text('item-2-saved'), findsOneWidget);
+
+      // Switch to 'Saved'
+      await tester.tap(find.text('Saved'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('item-1'), findsNothing);
+      expect(find.text('item-2-saved'), findsOneWidget);
+
+      // Switch back to 'All'
+      await tester.tap(find.text('All'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('item-1'), findsOneWidget);
+      expect(find.text('item-2-saved'), findsOneWidget);
+
+      // Toggle save on item-1 via tile bookmark button
+      await tester.tap(find.byTooltip('Save QR'));
+      await tester.pumpAndSettle();
+
+      // Now switch to 'Saved' again - item-1 is now saved!
+      await tester.tap(find.text('Saved'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('item-1'), findsOneWidget);
+      expect(find.text('item-2-saved'), findsOneWidget);
+
+      // Open detail sheet for item-2-saved and unsave
+      await tester.tap(find.text('item-2-saved'));
+      await tester.pumpAndSettle();
+      expect(find.text('Unsave'), findsOneWidget);
+      await tester.tap(find.text('Unsave'));
+      await tester.pumpAndSettle();
+
+      // item-2-saved is now unsaved, so in 'Saved' view only item-1 remains
+      expect(find.text('item-1'), findsOneWidget);
+      expect(find.text('item-2-saved'), findsNothing);
+    },
+  );
 
   testWidgets('free history shows a 24-hour retention lock', (tester) async {
     final repository = DriftQrHistoryRepository(
