@@ -76,8 +76,8 @@ void main() {
     expect(find.textContaining('mask '), findsNothing);
     expect(find.text('Create'), findsOneWidget);
     expect(find.text('Scan'), findsOneWidget);
-    expect(find.text('Saved'), findsOneWidget);
     expect(find.text('History'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
 
     await tester.tap(find.text('History'));
     await tester.pumpAndSettle();

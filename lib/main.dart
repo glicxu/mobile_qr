@@ -16,7 +16,7 @@ import 'features/create/presentation/generated_qr_page.dart';
 import 'features/history/application/history_controller.dart';
 import 'features/history/domain/qr_history.dart';
 import 'features/history/presentation/history_page.dart';
-import 'features/history/presentation/saved_page.dart';
+import 'features/create/application/custom_center_image_store.dart';
 import 'features/monetization/application/customization_entitlement.dart';
 import 'features/scan/application/inbound_image_share.dart';
 import 'features/scan/presentation/qr_scanner_page.dart';
@@ -30,6 +30,7 @@ class DaliQrApp extends StatelessWidget {
     this.secureQrService,
     this.historyController,
     this.customizationEntitlement,
+    this.customCenterImageStore,
     this.inboundImageShare,
     super.key,
   });
@@ -37,6 +38,7 @@ class DaliQrApp extends StatelessWidget {
   final SecureQrService? secureQrService;
   final HistoryController? historyController;
   final CustomizationEntitlement? customizationEntitlement;
+  final CustomCenterImageStore? customCenterImageStore;
   final InboundImageShareSource? inboundImageShare;
 
   @override
@@ -51,6 +53,7 @@ class DaliQrApp extends StatelessWidget {
         secureQrService: secureQrService,
         historyController: historyController,
         customizationEntitlement: customizationEntitlement,
+        customCenterImageStore: customCenterImageStore,
         inboundImageShare: inboundImageShare,
       ),
     );
@@ -62,6 +65,7 @@ class DaliQrHome extends StatefulWidget {
     this.secureQrService,
     this.historyController,
     this.customizationEntitlement,
+    this.customCenterImageStore,
     this.inboundImageShare,
     super.key,
   });
@@ -69,6 +73,7 @@ class DaliQrHome extends StatefulWidget {
   final SecureQrService? secureQrService;
   final HistoryController? historyController;
   final CustomizationEntitlement? customizationEntitlement;
+  final CustomCenterImageStore? customCenterImageStore;
   final InboundImageShareSource? inboundImageShare;
 
   @override
@@ -81,6 +86,7 @@ class _DaliQrHomeState extends State<DaliQrHome> {
   late final Future<SecureQrService> _secureQrService;
   Future<HistoryController>? _historyController;
   late final Future<CustomizationEntitlement> _customizationEntitlement;
+  late final CustomCenterImageStore _customCenterImageStore;
   Future<PackageInfo>? _packageInfo;
   late final InboundImageShareSource _inboundImageShare;
   String? _sharedImagePath;
@@ -100,6 +106,9 @@ class _DaliQrHomeState extends State<DaliQrHome> {
     _customizationEntitlement = suppliedEntitlement == null
         ? StoreCustomizationEntitlement.open()
         : Future.value(suppliedEntitlement);
+    _customCenterImageStore =
+        widget.customCenterImageStore ?? CustomCenterImageStore();
+    unawaited(_customCenterImageStore.initialize());
     _inboundImageShare = widget.inboundImageShare ?? InboundImageShare();
     unawaited(_inboundImageShare.start(_receiveSharedImage));
   }
@@ -230,6 +239,7 @@ class _DaliQrHomeState extends State<DaliQrHome> {
                           builder: (_) => QrGenerationSpikePage(
                             secureQrService: service,
                             customizationEntitlement: entitlement,
+                            customCenterImageStore: _customCenterImageStore,
                             onCreated: _recordCreated,
                             onSave: _saveCreated,
                           ),
@@ -245,20 +255,6 @@ class _DaliQrHomeState extends State<DaliQrHome> {
               onSharedImageConsumed: _sharedImageConsumed,
             ),
             2 => FutureBuilder<HistoryController>(
-              future: _loadHistory(),
-              builder: (context, historySnapshot) {
-                final controller = historySnapshot.data;
-                if (historySnapshot.hasError) {
-                  return const Center(
-                    child: Text('Saved QRs could not be loaded.'),
-                  );
-                }
-                return controller == null
-                    ? const Center(child: CircularProgressIndicator())
-                    : SavedPage(controller: controller);
-              },
-            ),
-            3 => FutureBuilder<HistoryController>(
               future: _loadHistory(),
               builder: (context, historySnapshot) {
                 final controller = historySnapshot.data;
@@ -283,6 +279,7 @@ class _DaliQrHomeState extends State<DaliQrHome> {
                     ? const Center(child: CircularProgressIndicator())
                     : SettingsPage(
                         customizationEntitlement: entitlement,
+                        customCenterImageStore: _customCenterImageStore,
                         packageInfo: _loadPackageInfo(),
                       );
               },
@@ -306,11 +303,6 @@ class _DaliQrHomeState extends State<DaliQrHome> {
             icon: Icon(Icons.qr_code_scanner),
             label: 'Scan',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.bookmarks_outlined),
-            selectedIcon: Icon(Icons.bookmarks),
-            label: 'Saved',
-          ),
           NavigationDestination(icon: Icon(Icons.history), label: 'History'),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),
@@ -327,6 +319,7 @@ class QrGenerationSpikePage extends StatefulWidget {
   const QrGenerationSpikePage({
     required this.secureQrService,
     required this.customizationEntitlement,
+    this.customCenterImageStore,
     this.imagePicker,
     this.onCreated,
     this.onSave,
@@ -335,6 +328,7 @@ class QrGenerationSpikePage extends StatefulWidget {
 
   final SecureQrService secureQrService;
   final CustomizationEntitlement customizationEntitlement;
+  final CustomCenterImageStore? customCenterImageStore;
   final ImagePicker? imagePicker;
   final Future<void> Function({
     required String payload,
@@ -374,11 +368,33 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
     super.initState();
     _imagePicker = widget.imagePicker ?? ImagePicker();
     _controller.addListener(_syncQrContentState);
+    final storeBytes = widget.customCenterImageStore?.customImageBytes;
+    if (storeBytes != null) {
+      _customImageBytes = storeBytes;
+      _decorationMode = QrCenterDecorationMode.customImage;
+    }
+    widget.customCenterImageStore?.addListener(_onStoreChanged);
     unawaited(_recoverLostImage());
+  }
+
+  void _onStoreChanged() {
+    final storeBytes = widget.customCenterImageStore?.customImageBytes;
+    if (storeBytes != null) {
+      setState(() {
+        _customImageBytes = storeBytes;
+        _decorationMode = QrCenterDecorationMode.customImage;
+      });
+    } else if (_decorationMode == QrCenterDecorationMode.customImage) {
+      setState(() {
+        _customImageBytes = null;
+        _decorationMode = QrCenterDecorationMode.daliIcon;
+      });
+    }
   }
 
   @override
   void dispose() {
+    widget.customCenterImageStore?.removeListener(_onStoreChanged);
     _controller.removeListener(_syncQrContentState);
     _controller.dispose();
     super.dispose();
@@ -422,6 +438,7 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
         _customImageBytes = bytes;
         _decorationMode = QrCenterDecorationMode.customImage;
       });
+      await widget.customCenterImageStore?.setImage(bytes);
     } on Object {
       if (!mounted) return;
       setState(() => _error = 'The selected image could not be opened.');
@@ -462,7 +479,8 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
             asset.buffer.asUint8List(asset.offsetInBytes, asset.lengthInBytes),
           );
         case QrCenterDecorationMode.customImage:
-          final bytes = _customImageBytes;
+          final bytes =
+              _customImageBytes ?? widget.customCenterImageStore?.customImageBytes;
           if (bytes == null) {
             throw const FormatException(
               'Choose an image for the center emblem.',
@@ -660,11 +678,15 @@ class SettingsPage extends StatelessWidget {
   const SettingsPage({
     required this.customizationEntitlement,
     required this.packageInfo,
+    this.customCenterImageStore,
+    this.imagePicker,
     super.key,
   });
 
   final CustomizationEntitlement customizationEntitlement;
   final Future<PackageInfo> packageInfo;
+  final CustomCenterImageStore? customCenterImageStore;
+  final ImagePicker? imagePicker;
 
   @override
   Widget build(BuildContext context) {
@@ -687,6 +709,13 @@ class SettingsPage extends StatelessWidget {
                 entitlement: customizationEntitlement,
                 showRefresh: true,
               ),
+              if (customCenterImageStore != null) ...[
+                const SizedBox(height: 24),
+                _QrCenterImageSettings(
+                  store: customCenterImageStore!,
+                  imagePicker: imagePicker ?? ImagePicker(),
+                ),
+              ],
               const SizedBox(height: 32),
               Text('App', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
@@ -862,6 +891,161 @@ class _SettingsRow extends StatelessWidget {
           Expanded(child: SelectableText(value)),
         ],
       ),
+    );
+  }
+}
+
+class _QrCenterImageSettings extends StatelessWidget {
+  const _QrCenterImageSettings({
+    required this.store,
+    required this.imagePicker,
+  });
+
+  final CustomCenterImageStore store;
+  final ImagePicker imagePicker;
+
+  Future<void> _pickImage(BuildContext context) async {
+    try {
+      final selected = await imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 92,
+        requestFullMetadata: false,
+      );
+      if (selected == null) return;
+      final bytes = await selected.readAsBytes();
+      await store.setImage(bytes);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Custom center image updated.')),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not load the selected image.')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return ListenableBuilder(
+      listenable: store,
+      builder: (context, _) {
+        final bytes = store.customImageBytes;
+        final hasImage = bytes != null;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'QR Center Image',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(color: colorScheme.outlineVariant),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: 56,
+                            height: 56,
+                            color: colorScheme.surfaceContainerHighest,
+                            child: hasImage
+                                ? Image.memory(
+                                    bytes,
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Icon(
+                                    Icons.add_photo_alternate_outlined,
+                                    size: 28,
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                hasImage
+                                    ? 'Custom image active'
+                                    : 'Default Dali icon',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                hasImage
+                                    ? 'Used as the center emblem when generating QR codes.'
+                                    : 'Add an image to display at the center of generated QR codes.',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => _pickImage(context),
+                          icon: Icon(
+                            hasImage
+                                ? Icons.edit_outlined
+                                : Icons.add_photo_alternate_outlined,
+                          ),
+                          label: Text(
+                            hasImage ? 'Change image' : 'Choose image',
+                          ),
+                        ),
+                        if (hasImage) ...[
+                          const SizedBox(width: 8),
+                          TextButton.icon(
+                            onPressed: () async {
+                              await store.clearImage();
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Custom center image removed.'),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.delete_outline),
+                            label: const Text('Remove'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
