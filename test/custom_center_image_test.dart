@@ -2,12 +2,14 @@ import 'dart:typed_data';
 
 import 'package:dali_qr/features/create/application/custom_center_image_store.dart';
 import 'package:dali_qr/features/create/presentation/generated_qr_page.dart';
+import 'package:dali_qr/features/create/presentation/image_crop_page.dart';
 import 'package:dali_qr/features/monetization/application/customization_entitlement.dart';
 import 'package:dali_qr/features/secure_qr/domain/public_suffix_list.dart';
 import 'package:dali_qr/features/secure_qr/domain/secure_qr_service.dart';
 import 'package:dali_qr/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:image/image.dart' as image_lib;
 import 'package:image_picker/image_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -120,7 +122,93 @@ final _samplePng = Uint8List.fromList([
   130,
 ]);
 
+Uint8List _horizontalBandsPng() {
+  final source = image_lib.Image(width: 900, height: 300);
+  image_lib.fillRect(
+    source,
+    x1: 0,
+    y1: 0,
+    x2: 299,
+    y2: 299,
+    color: image_lib.ColorRgb8(255, 0, 0),
+  );
+  image_lib.fillRect(
+    source,
+    x1: 300,
+    y1: 0,
+    x2: 599,
+    y2: 299,
+    color: image_lib.ColorRgb8(0, 255, 0),
+  );
+  image_lib.fillRect(
+    source,
+    x1: 600,
+    y1: 0,
+    x2: 899,
+    y2: 299,
+    color: image_lib.ColorRgb8(0, 0, 255),
+  );
+  return Uint8List.fromList(image_lib.encodePng(source));
+}
+
 void main() {
+  testWidgets('crop preview pans and exports the visible source pixels', (
+    tester,
+  ) async {
+    Uint8List? cropResult;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: FilledButton(
+                onPressed: () async {
+                  cropResult = await ImageCropPage.crop(
+                    context,
+                    imageBytes: _horizontalBandsPng(),
+                  );
+                },
+                child: const Text('Open crop'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open crop'));
+    await tester.pumpAndSettle();
+
+    final viewerFinder = find.byType(InteractiveViewer);
+    final viewer = tester.widget<InteractiveViewer>(viewerFinder);
+    expect(viewer.constrained, isFalse);
+    final controller = viewer.transformationController!;
+    final initialTranslation = controller.value.getTranslation().x;
+
+    // Moving the image right reveals the red band to the left of the green
+    // center band. This gesture was ignored when the child was constrained.
+    await tester.drag(viewerFinder, const Offset(120, 0));
+    await tester.pumpAndSettle();
+    expect(
+      controller.value.getTranslation().x,
+      greaterThan(initialTranslation),
+    );
+
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+
+    final cropped = image_lib.decodePng(cropResult!);
+    expect(cropped, isNotNull);
+    expect(cropped!.width, 512);
+    expect(cropped.height, 512);
+    final left = cropped.getPixel(48, 256);
+    final right = cropped.getPixel(464, 256);
+    expect(left.r, greaterThan(240));
+    expect(left.g, lessThan(15));
+    expect(right.g, greaterThan(240));
+    expect(right.r, lessThan(15));
+  });
+
   test('CustomCenterImageStore saves and clears image', () async {
     final storage = InMemoryCustomImageStorage();
     final store = CustomCenterImageStore(storage: storage);

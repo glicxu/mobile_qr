@@ -196,7 +196,6 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
     var unlocked = _isUnlocked;
     String? message;
     for (final purchase in purchases) {
-      if (purchase.productID != productId) continue;
       if (!productIds.contains(purchase.productID)) continue;
       switch (purchase.status) {
         case PurchaseStatus.purchased:
