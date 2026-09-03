@@ -367,14 +367,7 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
   Uint8List? _customImageBytes;
   var _decorationMode = QrCenterDecorationMode.daliIcon;
   bool _generating = false;
-<<<<<<< HEAD
-=======
-  bool _exporting = false;
-  bool _recordedCurrentQr = false;
-  bool _savedCurrentQr = false;
-  bool _savingCurrentQr = false;
   bool _hasQrContent = true;
->>>>>>> origin/main
 
   @override
   void initState() {
@@ -548,149 +541,6 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
     );
   }
 
-<<<<<<< HEAD
-=======
-  Future<void> _recordCurrentQr() async {
-    final onCreated = widget.onCreated;
-    final payload = _payload;
-    final pngBytes = _renderedQrBytes;
-    if (_recordedCurrentQr ||
-        onCreated == null ||
-        payload == null ||
-        pngBytes == null) {
-      return;
-    }
-    final verification = _verification;
-    await onCreated(
-      payload: payload.value,
-      verificationCode: verification?.code,
-      registrableDomain: verification is SecureQrResult
-          ? verification.registrableDomain
-          : null,
-      qrPngBytes: pngBytes,
-    );
-    if (mounted) _recordedCurrentQr = true;
-  }
-
-  Future<void> _copyVerificationCode(String code) async {
-    await Clipboard.setData(ClipboardData(text: code));
-    if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Verification code copied.')));
-  }
-
-  Future<void> _saveCurrentQr() async {
-    final onSave = widget.onSave;
-    final payload = _payload;
-    final bytes = _renderedQrBytes;
-    if (onSave == null ||
-        payload == null ||
-        bytes == null ||
-        _savedCurrentQr ||
-        _savingCurrentQr) {
-      return;
-    }
-    setState(() => _savingCurrentQr = true);
-    try {
-      if (!await _ensureExportAllowed()) return;
-      final verification = _verification;
-      await onSave(
-        payload: payload.value,
-        verificationCode: verification?.code,
-        registrableDomain: verification is SecureQrResult
-            ? verification.registrableDomain
-            : null,
-        qrPngBytes: bytes,
-      );
-      if (!mounted) return;
-      setState(() => _savedCurrentQr = true);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('QR saved.')));
-    } on Object {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('The QR could not be saved.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _savingCurrentQr = false);
-    }
-  }
-
-  Future<bool> _ensureExportAllowed() async {
-    if (_decorationMode != QrCenterDecorationMode.customImage ||
-        widget.customizationEntitlement.isUnlocked) {
-      return true;
-    }
-    final entitlement = widget.customizationEntitlement;
-    void closeWhenUnlocked() {
-      if (entitlement.isUnlocked && mounted) {
-        Navigator.of(context).pop(true);
-      }
-    }
-
-    entitlement.addListener(closeWhenUnlocked);
-    try {
-      return await showModalBottomSheet<bool>(
-            context: context,
-            showDragHandle: true,
-            builder: (context) =>
-                _CustomizationUnlockSheet(entitlement: entitlement),
-          ) ??
-          false;
-    } finally {
-      entitlement.removeListener(closeWhenUnlocked);
-    }
-  }
-
-  Future<void> _export({required bool copy}) async {
-    if (_exporting) return;
-    setState(() => _exporting = true);
-    try {
-      if (!await _ensureExportAllowed()) return;
-      final payload = _payload;
-      final pngBytes = _renderedQrBytes;
-      if (payload == null || pngBytes == null) return;
-      if (!_pngValidator.containsExactPayload(pngBytes, payload.value)) {
-        throw const FormatException(
-          'The QR could not be validated. Generate it again before exporting.',
-        );
-      }
-      await _recordCurrentQr();
-      if (!mounted) return;
-      if (copy) {
-        await QrClipboard.copyPng(bytes: pngBytes, payload: payload.value);
-      } else {
-        final renderBox = context.findRenderObject() as RenderBox?;
-        final shareOrigin = renderBox == null
-            ? null
-            : renderBox.localToGlobal(Offset.zero) & renderBox.size;
-        await QrShare.sharePng(
-          bytes: pngBytes,
-          payload: payload.value,
-          sharePositionOrigin: shareOrigin,
-        );
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(copy ? 'QR copied.' : 'QR ready to share.')),
-      );
-    } on Object catch (error) {
-      if (!mounted) return;
-      final message = error is FormatException
-          ? error.message
-          : 'The QR could not be exported.';
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    } finally {
-      if (mounted) setState(() => _exporting = false);
-    }
-  }
-
->>>>>>> origin/main
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -717,7 +567,6 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
                           tooltip: 'Clear QR content',
                           onPressed: () {
                             _controller.clear();
-                            setState(_clearGeneratedOutput);
                             setState(() => _error = null);
                           },
                           icon: const Icon(Icons.clear),
@@ -794,117 +643,11 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
               ],
               const SizedBox(height: 12),
               FilledButton(
-                onPressed: _generating ? null : () => unawaited(_generate()),
                 onPressed: !_hasQrContent || _generating
                     ? null
                     : () => unawaited(_generate()),
                 child: Text(_generating ? 'Generating...' : 'Generate QR code'),
               ),
-<<<<<<< HEAD
-=======
-              if (matrix != null &&
-                  payload != null &&
-                  renderedQrBytes != null) ...[
-                const SizedBox(height: 24),
-                Center(
-                  child: Semantics(
-                    label: 'QR code for ${payload.value}',
-                    image: true,
-                    child: SizedBox.square(
-                      dimension: 320,
-                      child: Image.memory(
-                        renderedQrBytes,
-                        filterQuality: FilterQuality.none,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (_verification case final verification?) ...[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        verification.code,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.displaySmall
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 4,
-                            ),
-                      ),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        onPressed: () =>
-                            unawaited(_copyVerificationCode(verification.code)),
-                        icon: const Icon(Icons.copy_outlined),
-                        tooltip: 'Copy verification code',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    verification is SecureQrResult
-                        ? 'Secure QR - ${verification.registrableDomain}'
-                        : 'Content comparison code',
-                    textAlign: TextAlign.center,
-                  ),
-                ] else ...[
-                  Text(
-                    'No verification code',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    payload.webUrl == null
-                        ? 'This payload type has no verification scheme.'
-                        : 'This URL does not have a registrable domain.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                const SizedBox(height: 16),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: _exporting
-                          ? null
-                          : () => unawaited(_export(copy: true)),
-                      icon: const Icon(Icons.copy_outlined),
-                      label: const Text('Copy QR image'),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: _savingCurrentQr || _savedCurrentQr
-                          ? null
-                          : () => unawaited(_saveCurrentQr()),
-                      icon: Icon(
-                        _savedCurrentQr
-                            ? Icons.bookmark_added
-                            : Icons.bookmark_add_outlined,
-                      ),
-                      label: Text(
-                        _savingCurrentQr
-                            ? 'Saving...'
-                            : _savedCurrentQr
-                            ? 'Saved'
-                            : 'Save QR',
-                      ),
-                    ),
-                    FilledButton.icon(
-                      onPressed: _exporting
-                          ? null
-                          : () => unawaited(_export(copy: false)),
-                      icon: const Icon(Icons.share_outlined),
-                      label: const Text('Share QR image'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SelectableText(payload.value),
-              ],
             ],
           ),
         ),
@@ -1118,56 +861,6 @@ class _SettingsRow extends StatelessWidget {
           ),
           Expanded(child: SelectableText(value)),
         ],
-      ),
-    );
-  }
-}
-
-class _CustomizationUnlockSheet extends StatelessWidget {
-  const _CustomizationUnlockSheet({required this.entitlement});
-
-  final CustomizationEntitlement entitlement;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: entitlement,
-      builder: (context, _) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Custom QR lifetime',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Export QR codes with your own image or logo using a one-time purchase.',
-              ),
-              if (entitlement.message case final message?) ...[
-                const SizedBox(height: 12),
-                Text(message),
-              ],
-              const SizedBox(height: 20),
-              _CustomizationPurchaseControls(entitlement: entitlement),
-              if (kDebugMode && entitlement is DebugCustomizationEntitlement)
-                TextButton.icon(
-                  onPressed: entitlement.isBusy
-                      ? null
-                      : () => unawaited(
-                          (entitlement as DebugCustomizationEntitlement)
-                              .unlockForTesting(),
-                        ),
-                  icon: const Icon(Icons.science_outlined),
-                  label: const Text('Unlock for testing'),
-                ),
->>>>>>> origin/main
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -655,7 +655,6 @@ enum _HistoryMenuAction { clear, disable }
 enum _DisableChoice { keep, delete }
 
 final class _DateHeader extends StatelessWidget {
-  const _DateHeader({required this.localDate, required this.itemCount});
   const _DateHeader({
     required this.localDate,
     required this.itemCount,
@@ -668,8 +667,6 @@ final class _DateHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
     final current = (now ?? DateTime.now)();
     final today = DateTime(current.year, current.month, current.day);
     final difference = today.difference(localDate).inDays;
