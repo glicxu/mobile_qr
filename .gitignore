@@ -33,6 +33,12 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Generated App Store review/upload artifacts.
+/artifacts/app_store_screenshots_*/
+/artifacts/appstore_upload/
+/artifacts/screenshots/ipad/
+/artifacts/tmp_asc_openapi/
+
 # Symbolication related
 app.*.symbols
 
