@@ -7,6 +7,7 @@ enum QrPayloadKind { url, text }
 enum QrActivitySource { manual, camera }
 
 enum HistoryRetention {
+  oneDay('24 hours', 1),
   sevenDays('7 days', 7),
   thirtyDays('30 days', 30),
   oneYear('1 year', 365),

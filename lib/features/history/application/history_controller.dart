@@ -35,6 +35,7 @@ final class HistoryController extends ChangeNotifier {
   List<QrHistoryItem> _allItems = const [];
   bool _enabled = false;
   HistoryRetention _retention = HistoryRetention.thirtyDays;
+  bool _extendedHistoryUnlocked = false;
 
   List<QrHistoryItem> get items =>
       _allItems.where((item) => item.isInHistory).toList(growable: false);
@@ -47,7 +48,10 @@ final class HistoryController extends ChangeNotifier {
   }
 
   bool get enabled => _enabled;
-  HistoryRetention get retention => _retention;
+  HistoryRetention get retention =>
+      _extendedHistoryUnlocked ? _retention : HistoryRetention.oneDay;
+  bool get extendedHistoryUnlocked => _extendedHistoryUnlocked;
+  DateTime now() => _now();
 
   Future<void> initialize() async {
     _enabled = await _settings.historyEnabled();
@@ -73,8 +77,16 @@ final class HistoryController extends ChangeNotifier {
   }
 
   Future<void> setRetention(HistoryRetention value) async {
+    if (!_extendedHistoryUnlocked && value != HistoryRetention.oneDay) return;
     _retention = value;
     await _settings.setRetention(value);
+    await _deleteExpired();
+    notifyListeners();
+  }
+
+  Future<void> setExtendedHistoryUnlocked(bool unlocked) async {
+    if (_extendedHistoryUnlocked == unlocked) return;
+    _extendedHistoryUnlocked = unlocked;
     await _deleteExpired();
     notifyListeners();
   }
@@ -223,7 +235,7 @@ final class HistoryController extends ChangeNotifier {
   }
 
   Future<void> _deleteExpired() async {
-    final days = _retention.days;
+    final days = retention.days;
     if (days == null) return;
     await _repository.deleteExpired(
       _now().toUtc().subtract(Duration(days: days)),

@@ -11,11 +11,17 @@ import '../../scan/presentation/qr_payload_action.dart';
 import '../application/history_controller.dart';
 import '../application/qr_clipboard.dart';
 import '../domain/qr_history.dart';
+import '../../monetization/application/customization_entitlement.dart';
 
 final class HistoryPage extends StatefulWidget {
-  const HistoryPage({required this.controller, super.key});
+  const HistoryPage({
+    required this.controller,
+    this.customizationEntitlement,
+    super.key,
+  });
 
   final HistoryController controller;
+  final Future<CustomizationEntitlement>? customizationEntitlement;
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
@@ -27,9 +33,48 @@ class _HistoryPageState extends State<HistoryPage> {
   static const _classifier = QrPayloadClassifier();
 
   final _searchController = TextEditingController();
+  CustomizationEntitlement? _customizationEntitlement;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_bindCustomizationEntitlement());
+  }
+
+  @override
+  void didUpdateWidget(covariant HistoryPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.customizationEntitlement != widget.customizationEntitlement) {
+      _customizationEntitlement?.removeListener(_syncExtendedHistory);
+      _customizationEntitlement = null;
+      unawaited(_bindCustomizationEntitlement());
+    }
+  }
+
+  Future<void> _bindCustomizationEntitlement() async {
+    final future = widget.customizationEntitlement;
+    if (future == null) {
+      await widget.controller.setExtendedHistoryUnlocked(true);
+      return;
+    }
+    final entitlement = await future;
+    if (!mounted) return;
+    _customizationEntitlement = entitlement;
+    entitlement.addListener(_syncExtendedHistory);
+    _syncExtendedHistory();
+  }
+
+  void _syncExtendedHistory() {
+    final entitlement = _customizationEntitlement;
+    if (entitlement == null) return;
+    unawaited(
+      widget.controller.setExtendedHistoryUnlocked(entitlement.isUnlocked),
+    );
+  }
 
   @override
   void dispose() {
+    _customizationEntitlement?.removeListener(_syncExtendedHistory);
     _searchController.dispose();
     super.dispose();
   }
@@ -58,6 +103,7 @@ class _HistoryPageState extends State<HistoryPage> {
       PopupMenuButton<HistoryRetention>(
         tooltip: 'History retention',
         initialValue: widget.controller.retention,
+        enabled: widget.controller.extendedHistoryUnlocked,
         onSelected: (value) {
           unawaited(widget.controller.setRetention(value));
         },
@@ -72,6 +118,18 @@ class _HistoryPageState extends State<HistoryPage> {
             .toList(),
         icon: const Icon(Icons.schedule_outlined),
       ),
+      if (!widget.controller.extendedHistoryUnlocked)
+        IconButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Unlock customization for longer history.'),
+              ),
+            );
+          },
+          tooltip: 'Longer history requires unlock',
+          icon: const Icon(Icons.lock_clock_outlined),
+        ),
       PopupMenuButton<_HistoryMenuAction>(
         onSelected: (action) {
           switch (action) {
@@ -122,8 +180,8 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Entries are kept for 30 days by default. You can change '
-              'retention, delete entries, or turn history off at any time.',
+              'Free history keeps entries for 24 hours. Unlock customization '
+              'to keep local history longer.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -184,6 +242,7 @@ class _HistoryPageState extends State<HistoryPage> {
                       _DateHeader(
                         localDate: group.localDate,
                         itemCount: group.items.length,
+                        now: widget.controller.now,
                       ),
                       for (final item in group.items)
                         _HistoryTile(
@@ -597,14 +656,22 @@ enum _DisableChoice { keep, delete }
 
 final class _DateHeader extends StatelessWidget {
   const _DateHeader({required this.localDate, required this.itemCount});
+  const _DateHeader({
+    required this.localDate,
+    required this.itemCount,
+    this.now,
+  });
 
   final DateTime localDate;
   final int itemCount;
+  final DateTime Function()? now;
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final current = (now ?? DateTime.now)();
+    final today = DateTime(current.year, current.month, current.day);
     final difference = today.difference(localDate).inDays;
     final label = switch (difference) {
       0 => 'Today',

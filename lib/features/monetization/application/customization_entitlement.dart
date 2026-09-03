@@ -11,6 +11,7 @@ abstract class CustomizationEntitlement extends ChangeNotifier {
   String? get price;
   String? get message;
 
+  Future<void> refresh();
   Future<void> purchase();
   Future<void> restore();
 }
@@ -67,6 +68,9 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
         (_preferences.getBool(_unlockedPreference) ?? false) ||
         (kDebugMode &&
             (_preferences.getBool(_testUnlockedPreference) ?? false));
+    if (kDebugMode) {
+      debugPrint('Customization unlock status: unlocked=$_isUnlocked');
+    }
     _subscription = _store.purchaseStream.listen(
       _handlePurchases,
       onError: (Object error) {
@@ -75,27 +79,51 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
         notifyListeners();
       },
     );
+    await _loadProductDetails(notify: false);
+    _isBusy = false;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> refresh() async {
+    if (_isBusy) return;
+    _isBusy = true;
+    _message = null;
+    notifyListeners();
+    await _loadProductDetails(notify: false);
+    _isBusy = false;
+    notifyListeners();
+  }
+
+  Future<void> _loadProductDetails({required bool notify}) async {
     try {
       _isStoreAvailable = await _store.isAvailable();
-      if (_isStoreAvailable) {
-        final response = await _store.queryProductDetails({productId});
-        if (response.productDetails.isNotEmpty) {
-          _product = response.productDetails.first;
-        } else {
-          _message = 'The lifetime unlock is not available in this store.';
-        }
-        if (response.error != null) {
-          _message = 'The store could not load the lifetime unlock.';
-        }
-      } else {
+      _product = null;
+      if (!_isStoreAvailable) {
         _message = 'Purchases are not available on this device.';
+        return;
+      }
+      final response = await _store.queryProductDetails({productId});
+      if (kDebugMode) {
+        debugPrint(
+          'StoreKit product query: found=${response.productDetails.map((product) => product.id).toList()} '
+          'notFound=${response.notFoundIDs} error=${response.error}',
+        );
+      }
+      if (response.productDetails.isNotEmpty) {
+        _product = response.productDetails.first;
+        _message = 'Lifetime unlock is available.';
+      } else if (response.error != null) {
+        _message = 'The store could not load the lifetime unlock.';
+      } else {
+        _message = 'The lifetime unlock is not available in this store.';
       }
     } on Object {
       _isStoreAvailable = false;
+      _product = null;
       _message = 'Purchases are not available in this build.';
     } finally {
-      _isBusy = false;
-      notifyListeners();
+      if (notify) notifyListeners();
     }
   }
 
@@ -125,12 +153,21 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
   @override
   Future<void> restore() async {
     if (!_isStoreAvailable || _isBusy) return;
+    if (kDebugMode) {
+      debugPrint('StoreKit restore requested');
+    }
     _isBusy = true;
     _message = null;
     notifyListeners();
     try {
       await _store.restorePurchases();
+      if (kDebugMode) {
+        debugPrint('StoreKit restore request completed');
+      }
     } on Object {
+      if (kDebugMode) {
+        debugPrint('StoreKit restore request failed');
+      }
       _isBusy = false;
       _message = 'Previous purchases could not be restored.';
       notifyListeners();
@@ -149,6 +186,11 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
   }
 
   Future<void> _handlePurchases(List<PurchaseDetails> purchases) async {
+    if (kDebugMode) {
+      debugPrint(
+        'StoreKit purchase stream: ${purchases.map((purchase) => '${purchase.productID}:${purchase.status.name}').toList()}',
+      );
+    }
     var unlocked = _isUnlocked;
     String? message;
     for (final purchase in purchases) {

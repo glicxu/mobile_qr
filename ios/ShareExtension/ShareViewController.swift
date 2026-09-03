@@ -1,7 +1,7 @@
 import Social
-import UniformTypeIdentifiers
 
 final class ShareViewController: SLComposeServiceViewController {
+  private let imageTypeIdentifier = "public.image"
   private let appGroup = "group.com.dalifin.qr.shared"
   private let sharedImageKey = "pendingSharedImagePath"
 
@@ -11,14 +11,14 @@ final class ShareViewController: SLComposeServiceViewController {
     guard
       let item = extensionContext?.inputItems.first as? NSExtensionItem,
       let provider = item.attachments?.first(where: {
-        $0.hasItemConformingToTypeIdentifier(UTType.image.identifier)
+        $0.hasItemConformingToTypeIdentifier(imageTypeIdentifier)
       })
     else {
       finish()
       return
     }
 
-    provider.loadFileRepresentation(forTypeIdentifier: UTType.image.identifier) {
+    provider.loadFileRepresentation(forTypeIdentifier: imageTypeIdentifier) {
       [weak self] sourceURL, _ in
       guard let self, let sourceURL else {
         self?.finish()

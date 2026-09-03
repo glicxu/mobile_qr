@@ -3,6 +3,7 @@ import 'package:dali_qr/features/history/data/drift_qr_history_repository.dart';
 import 'package:dali_qr/features/history/data/history_database.dart';
 import 'package:dali_qr/features/history/domain/qr_history.dart';
 import 'package:dali_qr/features/history/presentation/history_page.dart';
+import 'package:dali_qr/features/monetization/application/customization_entitlement.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,12 +15,16 @@ void main() {
     final repository = DriftQrHistoryRepository(
       HistoryDatabase.forTesting(NativeDatabase.memory()),
     );
-    final now = DateTime.now();
+    final now = DateTime(2026, 9, 1, 0, 30);
     await repository.save(_item('today', now.toUtc()));
     await repository.save(
-      _item('yesterday', now.subtract(const Duration(days: 1)).toUtc()),
+      _item('yesterday', now.subtract(const Duration(hours: 1)).toUtc()),
     );
-    final controller = HistoryController(repository, _EnabledHistorySettings());
+    final controller = HistoryController(
+      repository,
+      _EnabledHistorySettings(),
+      now: () => now,
+    );
     await controller.initialize();
     addTearDown(controller.dispose);
 
@@ -113,6 +118,29 @@ void main() {
     );
     expect(find.textContaining('Saved page'), findsOneWidget);
   });
+
+  testWidgets('free history shows a 24-hour retention lock', (tester) async {
+    final repository = DriftQrHistoryRepository(
+      HistoryDatabase.forTesting(NativeDatabase.memory()),
+    );
+    final controller = HistoryController(repository, _EnabledHistorySettings());
+    await controller.initialize();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HistoryPage(
+          controller: controller,
+          customizationEntitlement: Future.value(_LockedEntitlement()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(controller.retention, HistoryRetention.oneDay);
+    expect(find.byTooltip('History retention'), findsOneWidget);
+    expect(find.byTooltip('Longer history requires unlock'), findsOneWidget);
+  });
 }
 
 QrHistoryItem _item(String id, DateTime createdAtUtc) {
@@ -139,4 +167,30 @@ final class _EnabledHistorySettings implements HistorySettingsStore {
 
   @override
   Future<void> setRetention(HistoryRetention retention) async {}
+}
+
+final class _LockedEntitlement extends CustomizationEntitlement {
+  @override
+  bool get isBusy => false;
+
+  @override
+  bool get isStoreAvailable => true;
+
+  @override
+  bool get isUnlocked => false;
+
+  @override
+  String? get message => null;
+
+  @override
+  String? get price => r'$3.99';
+
+  @override
+  Future<void> refresh() async {}
+
+  @override
+  Future<void> purchase() async {}
+
+  @override
+  Future<void> restore() async {}
 }
