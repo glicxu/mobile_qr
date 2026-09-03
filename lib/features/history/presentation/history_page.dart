@@ -287,30 +287,15 @@ class _HistoryPageState extends State<HistoryPage> {
                             Text(domain),
                           const SizedBox(height: 20),
                         ],
-                        Text(
-                          payload.title,
-                          style: Theme.of(sheetContext).textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 4),
-                        SelectableText(
-                          payload.primaryText,
-                          style: Theme.of(sheetContext).textTheme.titleMedium,
-                        ),
-                        for (final detail in payload.details) ...[
-                          const SizedBox(height: 4),
-                          SelectableText(detail),
-                        ],
-                        QrSensitiveDetail(payload: payload),
                         if (item.note case final note?) ...[
-                          const SizedBox(height: 16),
                           Text(
                             'Note',
                             style: Theme.of(sheetContext).textTheme.labelLarge,
                           ),
                           const SizedBox(height: 4),
                           SelectableText(note),
+                          const SizedBox(height: 16),
                         ],
-                        const SizedBox(height: 16),
                         Text(
                           'Raw content',
                           style: Theme.of(sheetContext).textTheme.labelLarge,

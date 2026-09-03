@@ -51,13 +51,20 @@ void main() {
       find.bySemanticsLabel('QR code for https://example.com/'),
       findsOneWidget,
     );
+    expect(find.text('https://example.com/'), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+    expect(find.text('Plain'), findsNothing);
+    expect(find.text('Code'), findsNothing);
+    expect(find.text('Dali'), findsNothing);
+    expect(find.text('Custom'), findsNothing);
+    expect(find.widgetWithText(FilledButton, 'Generate QR code'), findsNothing);
+
     await tester.drag(find.byType(ListView), const Offset(0, -400));
     await tester.pumpAndSettle();
 
-    expect(find.text('https://example.com/'), findsOneWidget);
     expect(find.text('XIH-000'), findsOneWidget);
-    expect(find.text('Secure QR - example.com'), findsOneWidget);
-    expect(find.text('Copy QR image'), findsOneWidget);
+    expect(find.text('Secure QR - example.com'), findsNothing);
+    expect(find.text('Copy QR image'), findsNothing);
     expect(find.text('Share QR image'), findsOneWidget);
     expect(find.byTooltip('Copy verification code'), findsOneWidget);
     await tester.tap(find.byTooltip('Copy verification code'));
@@ -162,7 +169,7 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -350));
     await tester.pumpAndSettle();
     expect(find.text('041-AVZ'), findsOneWidget);
-    expect(find.text('Content comparison code'), findsOneWidget);
+    expect(find.text('Content comparison code'), findsNothing);
     expect(find.text(wifiPayload), findsOneWidget);
   });
 }

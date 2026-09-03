@@ -160,6 +160,37 @@ class _SavedPageState extends State<SavedPage> {
                           ),
                           const SizedBox(height: 20),
                         ],
+                        if (item.verificationCode case final code?) ...[
+                          Text(
+                            'Verification code',
+                            style: Theme.of(sheetContext).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SelectableText(
+                                  code,
+                                  style: Theme.of(sheetContext)
+                                      .textTheme
+                                      .headlineSmall
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => _copyText(
+                                  code,
+                                  'Verification code copied.',
+                                ),
+                                tooltip: 'Copy verification code',
+                                icon: const Icon(Icons.copy_outlined),
+                              ),
+                            ],
+                          ),
+                          if (item.registrableDomain case final domain?)
+                            Text(domain),
+                          const SizedBox(height: 20),
+                        ],
                         if (item.note case final note?) ...[
                           Text(
                             'Note',
@@ -169,21 +200,6 @@ class _SavedPageState extends State<SavedPage> {
                           SelectableText(note),
                           const SizedBox(height: 16),
                         ],
-                        Text(
-                          payload.title,
-                          style: Theme.of(sheetContext).textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 4),
-                        SelectableText(
-                          payload.primaryText,
-                          style: Theme.of(sheetContext).textTheme.titleMedium,
-                        ),
-                        for (final detail in payload.details) ...[
-                          const SizedBox(height: 4),
-                          SelectableText(detail),
-                        ],
-                        QrSensitiveDetail(payload: payload),
-                        const SizedBox(height: 16),
                         Text(
                           'Raw content',
                           style: Theme.of(sheetContext).textTheme.labelLarge,
@@ -336,9 +352,12 @@ class _SavedPageState extends State<SavedPage> {
     }
   }
 
-  Future<void> _copyText(String text) async {
+  Future<void> _copyText(
+    String text, [
+    String message = 'Raw content copied.',
+  ]) async {
     await Clipboard.setData(ClipboardData(text: text));
-    if (mounted) _message('Raw content copied.');
+    if (mounted) _message(message);
   }
 
   Future<void> _copyQr(Uint8List bytes, String payload) async {

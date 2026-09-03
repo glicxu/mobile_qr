@@ -45,7 +45,7 @@ void main() {
 
     await tester.drag(find.byType(ListView), const Offset(0, -500));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Copy QR image'));
+    await tester.tap(find.text('Share QR image'));
     await tester.pumpAndSettle();
 
     expect(find.text('Custom QR lifetime'), findsOne);
@@ -92,7 +92,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.drag(find.byType(ListView), const Offset(0, -500));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Copy QR image'));
+    await tester.tap(find.text('Share QR image'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Unlock for \$3.99'));
     await tester.pumpAndSettle();

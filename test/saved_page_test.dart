@@ -41,6 +41,46 @@ void main() {
     expect(find.text('Front desk'), findsOneWidget);
     expect(controller.items, isEmpty);
   });
+
+  testWidgets('displays verification code in saved QR detail sheet', (
+    tester,
+  ) async {
+    final repository = DriftQrHistoryRepository(
+      HistoryDatabase.forTesting(NativeDatabase.memory()),
+    );
+    await repository.save(
+      QrHistoryItem(
+        id: 'saved-verified',
+        activityKind: QrActivityKind.created,
+        payloadKind: QrPayloadKind.url,
+        rawPayload: 'https://example.com/login',
+        displayHost: 'example.com',
+        title: 'Login page',
+        verificationCode: 'XIH-000',
+        registrableDomain: 'example.com',
+        isInHistory: false,
+        savedAtUtc: DateTime.now().toUtc(),
+        source: QrActivitySource.manual,
+        createdAtUtc: DateTime.now().toUtc(),
+      ),
+    );
+    final controller = HistoryController(repository, _DisabledSettings());
+    await controller.initialize();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(home: SavedPage(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Login page'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verification code'), findsOneWidget);
+    expect(find.text('XIH-000'), findsOneWidget);
+    expect(find.text('example.com'), findsWidgets);
+    expect(find.byTooltip('Copy verification code'), findsOneWidget);
+  });
 }
 
 final class _DisabledSettings implements HistorySettingsStore {

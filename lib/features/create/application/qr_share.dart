@@ -8,7 +8,7 @@ import 'package:share_plus/share_plus.dart';
 abstract final class QrShare {
   static Future<void> sharePng({
     required Uint8List bytes,
-    required String payload,
+    String? payload,
     Rect? sharePositionOrigin,
   }) async {
     final directory = await getTemporaryDirectory();
@@ -17,8 +17,6 @@ abstract final class QrShare {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(file.path, mimeType: 'image/png')],
-        text: payload,
-        subject: 'Dali Secure QR',
         sharePositionOrigin: sharePositionOrigin,
       ),
     );
