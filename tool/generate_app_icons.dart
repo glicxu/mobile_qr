@@ -16,6 +16,8 @@ void main(List<String> arguments) {
   }
   final root = arguments[1];
 
+  _write(source, '$root/android/play_store_app_icon_512.png', 512);
+
   const androidSizes = {
     'mdpi': 48,
     'hdpi': 72,
