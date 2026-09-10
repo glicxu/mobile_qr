@@ -352,7 +352,7 @@ class CustomizationUnlockSheet extends StatelessWidget {
                 label: Text(
                   entitlement.price == null
                       ? 'Lifetime unlock'
-                      : 'Unlock lifetime customization',
+                      : 'Unlock for ${entitlement.price}',
                 ),
               ),
               TextButton(

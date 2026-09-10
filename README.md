@@ -45,7 +45,7 @@ Create a non-consumable product in both Google Play Console and App Store
 Connect using this exact identifier:
 
 ```text
-dali_secure_qr_custom_lifetime
+dali_secure_qr_lifetime
 ```
 
 The store purchase sheet supplies the current localized price; the app does not

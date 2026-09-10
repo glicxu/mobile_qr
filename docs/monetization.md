@@ -673,7 +673,7 @@ No QR creation quota.
 The application uses one non-consumable store product:
 
 ```text
-dali_secure_qr_custom_lifetime
+dali_secure_qr_lifetime
 ```
 
 The initial implementation follows these rules:

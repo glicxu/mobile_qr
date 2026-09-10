@@ -232,7 +232,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('Unlock your full history'), findsOneWidget);
-    expect(find.text('Unlock lifetime customization'), findsOneWidget);
+    expect(find.text(r'Unlock for $3.99'), findsOneWidget);
     expect(find.text('Restore purchases'), findsOneWidget);
 
     Navigator.of(tester.element(find.text('Unlock your full history'))).pop();

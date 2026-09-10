@@ -24,9 +24,11 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
     implements CustomizationEntitlement, DebugCustomizationEntitlement {
   StoreCustomizationEntitlement._(this._preferences, this._store);
 
-  static const productId = 'dali_secure_qr_custom_lifetime';
+  static const productId = 'dali_secure_qr_lifetime';
+  static const legacyAppleProductId = 'dali_secure_qr_custom_lifetime';
   static const googlePlayProductId = 'dali_qr_lifetime_unlock';
   static const productIds = {productId, googlePlayProductId};
+  static const recognizedProductIds = {...productIds, legacyAppleProductId};
   static const _unlockedPreference = 'customization_lifetime_unlocked';
   static const _testUnlockedPreference = 'customization_test_unlocked';
 
@@ -196,7 +198,7 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
     var unlocked = _isUnlocked;
     String? message;
     for (final purchase in purchases) {
-      if (!productIds.contains(purchase.productID)) continue;
+      if (!recognizedProductIds.contains(purchase.productID)) continue;
       switch (purchase.status) {
         case PurchaseStatus.purchased:
         case PurchaseStatus.restored:
@@ -208,7 +210,7 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
         case PurchaseStatus.error:
           message = 'The store could not complete the purchase.';
         case PurchaseStatus.canceled:
-          message = 'Purchase canceled.';
+          message = null;
         case PurchaseStatus.pending:
           message = 'Purchase pending.';
       }

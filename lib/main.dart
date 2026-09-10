@@ -942,7 +942,7 @@ class _CustomizationPurchaseControls extends StatelessWidget {
                 ? 'Lifetime customization unlocked'
                 : entitlement.price == null
                 ? 'Check unlock availability'
-                : 'Unlock lifetime customization',
+                : 'Unlock for ${entitlement.price}',
           ),
         ),
         const SizedBox(height: 4),
@@ -1105,7 +1105,9 @@ class _QrCenterImageSettings extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
                         OutlinedButton.icon(
                           onPressed: () => _pickImage(context),
@@ -1119,7 +1121,6 @@ class _QrCenterImageSettings extends StatelessWidget {
                           ),
                         ),
                         if (hasImage) ...[
-                          const SizedBox(width: 8),
                           OutlinedButton.icon(
                             onPressed: () async {
                               final cropped = await ImageCropPage.crop(
@@ -1141,7 +1142,6 @@ class _QrCenterImageSettings extends StatelessWidget {
                             icon: const Icon(Icons.crop),
                             label: const Text('Crop'),
                           ),
-                          const SizedBox(width: 8),
                           TextButton.icon(
                             onPressed: () async {
                               await store.clearImage();

@@ -3,7 +3,7 @@
 ## Dali Secure QR Custom
 
 - App bundle ID: `com.dalifin.qr`
-- IAP product ID: `dali_secure_qr_custom_lifetime`
+- IAP product ID: `dali_secure_qr_lifetime`
 - IAP type: non-consumable lifetime unlock
 - Price used for review/testing: `$3.99`
 
@@ -89,7 +89,7 @@ replacing the review screenshot.
 ## Known Good Review Note
 
 ```text
-Dali Secure QR Custom unlocks lifetime export of QR codes with a custom center image or logo. To locate the In-App Purchase: open Dali Secure QR, tap Settings in the bottom navigation, then under Customization tap Unlock lifetime customization. The Apple sandbox purchase sheet appears for Dali Secure QR Custom and shows the current localized price. Alternative path: open the Create tab, enter QR content such as https://example.com, select Custom, choose any image from Photos, tap Generate QR code, then tap Share QR image or Copy QR image. The lifetime customization unlock is shown. Plain QR export and Secure QR verification remain free. The In-App Purchase is available for the United States storefront and is not restricted by device configuration.
+Dali Secure QR Custom unlocks lifetime export of QR codes with a custom center image or logo. To locate the In-App Purchase: open Dali Secure QR, tap Settings in the bottom navigation, then under Customization tap Unlock lifetime customization. The Apple sandbox purchase sheet appears for Dali Secure QR Custom and shows the current localized price. Alternative path: open the Create tab, enter QR content such as https://example.com, select Custom, choose any image from Photos, tap Generate QR code, then tap Share QR image or Copy QR image. The lifetime customization unlock is shown. Plain QR export and Secure QR verification remain free. The In-App Purchase is available in all App Store territories and is not restricted by device configuration.
 ```
 
 ## StoreKit Diagnostics
@@ -97,13 +97,12 @@ Dali Secure QR Custom unlocks lifetime export of QR codes with a custom center i
 In a debug build, product lookup should log:
 
 ```text
-StoreKit product query: found=[dali_secure_qr_custom_lifetime] notFound=[] error=null
+StoreKit product query: found=[dali_secure_qr_lifetime] notFound=[] error=null
 ```
 
-If it logs `notFound=[dali_secure_qr_custom_lifetime]`, check:
+If it logs `notFound=[dali_secure_qr_lifetime]`, check:
 
 - The IAP has a valid price.
 - The sandbox tester country matches an available territory.
 - The IAP screenshot and metadata are complete.
 - The app version and IAP version are submitted together when required.
-

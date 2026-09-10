@@ -327,7 +327,11 @@ class _HistoryPageState extends State<HistoryPage> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.lock_open_outlined),
-                    label: const Text('Unlock lifetime customization'),
+                    label: Text(
+                      entitlement.price == null
+                          ? 'Lifetime unlock'
+                          : 'Unlock for ${entitlement.price}',
+                    ),
                   ),
                   const SizedBox(height: 4),
                   OutlinedButton.icon(
