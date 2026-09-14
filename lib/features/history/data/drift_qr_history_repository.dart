@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../scan/domain/scanned_code.dart';
 import '../domain/qr_history.dart';
 import 'history_database.dart';
 
@@ -28,6 +29,7 @@ final class DriftQrHistoryRepository implements QrHistoryRepository {
               verificationCode: row.verificationCode,
               registrableDomain: row.registrableDomain,
               qrPngBytes: row.qrPngBytes,
+              codeFormat: ScannedCodeFormat.fromStorageKey(row.codeFormat),
               source: QrActivitySource.values[row.source],
               createdAtUtc: row.createdAtUtc,
             ),
@@ -54,6 +56,7 @@ final class DriftQrHistoryRepository implements QrHistoryRepository {
             verificationCode: Value(item.verificationCode),
             registrableDomain: Value(item.registrableDomain),
             qrPngBytes: Value(item.qrPngBytes),
+            codeFormat: Value(item.codeFormat.storageKey),
             source: item.source.index,
             createdAtUtc: item.createdAtUtc,
           ),
@@ -61,9 +64,16 @@ final class DriftQrHistoryRepository implements QrHistoryRepository {
   }
 
   @override
-  Future<QrHistoryItem?> findMostRecentByPayload(String payload) async {
+  Future<QrHistoryItem?> findMostRecentByPayload(
+    String payload, {
+    ScannedCodeFormat codeFormat = ScannedCodeFormat.qrCode,
+  }) async {
     final query = _database.select(_database.historyEntries)
-      ..where((row) => row.rawPayload.equals(payload))
+      ..where(
+        (row) =>
+            row.rawPayload.equals(payload) &
+            row.codeFormat.equals(codeFormat.storageKey),
+      )
       ..orderBy([(row) => OrderingTerm.desc(row.createdAtUtc)])
       ..limit(1);
     final row = await query.getSingleOrNull();
@@ -143,6 +153,7 @@ final class DriftQrHistoryRepository implements QrHistoryRepository {
     verificationCode: row.verificationCode,
     registrableDomain: row.registrableDomain,
     qrPngBytes: row.qrPngBytes,
+    codeFormat: ScannedCodeFormat.fromStorageKey(row.codeFormat),
     source: QrActivitySource.values[row.source],
     createdAtUtc: row.createdAtUtc,
   );

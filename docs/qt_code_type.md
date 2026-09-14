@@ -1018,26 +1018,28 @@ calculate its comparison code independently. A future OCR result may invite
 the user to compare the visible and calculated values, but the application
 must not claim that they match without explicit confirmation.
 
-# 19. QR Images Saved on the Same Phone
+# 19. Code Images Saved on the Same Phone
 
 The Scan screen also allows the user to choose an image from the system photo
-picker. This supports screenshots, downloaded images, and QR codes displayed
-elsewhere on the same phone without requiring a second device or pointing the
-camera at another screen.
+picker. This supports screenshots, downloaded images, QR codes, and supported
+1D barcodes displayed elsewhere on the same phone without requiring a second
+device or pointing the camera at another screen.
 
 The selected image is decoded locally and is not retained by Dali QR. A decoded
-payload follows the same classification, comparison-code, preview, history,
-and user-confirmation flow as a camera scan. Choosing an image must never open
-or send its payload automatically. If the image contains no readable QR code,
-the app reports that result and resumes the camera scanner.
+payload follows the same classification, preview, history, and
+user-confirmation flow as a camera scan. Comparison codes remain available
+only for QR Code symbols. Choosing an image must never open or send its payload
+automatically. If the image contains no readable QR code or supported barcode,
+the app reports that result and resumes the camera scanner. If it contains
+multiple supported symbols, the app asks the user which result to inspect.
 
 Other applications may also send a single image to Dali QR through the system
 share sheet. Android exposes Dali QR as an `image/*` share target. iOS uses a
 Share Extension and an App Group shared only by that extension and the main
 application. In both cases, Dali QR copies the received image into private
-temporary storage, opens the Scan screen, decodes it through the same QR-only
-pipeline, and deletes the temporary image when analysis finishes. Sharing an
-image does not approve or launch the decoded payload.
+temporary storage, opens the Scan screen, decodes it through the same
+format-aware pipeline, and deletes the temporary image when analysis finishes.
+Sharing an image does not approve or launch the decoded payload.
 
 The Android application ID and iOS main-app bundle ID are `com.dalifin.qr`.
 The iOS share extension uses `com.dalifin.qr.ShareExtension`, and both iOS

@@ -20,11 +20,16 @@ import 'features/create/application/custom_center_image_store.dart';
 import 'features/create/presentation/image_crop_page.dart';
 import 'features/monetization/application/customization_entitlement.dart';
 import 'features/scan/application/inbound_image_share.dart';
+import 'features/scan/domain/scanned_code.dart';
 import 'features/scan/presentation/qr_scanner_page.dart';
+import 'features/scan/presentation/share_extension_result_app.dart';
 import 'features/secure_qr/application/secure_qr_loader.dart';
 import 'features/secure_qr/domain/secure_qr_service.dart';
 
 void main() => runApp(const DaliQrApp());
+
+@pragma('vm:entry-point')
+void shareExtensionMain() => runDaliQrShareExtension();
 
 class DaliQrApp extends StatelessWidget {
   const DaliQrApp({
@@ -45,7 +50,7 @@ class DaliQrApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dali Secure QR',
+      title: 'Dali QR',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff315caa)),
         useMaterial3: true,
@@ -154,12 +159,16 @@ class _DaliQrHomeState extends State<DaliQrHome> {
     String? verificationCode,
     String? registrableDomain,
     Uint8List? qrPngBytes,
+    required ScannedCodeFormat codeFormat,
+    required ScanSource source,
   }) async {
     await (await _loadHistory()).recordScanned(
       payload: payload,
       verificationCode: verificationCode,
       registrableDomain: registrableDomain,
       qrPngBytes: qrPngBytes,
+      codeFormat: codeFormat,
+      source: source,
     );
   }
 
@@ -184,14 +193,21 @@ class _DaliQrHomeState extends State<DaliQrHome> {
     String? verificationCode,
     String? registrableDomain,
     Uint8List? qrPngBytes,
+    required ScannedCodeFormat codeFormat,
+    required ScanSource source,
   }) async {
     await (await _loadHistory()).savePayload(
       payload: payload,
       verificationCode: verificationCode,
       registrableDomain: registrableDomain,
       qrPngBytes: qrPngBytes,
+      codeFormat: codeFormat,
       activityKind: QrActivityKind.scanned,
-      source: QrActivitySource.camera,
+      source: switch (source) {
+        ScanSource.camera => QrActivitySource.camera,
+        ScanSource.gallery => QrActivitySource.gallery,
+        ScanSource.sharedImage => QrActivitySource.sharedImage,
+      },
     );
   }
 
@@ -747,7 +763,7 @@ class SettingsPage extends StatelessWidget {
                     children: [
                       _SettingsRow(
                         label: 'Name',
-                        value: info?.appName ?? 'Dali Secure QR',
+                        value: info?.appName ?? 'Dali QR',
                       ),
                       _SettingsRow(
                         label: 'Version',

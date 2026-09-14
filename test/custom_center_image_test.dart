@@ -274,9 +274,9 @@ void main() {
           customizationEntitlement: entitlement,
           packageInfo: Future.value(
             PackageInfo(
-              appName: 'Dali Secure QR',
+              appName: 'Dali QR',
               packageName: 'com.dalifin.qr',
-              version: '1.1.0',
+              version: '1.2.0',
               buildNumber: '1',
             ),
           ),
@@ -326,9 +326,9 @@ void main() {
           imagePicker: mockPicker,
           packageInfo: Future.value(
             PackageInfo(
-              appName: 'Dali Secure QR',
+              appName: 'Dali QR',
               packageName: 'com.dalifin.qr',
-              version: '1.1.0',
+              version: '1.2.0',
               buildNumber: '1',
             ),
           ),
@@ -389,9 +389,9 @@ void main() {
           imagePicker: _MockImagePicker(pickedBytes: _samplePng),
           packageInfo: Future.value(
             PackageInfo(
-              appName: 'Dali Secure QR',
+              appName: 'Dali QR',
               packageName: 'com.dalifin.qr',
-              version: '1.1.0',
+              version: '1.2.0',
               buildNumber: '1',
             ),
           ),

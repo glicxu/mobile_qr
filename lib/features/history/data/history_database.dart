@@ -16,6 +16,7 @@ class HistoryEntries extends Table {
   TextColumn get verificationCode => text().nullable()();
   TextColumn get registrableDomain => text().nullable()();
   BlobColumn get qrPngBytes => blob().nullable()();
+  TextColumn get codeFormat => text().withDefault(const Constant('qrCode'))();
   IntColumn get source => integer()();
   DateTimeColumn get createdAtUtc => dateTime()();
 
@@ -30,7 +31,7 @@ final class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase.forTesting(super.connection);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,6 +55,9 @@ final class HistoryDatabase extends _$HistoryDatabase {
       if (from < 4) {
         await migrator.addColumn(historyEntries, historyEntries.isInHistory);
         await migrator.addColumn(historyEntries, historyEntries.savedAtUtc);
+      }
+      if (from < 5) {
+        await migrator.addColumn(historyEntries, historyEntries.codeFormat);
       }
     },
   );

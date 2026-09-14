@@ -10,7 +10,9 @@ import '../../create/application/qr_encoder.dart';
 import '../../create/data/dart_qr_encoder.dart';
 import '../../create/data/qr_png_renderer.dart';
 import '../../secure_qr/domain/secure_qr_service.dart';
+import '../data/mobile_scanner_code_adapter.dart';
 import '../domain/qr_payload_classifier.dart';
+import '../domain/scanned_code.dart';
 import 'qr_payload_action.dart';
 
 final class QrScannerPage extends StatefulWidget {
@@ -29,6 +31,8 @@ final class QrScannerPage extends StatefulWidget {
     String? verificationCode,
     String? registrableDomain,
     Uint8List? qrPngBytes,
+    required ScannedCodeFormat codeFormat,
+    required ScanSource source,
   })?
   onScanned;
   final Future<void> Function({
@@ -36,6 +40,8 @@ final class QrScannerPage extends StatefulWidget {
     String? verificationCode,
     String? registrableDomain,
     Uint8List? qrPngBytes,
+    required ScannedCodeFormat codeFormat,
+    required ScanSource source,
   })?
   onSave;
   final String? sharedImagePath;
@@ -46,19 +52,19 @@ final class QrScannerPage extends StatefulWidget {
 }
 
 class _QrScannerPageState extends State<QrScannerPage> {
+  static const _maxImageBytes = 25 * 1024 * 1024;
   static const QrEncoder _encoder = DartQrEncoder();
   static const _pngRenderer = QrPngRenderer();
-  static const _classifier = QrPayloadClassifier();
-
   late final MobileScannerController _controller = MobileScannerController(
-    formats: const [BarcodeFormat.qrCode],
+    formats: MobileScannerCodeAdapter.formats,
     detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
     returnImage: false,
   );
   final ImagePicker _imagePicker = ImagePicker();
 
-  String? _decodedText;
+  ScannedCode? _decodedCode;
+  List<ScannedCode> _detectedCodes = const [];
   Uint8List? _decodedQrPngBytes;
   bool _handlingDetection = false;
   bool _importingImage = false;
@@ -85,7 +91,13 @@ class _QrScannerPageState extends State<QrScannerPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || widget.sharedImagePath != path) return;
       widget.onSharedImageConsumed?.call(path);
-      unawaited(_scanImagePath(path, deleteAfterScan: true));
+      unawaited(
+        _scanImagePath(
+          path,
+          source: ScanSource.sharedImage,
+          deleteAfterScan: true,
+        ),
+      );
     });
   }
 
@@ -98,39 +110,51 @@ class _QrScannerPageState extends State<QrScannerPage> {
   void _handleDetection(BarcodeCapture capture) {
     if (_handlingDetection) return;
 
-    final text = firstQrPayload(capture);
-    if (text == null) return;
+    final codes = MobileScannerCodeAdapter.extract(
+      capture,
+      source: ScanSource.camera,
+    );
+    if (codes.isEmpty) return;
 
     _handlingDetection = true;
     unawaited(_controller.pause());
-    _completeDetection(text);
+    _completeDetection(codes.first);
   }
 
-  void _completeDetection(String text) {
+  void _completeDetection(ScannedCode code) {
+    _recordingFuture = null;
     setState(() {
-      _decodedText = text;
+      _decodedCode = code;
+      _detectedCodes = const [];
       _saved = false;
       _decodedQrPngBytes = null;
     });
     final onScanned = widget.onScanned;
     if (onScanned != null) {
-      final verification = widget.secureQrService.calculateForPayload(text);
+      final verification = verificationForScannedCode(
+        widget.secureQrService,
+        code,
+      );
       Uint8List? qrPngBytes;
-      try {
-        qrPngBytes = _pngRenderer
-            .render(_encoder.encode(text), size: 512)
-            .bytes;
-      } on Object {
-        // Very large or unsupported values can still be retained as text.
+      if (code.format == ScannedCodeFormat.qrCode) {
+        try {
+          qrPngBytes = _pngRenderer
+              .render(_encoder.encode(code.value), size: 512)
+              .bytes;
+        } on Object {
+          // Very large or unsupported values can still be retained as text.
+        }
       }
       _decodedQrPngBytes = qrPngBytes;
       _recordingFuture = onScanned(
-        payload: text,
+        payload: code.value,
         verificationCode: verification?.code,
         registrableDomain: verification is SecureQrResult
             ? verification.registrableDomain
             : null,
         qrPngBytes: qrPngBytes,
+        codeFormat: code.format,
+        source: code.source,
       );
       unawaited(_recordingFuture);
     }
@@ -151,7 +175,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
         await _resumeAfterImport();
         return;
       }
-      await _scanImagePath(image.path);
+      await _scanImagePath(image.path, source: ScanSource.gallery);
     } on Object {
       await _showImageScanError();
     }
@@ -159,6 +183,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
 
   Future<void> _scanImagePath(
     String path, {
+    required ScanSource source,
     bool deleteAfterScan = false,
   }) async {
     if (!_handlingDetection) {
@@ -172,13 +197,28 @@ class _QrScannerPageState extends State<QrScannerPage> {
     }
 
     try {
+      if (await File(path).length() > _maxImageBytes) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Choose an image smaller than 25 MB.'),
+            ),
+          );
+          await _resumeAfterImport();
+        }
+        return;
+      }
       final capture = await _controller.analyzeImage(path);
       if (!mounted) return;
-      final text = capture == null ? null : firstQrPayload(capture);
-      if (text == null) {
+      final codes = capture == null
+          ? const <ScannedCode>[]
+          : MobileScannerCodeAdapter.extract(capture, source: source);
+      if (codes.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No readable QR code was found in that image.'),
+            content: Text(
+              'No readable QR code or supported barcode was found in that image.',
+            ),
           ),
         );
         await _resumeAfterImport();
@@ -186,7 +226,11 @@ class _QrScannerPageState extends State<QrScannerPage> {
       }
 
       setState(() => _importingImage = false);
-      _completeDetection(text);
+      if (codes.length == 1) {
+        _completeDetection(codes.single);
+      } else {
+        setState(() => _detectedCodes = codes);
+      }
     } on Object {
       await _showImageScanError();
     } finally {
@@ -221,7 +265,8 @@ class _QrScannerPageState extends State<QrScannerPage> {
 
   Future<void> _scanAgain() async {
     setState(() {
-      _decodedText = null;
+      _decodedCode = null;
+      _detectedCodes = const [];
       _decodedQrPngBytes = null;
       _saved = false;
     });
@@ -229,38 +274,35 @@ class _QrScannerPageState extends State<QrScannerPage> {
     await _controller.start();
   }
 
-  Future<void> _copyRawContent(String text) async {
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Raw content copied.')));
-  }
-
-  Future<void> _saveQr(String text) async {
+  Future<void> _saveCode(ScannedCode code) async {
     final onSave = widget.onSave;
     if (onSave == null || _saving || _saved) return;
     setState(() => _saving = true);
     try {
       await _recordingFuture;
-      final verification = widget.secureQrService.calculateForPayload(text);
+      final verification = verificationForScannedCode(
+        widget.secureQrService,
+        code,
+      );
       await onSave(
-        payload: text,
+        payload: code.value,
         verificationCode: verification?.code,
         registrableDomain: verification is SecureQrResult
             ? verification.registrableDomain
             : null,
         qrPngBytes: _decodedQrPngBytes,
+        codeFormat: code.format,
+        source: code.source,
       );
       if (!mounted) return;
       setState(() => _saved = true);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('QR saved.')));
+      ).showSnackBar(const SnackBar(content: Text('Code saved.')));
     } on Object {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('The QR could not be saved.')),
+          const SnackBar(content: Text('The code could not be saved.')),
         );
       }
     } finally {
@@ -270,12 +312,12 @@ class _QrScannerPageState extends State<QrScannerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final decodedText = _decodedText;
+    final decodedCode = _decodedCode;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan QR code'),
+        title: const Text('Scan QR code or barcode'),
         actions: [
-          if (decodedText == null)
+          if (decodedCode == null && _detectedCodes.isEmpty)
             IconButton(
               onPressed: _controller.toggleTorch,
               tooltip: 'Toggle flashlight',
@@ -283,9 +325,11 @@ class _QrScannerPageState extends State<QrScannerPage> {
             ),
         ],
       ),
-      body: decodedText == null
-          ? _buildScanner()
-          : _buildResult(context, decodedText),
+      body: decodedCode != null
+          ? _buildResult(context, decodedCode)
+          : _detectedCodes.isNotEmpty
+          ? _buildResultSelection(context)
+          : _buildScanner(),
     );
   }
 
@@ -317,7 +361,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Text(
-                        'Point the camera at a QR code. Nothing is opened or sent.',
+                        'Point the camera at a QR code or barcode. Nothing is opened or sent.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Colors.white),
                       ),
@@ -347,14 +391,111 @@ class _QrScannerPageState extends State<QrScannerPage> {
     );
   }
 
-  Widget _buildResult(BuildContext context, String text) {
+  Widget _buildResultSelection(BuildContext context) {
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Text(
+            'Choose a result',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          const Text('More than one code was found in the image.'),
+          const SizedBox(height: 16),
+          for (final code in _detectedCodes)
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.barcode_reader),
+                title: Text(code.format.label),
+                subtitle: Text(
+                  code.value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () => _completeDetection(code),
+              ),
+            ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: _scanAgain,
+            icon: const Icon(Icons.qr_code_scanner),
+            label: const Text('Scan again'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResult(BuildContext context, ScannedCode code) {
+    return ScannedCodeResultView(
+      code: code,
+      secureQrService: widget.secureQrService,
+      saving: _saving,
+      saved: _saved,
+      onSave: () => _saveCode(code),
+      onScanAgain: _scanAgain,
+    );
+  }
+}
+
+final class ScannedCodeResultView extends StatelessWidget {
+  const ScannedCodeResultView({
+    required this.code,
+    required this.secureQrService,
+    required this.onScanAgain,
+    this.onSave,
+    this.saving = false,
+    this.saved = false,
+    this.allowRouting = true,
+    this.scanAgainLabel = 'Scan again',
+    super.key,
+  });
+
+  static const _classifier = QrPayloadClassifier();
+
+  final ScannedCode code;
+  final SecureQrService secureQrService;
+  final VoidCallback onScanAgain;
+  final VoidCallback? onSave;
+  final bool saving;
+  final bool saved;
+  final bool allowRouting;
+  final String scanAgainLabel;
+
+  Future<void> _copyRawContent(BuildContext context, String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('Contents copied.')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = code.value;
     final payload = _classifier.classify(text);
-    final verification = widget.secureQrService.calculateForPayload(text);
+    final verification = verificationForScannedCode(secureQrService, code);
 
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          Center(
+            child: Column(
+              children: [
+                Chip(
+                  avatar: const Icon(Icons.barcode_reader),
+                  label: Text(code.format.label),
+                ),
+                Text(
+                  code.source.label,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           Icon(
             payload.icon,
             size: 72,
@@ -428,30 +569,32 @@ class _QrScannerPageState extends State<QrScannerPage> {
               child: SelectableText(text),
             ),
           ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: _saving || _saved ? null : () => _saveQr(text),
-              icon: Icon(
-                _saved ? Icons.bookmark_added : Icons.bookmark_add_outlined,
-              ),
-              label: Text(
-                _saving
-                    ? 'Saving...'
-                    : _saved
-                    ? 'Saved'
-                    : 'Save QR',
+          if (onSave != null) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: saving || saved ? null : onSave,
+                icon: Icon(
+                  saved ? Icons.bookmark_added : Icons.bookmark_add_outlined,
+                ),
+                label: Text(
+                  saving
+                      ? 'Saving...'
+                      : saved
+                      ? 'Saved'
+                      : 'Save code',
+                ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
-              onPressed: () => _copyRawContent(text),
+              onPressed: () => _copyRawContent(context, text),
               icon: const Icon(Icons.copy_outlined),
-              label: const Text('Copy raw content'),
+              label: const Text('Copy contents'),
             ),
           ),
           const SizedBox(height: 12),
@@ -459,7 +602,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
             'The decoded value is displayed only. Dali QR has not opened or sent it.',
           ),
           const SizedBox(height: 24),
-          if (payload.canRoute) ...[
+          if (allowRouting && payload.canRoute) ...[
             FilledButton.icon(
               onPressed: () => routeQrPayload(
                 context,
@@ -472,9 +615,9 @@ class _QrScannerPageState extends State<QrScannerPage> {
             const SizedBox(height: 12),
           ],
           FilledButton.icon(
-            onPressed: _scanAgain,
+            onPressed: onScanAgain,
             icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Scan again'),
+            label: Text(scanAgainLabel),
           ),
         ],
       ),
@@ -483,13 +626,12 @@ class _QrScannerPageState extends State<QrScannerPage> {
 }
 
 @visibleForTesting
-String? firstQrPayload(BarcodeCapture capture) {
-  for (final barcode in capture.barcodes) {
-    if (barcode.format != BarcodeFormat.qrCode) continue;
-    final candidate = barcode.rawValue;
-    if (candidate != null && candidate.isNotEmpty) return candidate;
-  }
-  return null;
+QrVerificationResult? verificationForScannedCode(
+  SecureQrService service,
+  ScannedCode code,
+) {
+  if (code.format != ScannedCodeFormat.qrCode) return null;
+  return service.calculateForPayload(code.value);
 }
 
 final class _ScannerError extends StatelessWidget {
@@ -508,7 +650,7 @@ final class _ScannerError extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           child: Text(
             permissionDenied
-                ? 'Camera access is required to scan QR codes. Enable it in system settings and return to the app.'
+                ? 'Camera access is required to scan QR codes and barcodes. Enable it in system settings and return to the app.'
                 : 'The camera could not start (${error.errorCode.name}).',
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.white),

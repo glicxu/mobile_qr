@@ -1,7 +1,8 @@
 # Dali QR
 
-Dali QR creates and scans general QR payloads while keeping classification,
-content comparison, domain verification, and OS routing separate.
+Dali QR creates QR codes and scans QR codes and common 1D barcodes while
+keeping classification, content comparison, domain verification, and OS
+routing separate.
 
 ## Supported content
 
@@ -10,6 +11,8 @@ content comparison, domain verification, and OS routing separate.
 - Email, telephone, SMS, location, Wi-Fi, vCard, and calendar payloads with a
   content-comparison code
 - Unknown text and custom URI schemes as display-only content
+- Camera, photo-library, and share-sheet scanning for QR Code, UPC-A, UPC-E,
+  EAN-8, EAN-13, Code 128, Code 39, Code 93, Codabar, and ITF-14
 - Opt-in local history with one week of free access; older entries stay on the
   device and unlock with lifetime customization
 - Free previews for custom center images, with export enabled by a lifetime
@@ -63,5 +66,5 @@ app and account satisfy Play testing rules.
   the intended physical Android and iOS devices.
 - Supply store descriptions, screenshots, privacy disclosures, and production
   signing credentials through the relevant store accounts.
-- Keep decoded QR payloads and Wi-Fi credentials out of telemetry and crash
+- Keep decoded code payloads and Wi-Fi credentials out of telemetry and crash
   reports.

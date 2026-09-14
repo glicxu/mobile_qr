@@ -163,7 +163,7 @@ void main() {
     });
 
     test('custom center image is cropped and runtime validated', () {
-      const input = 'A custom message inside a Dali Secure QR';
+      const input = 'A custom message inside Dali QR';
       final image = File('assets/dali_smart_code_icon.png').readAsBytesSync();
       final matrix = encoder.encode(
         input,

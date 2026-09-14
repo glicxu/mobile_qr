@@ -172,7 +172,7 @@ void main() {
       expect(find.text('item-2-saved'), findsOneWidget);
 
       // Toggle save on item-1 via tile bookmark button
-      await tester.tap(find.byTooltip('Save QR'));
+      await tester.tap(find.byTooltip('Save code'));
       await tester.pumpAndSettle();
 
       // Now switch to 'Saved' again - item-1 is now saved!
@@ -224,7 +224,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.lockedItemCount, 1);
-    expect(find.text('1 older QR code is locked'), findsOneWidget);
+    expect(find.text('1 older code is locked'), findsOneWidget);
     expect(find.textContaining('Nothing was deleted.'), findsOneWidget);
 
     await tester.tap(find.text('Unlock history'));

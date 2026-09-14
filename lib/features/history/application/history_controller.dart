@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../../create/domain/url_payload_policy.dart';
+import '../../scan/domain/scanned_code.dart';
 import '../data/drift_qr_history_repository.dart';
 import '../data/history_database.dart';
 import '../data/shared_preferences_history_settings.dart';
@@ -101,14 +102,17 @@ final class HistoryController extends ChangeNotifier {
     String? verificationCode,
     String? registrableDomain,
     Uint8List? qrPngBytes,
+    ScannedCodeFormat codeFormat = ScannedCodeFormat.qrCode,
+    ScanSource source = ScanSource.camera,
   }) {
     return _record(
       payload: payload,
       verificationCode: verificationCode,
       registrableDomain: registrableDomain,
       qrPngBytes: qrPngBytes,
+      codeFormat: codeFormat,
       activityKind: QrActivityKind.scanned,
-      source: QrActivitySource.camera,
+      source: _historySource(source),
     );
   }
 
@@ -117,11 +121,15 @@ final class HistoryController extends ChangeNotifier {
     required String? verificationCode,
     required String? registrableDomain,
     required Uint8List? qrPngBytes,
+    ScannedCodeFormat codeFormat = ScannedCodeFormat.qrCode,
     required QrActivityKind activityKind,
     required QrActivitySource source,
   }) async {
     if (!_enabled) return;
-    final existing = await _repository.findMostRecentByPayload(payload);
+    final existing = await _repository.findMostRecentByPayload(
+      payload,
+      codeFormat: codeFormat,
+    );
     if (existing != null &&
         !existing.isInHistory &&
         existing.savedAtUtc != null) {
@@ -132,7 +140,7 @@ final class HistoryController extends ChangeNotifier {
     try {
       urlPayload = _urlPolicy.validate(payload);
     } on UrlPayloadValidationException {
-      // Scanned QR codes may contain arbitrary text.
+      // Scanned codes may contain arbitrary text.
     }
     final nowUtc = _now().toUtc();
     await _repository.save(
@@ -147,6 +155,7 @@ final class HistoryController extends ChangeNotifier {
         verificationCode: verificationCode,
         registrableDomain: registrableDomain,
         qrPngBytes: qrPngBytes,
+        codeFormat: codeFormat,
         source: source,
         createdAtUtc: nowUtc,
       ),
@@ -164,11 +173,15 @@ final class HistoryController extends ChangeNotifier {
     String? verificationCode,
     String? registrableDomain,
     Uint8List? qrPngBytes,
+    ScannedCodeFormat codeFormat = ScannedCodeFormat.qrCode,
     required QrActivityKind activityKind,
     required QrActivitySource source,
   }) async {
     final nowUtc = _now().toUtc();
-    final existing = await _repository.findMostRecentByPayload(payload);
+    final existing = await _repository.findMostRecentByPayload(
+      payload,
+      codeFormat: codeFormat,
+    );
     if (existing != null) {
       await _repository.setSavedAt(existing.id, nowUtc);
       return;
@@ -177,7 +190,7 @@ final class HistoryController extends ChangeNotifier {
     try {
       urlPayload = _urlPolicy.validate(payload);
     } on UrlPayloadValidationException {
-      // Saved QR codes may contain arbitrary text.
+      // Saved codes may contain arbitrary text.
     }
     await _repository.save(
       QrHistoryItem(
@@ -191,6 +204,7 @@ final class HistoryController extends ChangeNotifier {
         verificationCode: verificationCode,
         registrableDomain: registrableDomain,
         qrPngBytes: qrPngBytes,
+        codeFormat: codeFormat,
         source: source,
         createdAtUtc: nowUtc,
         isInHistory: false,
@@ -211,6 +225,12 @@ final class HistoryController extends ChangeNotifier {
     final trimmed = value?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
   }
+
+  static QrActivitySource _historySource(ScanSource source) => switch (source) {
+    ScanSource.camera => QrActivitySource.camera,
+    ScanSource.gallery => QrActivitySource.gallery,
+    ScanSource.sharedImage => QrActivitySource.sharedImage,
+  };
 
   Future<void> clear() => _repository.clearHistory();
 

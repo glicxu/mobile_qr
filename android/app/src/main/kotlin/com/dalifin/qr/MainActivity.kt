@@ -15,6 +15,12 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
 class MainActivity : FlutterActivity() {
+    private companion object {
+        const val MAX_SHARED_IMAGE_BYTES = 25L * 1024L * 1024L
+        const val SHARED_CODE_PREFIX = "dali_shared_code_"
+        const val LEGACY_SHARED_QR_PREFIX = "dali_shared_qr_"
+    }
+
     private var inboundShareChannel: MethodChannel? = null
     private var pendingSharedImagePath: String? = null
 
@@ -33,6 +39,7 @@ class MainActivity : FlutterActivity() {
                 pendingSharedImagePath = null
             }
         }
+        cleanupStaleSharedImages()
         receiveSharedImage(intent, notifyFlutter = false)
 
         MethodChannel(
@@ -144,17 +151,42 @@ class MainActivity : FlutterActivity() {
         }
 
         val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return
+        var sharedImage: File? = null
         try {
             pendingSharedImagePath?.let { File(it).delete() }
-            val sharedImage = File.createTempFile("dali_shared_qr_", ".image", cacheDir)
+            val destination = File.createTempFile(SHARED_CODE_PREFIX, ".image", cacheDir)
+            sharedImage = destination
             contentResolver.openInputStream(uri).use { input ->
                 requireNotNull(input) { "The shared image could not be opened." }
-                sharedImage.outputStream().use(input::copyTo)
+                destination.outputStream().use { output ->
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    var total = 0L
+                    while (true) {
+                        val count = input.read(buffer)
+                        if (count < 0) break
+                        total += count
+                        require(total <= MAX_SHARED_IMAGE_BYTES) {
+                            "The shared image is larger than 25 MB."
+                        }
+                        output.write(buffer, 0, count)
+                    }
+                }
             }
-            pendingSharedImagePath = sharedImage.absolutePath
-            if (notifyFlutter) notifyFlutterOfSharedImage(sharedImage.absolutePath)
+            pendingSharedImagePath = destination.absolutePath
+            if (notifyFlutter) notifyFlutterOfSharedImage(destination.absolutePath)
         } catch (_: Exception) {
+            sharedImage?.delete()
             pendingSharedImagePath = null
+        }
+    }
+
+    private fun cleanupStaleSharedImages() {
+        cacheDir.listFiles()?.forEach { file ->
+            if (file.name.startsWith(SHARED_CODE_PREFIX) ||
+                file.name.startsWith(LEGACY_SHARED_QR_PREFIX)
+            ) {
+                file.delete()
+            }
         }
     }
 

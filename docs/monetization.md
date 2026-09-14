@@ -1,8 +1,8 @@
-# Dali Secure QR — Monetization Plan
+# Dali QR — Monetization Plan
 
 ## 1. Strategy
 
-Dali Secure QR should avoid charging users for the fundamental functions that make the ecosystem useful.
+Dali QR should avoid charging users for the fundamental functions that make the ecosystem useful.
 
 The core principle is:
 
@@ -14,7 +14,7 @@ An even broader product principle is:
 
 Users should never have to pay simply to determine whether a supported QR destination passes Dali's verification mechanism.
 
-Likewise, basic QR creation should remain free because every QR created and distributed can introduce another person to Dali Secure QR.
+Likewise, basic QR creation should remain free because every QR created and distributed can introduce another person to Dali QR.
 
 ---
 
@@ -24,26 +24,26 @@ A traditional model would be:
 
 > Free for one month → subscription required
 
-This is not ideal for Dali Secure QR.
+This is not ideal for Dali QR.
 
 QR scanning and creation are intermittent activities. A user might install the application, use it several times, and not need it again for several weeks.
 
 When they return, discovering that the scanner or security functionality has expired creates unnecessary friction.
 
-More importantly, Dali Secure QR benefits from widespread adoption.
+More importantly, Dali QR benefits from widespread adoption.
 
 The business objective should initially be:
 
 ```text
 More creators
      ↓
-More Dali Secure QR codes
+More Dali QR codes
      ↓
 More people receive them
      ↓
 More people scan them
      ↓
-More Dali Secure QR users
+More Dali QR users
 ```
 
 A time-based trial interferes with this cycle.
@@ -73,7 +73,7 @@ Free users can:
 
 Free users can:
 
-- Scan Dali Secure QR
+- Scan Dali QR
 - See domain-based verification information for supported web URLs
 - Compare the security code
 - See the registrable domain
@@ -88,7 +88,7 @@ Free users can:
 - Create QR codes
 - Create text/message QR codes
 - Create URL QR codes
-- Create Dali Secure QR for supported URLs
+- Create Dali QR for supported URLs
 - Save generated QR codes
 - Share generated QR codes
 - Print generated QR codes
@@ -219,7 +219,7 @@ A reasonable launch point would be:
 Possible App Store / Play Store product:
 
 ```text
-Dali Secure QR Custom
+Dali QR Custom
 One-Time Purchase
 $3.99
 ```
@@ -246,7 +246,7 @@ Per-QR pricing would discourage experimentation and sharing.
 | Generate standard QR | ✓ | ✓ |
 | Generate message QR | ✓ | ✓ |
 | Generate URL QR | ✓ | ✓ |
-| Generate Dali Secure QR | ✓ | ✓ |
+| Generate Dali QR | ✓ | ✓ |
 | Domain verification | ✓ | ✓ |
 | Security warnings | ✓ | ✓ |
 | Save/share QR | ✓ | ✓ |
@@ -274,7 +274,7 @@ or:
 
 > "Your security verification trial has expired."
 
-That would undermine the purpose of Dali Secure QR.
+That would undermine the purpose of Dali QR.
 
 Instead:
 
@@ -317,7 +317,7 @@ Recipient
    ↓
 Scans QR
    ↓
-Discovers Dali Secure QR
+Discovers Dali QR
 ```
 
 Every free QR can therefore function as a small distribution mechanism for Dali.
@@ -328,7 +328,7 @@ Charging for creation would reduce this effect.
 
 # 10. QR as an Envelope
 
-Dali Secure QR should not be positioned only as a website-link tool.
+Dali QR should not be positioned only as a website-link tool.
 
 A useful concept is:
 
@@ -354,7 +354,7 @@ For example:
 
 followed by the QR.
 
-This gives Dali Secure QR a creative use case beyond conventional QR generators.
+This gives Dali QR a creative use case beyond conventional QR generators.
 
 These uses should remain free because they encourage people to create and exchange QR codes.
 
@@ -362,7 +362,7 @@ These uses should remain free because they encourage people to create and exchan
 
 # 11. Consumer Positioning
 
-Dali Secure QR can communicate three separate ideas:
+Dali QR can communicate three separate ideas:
 
 ### Create
 
@@ -499,7 +499,7 @@ The person scanning can recognize both:
 
 ---
 
-# 15. Future Dali Secure QR Business
+# 15. Future Dali QR Business
 
 A future business product could add capabilities such as:
 
@@ -521,7 +521,7 @@ Unlike the consumer application, these features could reasonably use subscriptio
 For example:
 
 ```text
-Dali Secure QR
+Dali QR
 Consumer
 Free
 
@@ -532,7 +532,7 @@ One-time purchase
 
         +
 
-Dali Secure QR Business
+Dali QR Business
 Subscription
 ```
 
@@ -545,7 +545,7 @@ The business subscription should be introduced only when there are genuinely rec
 The long-term model therefore becomes:
 
 ```text
-                     Dali Secure QR
+                     Dali QR
                            │
               ┌────────────┴────────────┐
               │                         │
@@ -608,7 +608,7 @@ User Leaves
 
 # 18. Guiding Principles
 
-Dali Secure QR monetization should follow five rules:
+Dali QR monetization should follow five rules:
 
 ### 1. Don't monetize trust.
 
@@ -638,7 +638,7 @@ Future organization services can use subscriptions when they provide continuing 
 
 For the initial release:
 
-**Dali Secure QR — Free**
+**Dali QR — Free**
 
 Includes:
 
@@ -651,7 +651,7 @@ Includes:
 - Other supported QR payload types
 - Save and share
 
-**Dali Secure QR Custom — $3.99 Lifetime Unlock**
+**Dali QR Custom — $3.99 Lifetime Unlock**
 
 Adds:
 
@@ -695,10 +695,10 @@ The initial implementation follows these rules:
 
 # 20. Core Business Philosophy
 
-The strongest monetization principle for Dali Secure QR is:
+The strongest monetization principle for Dali QR is:
 
 > **Don't monetize trust. Monetize identity.**
 
-The more people who can freely create, share, scan, and verify Dali Secure QR codes, the more valuable the ecosystem becomes.
+The more people who can freely create, share, scan, and verify Dali QR codes, the more valuable the ecosystem becomes.
 
 The paid upgrade should therefore make users' QR codes **more personal, recognizable, and professional** without making the free QR codes less functional or less secure.
