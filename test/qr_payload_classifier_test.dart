@@ -4,6 +4,28 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   const classifier = QrPayloadClassifier();
 
+  test(
+    'recognizes passkey requests without exposing session data in preview',
+    () {
+      for (final raw in ['FIDO:/1234567890', 'fido:/1234567890']) {
+        final result = classifier.classify(raw);
+        expect(result.type, QrContentType.passkey);
+        expect(result.action, QrRouteAction.authenticatePasskey);
+        expect(result.rawPayload, raw);
+        expect(result.primaryText, isNot(contains('1234567890')));
+      }
+      for (final raw in [
+        'FIDO:/',
+        'FIDO://123',
+        'FIDO:/12?x=3',
+        'FIDO:/123\n',
+        'FIDO:/abc',
+      ]) {
+        expect(classifier.classify(raw).canRoute, isFalse, reason: raw);
+      }
+    },
+  );
+
   test('classifies standard URI actions', () {
     final fixtures = {
       'https://example.com/path': QrRouteAction.openUrl,

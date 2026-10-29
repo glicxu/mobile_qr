@@ -6,6 +6,7 @@ import '../domain/qr_payload_classifier.dart';
 
 extension QrPayloadPresentation on ClassifiedQrPayload {
   IconData get icon => switch (type) {
+    QrContentType.passkey => Icons.key,
     QrContentType.webUrl => Icons.language,
     QrContentType.email => Icons.email_outlined,
     QrContentType.phone => Icons.phone_outlined,
@@ -19,6 +20,7 @@ extension QrPayloadPresentation on ClassifiedQrPayload {
   };
 
   String get actionLabel => switch (action) {
+    QrRouteAction.authenticatePasskey => 'Continue with passkey',
     QrRouteAction.openUrl => 'Open in browser',
     QrRouteAction.composeEmail => 'Compose email',
     QrRouteAction.call => 'Call number',
@@ -32,6 +34,9 @@ extension QrPayloadPresentation on ClassifiedQrPayload {
   };
 
   String get failureMessage => switch (action) {
+    QrRouteAction.authenticatePasskey =>
+      'Could not start passkey sign-in. Try your phone’s system Camera or '
+          'Code Scanner with a fresh QR code.',
     QrRouteAction.configureWifi =>
       'Wi-Fi configuration is not available on this device.',
     QrRouteAction.addContact => 'A contacts app could not open this contact.',
@@ -78,7 +83,7 @@ Future<void> routeQrPayload(
 }) async {
   if (!payload.canRoute) return;
 
-  if (comparisonCode != null) {
+  if (comparisonCode != null && payload.type != QrContentType.passkey) {
     final outcome = await showVerificationPrompt(
       context,
       code: comparisonCode,
@@ -93,7 +98,11 @@ Future<void> routeQrPayload(
       builder: (dialogContext) => AlertDialog(
         icon: Icon(payload.icon),
         title: Text(payload.actionLabel),
-        content: Text(payload.primaryText),
+        content: Text(
+          payload.type == QrContentType.passkey
+              ? '${payload.primaryText}\n\n${payload.details.join('\n\n')}'
+              : payload.primaryText,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),

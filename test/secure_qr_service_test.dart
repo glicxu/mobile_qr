@@ -20,6 +20,11 @@ cn
 '''),
   );
 
+  test('never assigns comparison codes to passkey requests', () {
+    expect(service.calculateForPayload('FIDO:/1234567890'), isNull);
+    expect(service.calculateForPayload('fido:/invalid'), isNull);
+  });
+
   test('produces fixed Secure QR v1 vectors', () {
     final cases = <String, String>{
       'https://example.com/': 'XIH-000',

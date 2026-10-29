@@ -43,6 +43,8 @@ final class SecureQrService {
   static const _urlPolicy = UrlPayloadPolicy();
 
   QrVerificationResult? calculateForPayload(String input) {
+    // A passkey request is authenticated by the OS, not a comparison code.
+    if (input.toLowerCase().startsWith('fido:')) return null;
     try {
       _urlPolicy.validate(input);
     } on UrlPayloadValidationException {

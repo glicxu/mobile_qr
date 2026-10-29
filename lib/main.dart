@@ -82,7 +82,7 @@ class DaliQrHome extends StatefulWidget {
 }
 
 class _DaliQrHomeState extends State<DaliQrHome> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
   final _createNavigatorKey = GlobalKey<NavigatorState>();
   late final Future<SecureQrService> _secureQrService;
   Future<HistoryController>? _historyController;

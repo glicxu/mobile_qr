@@ -76,6 +76,11 @@ class MainActivity : FlutterActivity() {
         ).setMethodCallHandler { call, result ->
             try {
                 val intent = when (call.method) {
+                    "authenticatePasskey" -> {
+                        val uri = call.argument<String>("uri") ?: ""
+                        require(Regex("FIDO:/[0-9]+").matches(uri))
+                        Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+                    }
                     "configureWifi" -> Intent(Settings.ACTION_WIFI_SETTINGS)
                     "addContact" -> Intent(
                         Intent.ACTION_INSERT,

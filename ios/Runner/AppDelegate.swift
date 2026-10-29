@@ -64,6 +64,16 @@ import EventKitUI
       guard let self else { result(false); return }
       let arguments = call.arguments as? [String: Any] ?? [:]
       switch call.method {
+      case "authenticatePasskey":
+        guard let raw = arguments["uri"] as? String,
+              raw.range(of: "^FIDO:/[0-9]+$", options: .regularExpression) != nil,
+              let url = URL(string: raw) else {
+          result(false)
+          return
+        }
+        UIApplication.shared.open(url, options: [:]) { opened in
+          result(opened)
+        }
       case "configureWifi":
         result(false)
       case "addContact":

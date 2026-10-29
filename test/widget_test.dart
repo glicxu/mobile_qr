@@ -10,6 +10,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 void main() {
   testWidgets('generates and displays a QR code', (tester) async {
@@ -42,6 +43,18 @@ void main() {
         customizationEntitlement: _TestEntitlement(),
       ),
     );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Scan QR code'), findsOneWidget);
+    final scanner = tester.widget<MobileScanner>(find.byType(MobileScanner));
+    expect(scanner.controller?.autoStart, isTrue);
+    expect(scanner.controller?.facing, CameraFacing.back);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      1,
+    );
+
+    await tester.tap(find.text('Create'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Generate QR code'));

@@ -51,6 +51,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
   static const _classifier = QrPayloadClassifier();
 
   late final MobileScannerController _controller = MobileScannerController(
+    autoStart: true,
     formats: const [BarcodeFormat.qrCode],
     detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
@@ -113,7 +114,8 @@ class _QrScannerPageState extends State<QrScannerPage> {
       _decodedQrPngBytes = null;
     });
     final onScanned = widget.onScanned;
-    if (onScanned != null) {
+    if (onScanned != null &&
+        _classifier.classify(text).type != QrContentType.passkey) {
       final verification = widget.secureQrService.calculateForPayload(text);
       Uint8List? qrPngBytes;
       try {
@@ -399,7 +401,9 @@ class _QrScannerPageState extends State<QrScannerPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'No comparison code is available for this payload.',
+              payload.type == QrContentType.passkey
+                  ? 'Your phone’s passkey provider handles verification.'
+                  : 'No comparison code is available for this payload.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
@@ -415,49 +419,51 @@ class _QrScannerPageState extends State<QrScannerPage> {
             SelectableText(detail),
           ],
           QrSensitiveDetail(payload: payload),
-          const SizedBox(height: 20),
-          Text('Raw content', style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 12),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SelectableText(text),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: _saving || _saved ? null : () => _saveQr(text),
-              icon: Icon(
-                _saved ? Icons.bookmark_added : Icons.bookmark_add_outlined,
+          if (payload.type != QrContentType.passkey) ...[
+            const SizedBox(height: 20),
+            Text('Raw content', style: Theme.of(context).textTheme.labelLarge),
+            const SizedBox(height: 12),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
               ),
-              label: Text(
-                _saving
-                    ? 'Saving...'
-                    : _saved
-                    ? 'Saved'
-                    : 'Save QR',
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: SelectableText(text),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: () => _copyRawContent(text),
-              icon: const Icon(Icons.copy_outlined),
-              label: const Text('Copy raw content'),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: _saving || _saved ? null : () => _saveQr(text),
+                icon: Icon(
+                  _saved ? Icons.bookmark_added : Icons.bookmark_add_outlined,
+                ),
+                label: Text(
+                  _saving
+                      ? 'Saving...'
+                      : _saved
+                      ? 'Saved'
+                      : 'Save QR',
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'The decoded value is displayed only. Dali QR has not opened or sent it.',
-          ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: () => _copyRawContent(text),
+                icon: const Icon(Icons.copy_outlined),
+                label: const Text('Copy raw content'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'The decoded value is displayed only. Dali QR has not opened or sent it.',
+            ),
+          ],
           const SizedBox(height: 24),
           if (payload.canRoute) ...[
             FilledButton.icon(

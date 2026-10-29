@@ -1,0 +1,12 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#D32F2F"
+        android:pathData="M0,65 L108,65 L108,91 L0,91 Z" />
+    <!-- Letter outlines keep the TEST ribbon independent of device fonts. -->
+    <path android:fillColor="#FFFFFF" android:pathData="
+        M23,71 H36 V75 H31.5 V85 H27.5 V75 H23 Z
+        M40,71 H52 V75 H44 V76 H51 V80 H44 V81 H52 V85 H40 Z
+        M56,71 H68 V75 H60 V76 H68 V85 H56 V81 H64 V80 H56 Z
+        M72,71 H85 V75 H80.5 V85 H76.5 V75 H72 Z" />
+</vector>

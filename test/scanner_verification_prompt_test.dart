@@ -1,8 +1,57 @@
 import 'package:dali_qr/features/secure_qr/presentation/verification_prompt.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
+import 'package:dali_qr/features/scan/domain/qr_payload_classifier.dart';
+import 'package:dali_qr/features/scan/presentation/qr_payload_action.dart';
 
 void main() {
+  testWidgets(
+    'passkey handoff requires consent and bypasses comparison codes',
+    (tester) async {
+      const channel = MethodChannel('dali_qr/routing');
+      var calls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (call) async {
+            calls++;
+            return true;
+          });
+      addTearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null);
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) {
+              return FilledButton(
+                onPressed: () => routeQrPayload(
+                  context,
+                  const QrPayloadClassifier().classify('FIDO:/1234567890'),
+                  comparisonCode: 'OLD-123',
+                ),
+                child: const Text('Open'),
+              );
+            },
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      expect(find.text('Continue with passkey'), findsOneWidget);
+      expect(find.text('Verify if available'), findsNothing);
+      expect(calls, 0);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(calls, 0);
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(calls, 1);
+    },
+  );
+
   testWidgets('explains that verification needs an available trusted code', (
     tester,
   ) async {

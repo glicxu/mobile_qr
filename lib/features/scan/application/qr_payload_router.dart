@@ -10,6 +10,17 @@ final class QrPayloadRouter {
 
   Future<bool> route(ClassifiedQrPayload payload) async {
     switch (payload.action) {
+      case QrRouteAction.authenticatePasskey:
+        // Preserve the standard uppercase scheme (Dart Uri normalizes it).
+        if (!RegExp(
+          r'^FIDO:/[0-9]+$',
+          caseSensitive: false,
+        ).hasMatch(payload.rawPayload)) {
+          return false;
+        }
+        return await _invoke('authenticatePasskey', {
+          'uri': 'FIDO:${payload.rawPayload.substring(5)}',
+        });
       case QrRouteAction.openUrl:
       case QrRouteAction.composeEmail:
       case QrRouteAction.call:

@@ -10,6 +10,11 @@ content comparison, domain verification, and OS routing separate.
 - Email, telephone, SMS, location, Wi-Fi, vCard, and calendar payloads with a
   content-comparison code
 - Unknown text and custom URI schemes as display-only content
+- FIDO passkey QR requests with explicit confirmation and native OS handoff
+  on Android and iOS; requires an available passkey provider. The provider
+  handles Bluetooth proximity, credentials, and biometric/PIN approval.
+  Opening the provider does not report successful authentication to Dali QR.
+  Passkey scans do not receive comparison codes or enter automatic history.
 - Opt-in local history with one week of free access; older entries stay on the
   device and unlock with lifetime customization
 - Free previews for custom center images, with export enabled by a lifetime
@@ -26,6 +31,10 @@ flutter analyze
 flutter test
 flutter build apk --debug
 ```
+
+Android debug builds install separately as `com.dalifin.qr.test`, labeled
+`Dali QR Test`, with a red TEST ribbon on the launcher icon. They use their
+own app data. Release builds retain the production name, ID, and icon.
 
 ## Android release signing
 
@@ -58,6 +67,9 @@ app and account satisfy Play testing rules.
 
 ## Remaining release checks
 
+- Test FIDO sign-in with fresh website QR codes on physical Android and iOS
+  devices, including approval, cancellation, expired codes, Bluetooth disabled,
+  and missing passkey/provider. iOS native compilation requires macOS/Xcode.
 - Compile and exercise the iOS contacts and calendar routes on macOS/Xcode.
 - Test email, telephone, SMS, maps, Wi-Fi, contacts, and calendar routing on
   the intended physical Android and iOS devices.

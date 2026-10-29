@@ -7,6 +7,28 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('dali_qr/routing');
 
+  test('hands off passkey data with the standard scheme unchanged', () async {
+    MethodCall? received;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          received = call;
+          return true;
+        });
+    final payload = const QrPayloadClassifier().classify('fido:/1234567890');
+    expect(await const QrPayloadRouter().route(payload), isTrue);
+    expect(received?.method, 'authenticatePasskey');
+    expect(received?.arguments, {'uri': 'FIDO:/1234567890'});
+  });
+
+  test('passkey handoff handles a missing provider', () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          throw PlatformException(code: 'route_failed');
+        });
+    final payload = const QrPayloadClassifier().classify('FIDO:/1234567890');
+    expect(await const QrPayloadRouter().route(payload), isFalse);
+  });
+
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);

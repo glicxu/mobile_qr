@@ -9,6 +9,7 @@ enum QrContentType {
   calendarEvent,
   deepLink,
   text,
+  passkey,
 }
 
 enum QrRouteAction {
@@ -22,6 +23,7 @@ enum QrRouteAction {
   addCalendarEvent,
   openDeepLink,
   none,
+  authenticatePasskey,
 }
 
 final class ClassifiedQrPayload {
@@ -58,6 +60,28 @@ final class QrPayloadClassifier {
   ClassifiedQrPayload classify(String raw) {
     final uri = Uri.tryParse(raw);
     final scheme = uri?.scheme.toLowerCase();
+
+    if (scheme == 'fido') {
+      final valid = RegExp(
+        r'^FIDO:/[0-9]+$',
+        caseSensitive: false,
+      ).hasMatch(raw);
+      return ClassifiedQrPayload(
+        rawPayload: raw,
+        type: QrContentType.passkey,
+        action: valid ? QrRouteAction.authenticatePasskey : QrRouteAction.none,
+        title: 'Passkey sign-in',
+        primaryText: valid
+            ? 'Continue with your phone’s passkey provider.'
+            : 'This passkey QR code is malformed. Scan a fresh code.',
+        details: valid
+            ? const [
+                'Keep the devices nearby with Bluetooth enabled.',
+                'Approve only a sign-in you started. Your phone will ask you to confirm.',
+              ]
+            : const [],
+      );
+    }
 
     if ((scheme == 'http' || scheme == 'https') && uri!.host.isNotEmpty) {
       return ClassifiedQrPayload(
