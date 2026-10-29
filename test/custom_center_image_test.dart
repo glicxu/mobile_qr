@@ -274,9 +274,9 @@ void main() {
           customizationEntitlement: entitlement,
           packageInfo: Future.value(
             PackageInfo(
-              appName: 'Dali Secure QR',
+              appName: 'Dali QR',
               packageName: 'com.dalifin.qr',
-              version: '1.1.0',
+              version: '1.2.0',
               buildNumber: '1',
             ),
           ),
@@ -303,7 +303,7 @@ void main() {
     await tester.pump();
     expect(entitlement.restoreCalls, 1);
 
-    await tester.tap(find.text('Unlock lifetime customization'));
+    await tester.tap(find.text(r'Unlock for $1.99'));
     await tester.pump();
     expect(entitlement.purchaseCalls, 1);
     expect(find.text('Unlocked'), findsOneWidget);
@@ -326,9 +326,9 @@ void main() {
           imagePicker: mockPicker,
           packageInfo: Future.value(
             PackageInfo(
-              appName: 'Dali Secure QR',
+              appName: 'Dali QR',
               packageName: 'com.dalifin.qr',
-              version: '1.1.0',
+              version: '1.2.0',
               buildNumber: '1',
             ),
           ),
@@ -371,6 +371,41 @@ void main() {
     expect(find.text('Default Dali icon'), findsOneWidget);
     expect(find.bySemanticsLabel('Default Dali center icon'), findsOneWidget);
     expect(find.text('Choose image'), findsOneWidget);
+  });
+
+  testWidgets('center image actions wrap on a narrow screen', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 700));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final store = CustomCenterImageStore(storage: InMemoryCustomImageStorage());
+    await store.initialize();
+    await store.setImage(_samplePng);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SettingsPage(
+          customizationEntitlement: _UnlockedEntitlement(),
+          customCenterImageStore: store,
+          imagePicker: _MockImagePicker(pickedBytes: _samplePng),
+          packageInfo: Future.value(
+            PackageInfo(
+              appName: 'Dali QR',
+              packageName: 'com.dalifin.qr',
+              version: '1.2.0',
+              buildNumber: '1',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Remove'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Change image'), findsOneWidget);
+    expect(find.text('Crop'), findsOneWidget);
+    expect(find.text('Remove'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

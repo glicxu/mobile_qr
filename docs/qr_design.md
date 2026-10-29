@@ -86,7 +86,9 @@ Important UX rule: show the exact encoded value in a selectable detail view. The
 
 1. The user opens Scan.
 2. If camera permission has not been decided, show a short pre-permission explanation and request access only after **Continue**.
-3. The live scanner starts with rear camera, QR-only detection, a centered guide, torch control, and an **Import image** alternative.
+3. The live scanner starts with the rear camera, an explicit QR and common 1D
+   barcode allowlist, a centered guide, torch control, and an **Import image**
+   alternative.
 4. When a code is decoded, pause frame analysis immediately and deduplicate repeated callbacks.
 5. Show a result sheet containing:
    - classified content type;
@@ -102,7 +104,8 @@ Do not automatically follow redirects, fetch page metadata, resolve a hostname, 
 
 - Open the system photo picker rather than requesting broad photo-library access when platform support permits.
 - Decode locally.
-- If multiple QR codes are found, show each candidate with a crop thumbnail or numbered overlay and require selection.
+- If multiple supported codes are found, show each candidate's format and
+  contents and require selection.
 - If none is found, explain likely causes and offer a camera scan; do not upload the image.
 
 ### 3.5 Result and routing behavior
@@ -117,7 +120,7 @@ The result screen is a trust boundary. It must display the decoded content befor
 - Swipe/delete individual records and provide **Clear all history** with confirmation.
 - Free users can access one week of history. Older entries remain stored locally
   and become accessible after the lifetime customization unlock.
-- Saved QRs remain accessible regardless of age until the user deletes them.
+- Saved codes remain accessible regardless of age until the user deletes them.
 - Do not save imported source photos or camera frames.
 
 ---
@@ -169,7 +172,7 @@ Select final deployment targets during project bootstrap based on the current Fl
 | State management | Riverpod | Testable dependency injection; avoid global mutable singletons |
 | Navigation | `go_router` | Typed route wrappers; simple three-tab shell |
 | QR generation | `qr` 4.x for the encoded matrix; Dali-owned matrix painters for screen and export | Use explicit UTF-8 ECI; do not depend on `qr_flutter` 4.1.0 because it constrains `qr` to 3.x |
-| QR camera decoding | `mobile_scanner` | QR-only configuration; native backends on iOS/Android |
+| QR and barcode camera decoding | `mobile_scanner` | Explicit QR, UPC, EAN, Code 128/39/93, Codabar, and ITF-14 allowlist; native backends on iOS/Android |
 | External routing | `url_launcher`, wrapped by a Dali-owned policy service | Never call it directly from widgets |
 | Sharing | `share_plus` | Native share sheet for image/text |
 | Local database | Drift over SQLite | Typed schema, migrations, reactive history queries |
@@ -492,7 +495,9 @@ Use `ClipboardManager` only in the direct paste handler. Check that the primary 
 
 ### 10.1 Camera
 
-**iOS configuration:** add `NSCameraUsageDescription`, for example: “Dali QR uses the camera only to scan QR codes.” Request access when Scan is first used, not at launch.
+**iOS configuration:** add `NSCameraUsageDescription`, for example: “Dali QR
+uses the camera only to scan QR codes and barcodes.” Request access when Scan
+is first used, not at launch.
 
 **Android configuration:** declare `android.permission.CAMERA` and request it at runtime. Do not request microphone, location, contacts, or storage for live scanning.
 
@@ -622,7 +627,7 @@ Settings include `historyEnabled`, `defaultTab`, `hapticsEnabled`, and `hasSeenS
   history immediately.
 - **Clear all** deletes database rows and cached export files.
 - If history is disabled, immediately offer to delete existing records; do not assume the user intended deletion without confirmation.
-- Saved QRs remain accessible regardless of age until explicitly removed.
+- Saved codes remain accessible regardless of age until explicitly removed.
 
 ---
 
@@ -815,7 +820,7 @@ Provide an in-app **Copy diagnostics** action that shows exactly what will be co
 - Create and Scan screens.
 - Explicit paste/manual entry and URL validation.
 - QR generation with fixed M profile and safe rendering.
-- Live QR-only scanner, permission states, torch, and lifecycle.
+- Live QR and common 1D barcode scanner, permission states, torch, and lifecycle.
 - Confirmation result screen.
 - `http`/`https` routing only.
 - PNG share/save and copy text.
@@ -826,7 +831,7 @@ Provide an in-app **Copy diagnostics** action that shows exactly what will be co
 ### Phase 2 - Local utility completion (2-3 weeks)
 
 - Opt-in Drift history with one-week free access, lifetime unlock, and explicit deletion.
-- Import QR from a system-selected image.
+- Import supported QR and barcode symbols from a system-selected image.
 - Plain text, email, phone, SMS, and geo classification with per-type confirmation.
 - SVG export.
 - Improved suspicious-host presentation and diagnostics.
@@ -843,7 +848,7 @@ Provide an in-app **Copy diagnostics** action that shows exactly what will be co
 
 ### Deferred/conditional
 
-- Share extension into Dali QR.
+- Additional share input types beyond a single image.
 - Encrypted history or biometric lock.
 - Dynamic QR service, synchronization, or link analytics; each requires a backend, account model, abuse prevention, privacy policy changes, and a new security design.
 - Styled/logo QR codes; require automated scannability validation and strict design constraints.
@@ -862,7 +867,7 @@ Provide an in-app **Copy diagnostics** action that shows exactly what will be co
 
 ### Scanning
 
-- [ ] QR-only detection is configured.
+- [ ] The explicit supported QR and barcode allowlist is configured.
 - [ ] Android model is bundled for offline first use.
 - [ ] Camera stops outside active scan state.
 - [ ] Duplicate callbacks cannot trigger multiple sheets or launches.
@@ -959,6 +964,11 @@ The following primary documentation should be rechecked when dependencies are lo
 
 ## 23. Final recommendation
 
-Build Dali QR as a small Flutter app with a deliberately narrow native boundary. Creation accepts general QR payload content, while verification remains limited to web URLs with registrable domains. Keep QR-only live scanning, explicit result confirmation, OS-mediated routing, local history, and PNG clipboard export behind clearly separated classification, verification, and action policies.
+Build Dali QR as a small Flutter app with a deliberately narrow native
+boundary. Creation accepts general QR payload content, while Secure QR
+verification remains limited to QR symbols. Keep allowlisted QR and common 1D
+barcode scanning, explicit result confirmation, OS-mediated routing, local
+history, and PNG clipboard export behind clearly separated classification,
+verification, and action policies.
 
 The defining engineering principle is separation of concerns: proven libraries own QR encoding and visual decoding; Dali QR owns user intent, safe presentation, routing policy, privacy, exports, and verification. That division minimizes standards risk while keeping the parts that define user trust under direct product control.

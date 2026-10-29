@@ -7,6 +7,7 @@ import '../../create/application/qr_encoder.dart';
 import '../../create/data/dart_qr_encoder.dart';
 import '../../create/data/qr_png_renderer.dart';
 import '../../scan/domain/qr_payload_classifier.dart';
+import '../../scan/domain/scanned_code.dart';
 import '../../scan/presentation/qr_payload_action.dart';
 import '../application/history_controller.dart';
 import '../application/qr_clipboard.dart';
@@ -49,7 +50,7 @@ class _SavedPageState extends State<SavedPage> {
             })
             .toList(growable: false);
         return Scaffold(
-          appBar: AppBar(title: const Text('Saved QRs')),
+          appBar: AppBar(title: const Text('Saved Codes')),
           body: SafeArea(
             child: Column(
               children: [
@@ -130,8 +131,12 @@ class _SavedPageState extends State<SavedPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.title ?? 'Saved QR',
+                  item.title ?? 'Saved ${item.codeFormat.label}',
                   style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+                Text(
+                  '${item.codeFormat.label} · ${item.source.label}',
+                  style: Theme.of(sheetContext).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 12),
                 Expanded(
@@ -342,6 +347,7 @@ class _SavedPageState extends State<SavedPage> {
   }
 
   Uint8List? _qrBytesFor(QrHistoryItem item) {
+    if (item.codeFormat != ScannedCodeFormat.qrCode) return null;
     if (item.qrPngBytes case final bytes?) return bytes;
     try {
       return _renderer
@@ -405,7 +411,7 @@ final class _SavedEmpty extends StatelessWidget {
             if (!searching) ...[
               const SizedBox(height: 8),
               const Text(
-                'Saved QRs stay here even when History is cleared or older entries are locked.',
+                'Saved codes stay here even when History is cleared or older entries are locked.',
                 textAlign: TextAlign.center,
               ),
             ],

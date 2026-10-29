@@ -7,6 +7,7 @@ import '../../create/application/qr_encoder.dart';
 import '../../create/data/dart_qr_encoder.dart';
 import '../../create/data/qr_png_renderer.dart';
 import '../../scan/domain/qr_payload_classifier.dart';
+import '../../scan/domain/scanned_code.dart';
 import '../../scan/presentation/qr_payload_action.dart';
 import '../application/history_controller.dart';
 import '../application/qr_clipboard.dart';
@@ -256,7 +257,7 @@ class _HistoryPageState extends State<HistoryPage> {
                           onToggleSaved: () async {
                             if (item.savedAtUtc == null) {
                               await widget.controller.save(item.id);
-                              _showMessage('QR saved.');
+                              _showMessage('Code saved.');
                             } else {
                               await widget.controller.removeFromSaved(item.id);
                               _showMessage('Removed from Saved.');
@@ -305,7 +306,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Your older QR codes are still stored privately on this '
+                    'Your older codes are still stored privately on this '
                     'device. Unlock lifetime customization to view and reuse '
                     'them again.',
                   ),
@@ -327,7 +328,11 @@ class _HistoryPageState extends State<HistoryPage> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.lock_open_outlined),
-                    label: const Text('Unlock lifetime customization'),
+                    label: Text(
+                      entitlement.price == null
+                          ? 'Lifetime unlock'
+                          : 'Unlock for ${entitlement.price}',
+                    ),
                   ),
                   const SizedBox(height: 4),
                   OutlinedButton.icon(
@@ -368,16 +373,20 @@ class _HistoryPageState extends State<HistoryPage> {
                   item.title ??
                       (item.activityKind == QrActivityKind.created
                           ? 'Created QR'
-                          : 'Scanned QR'),
+                          : 'Scanned ${item.codeFormat.label}'),
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
                 if (item.title != null)
                   Text(
                     item.activityKind == QrActivityKind.created
                         ? 'Created QR'
-                        : 'Scanned QR',
+                        : 'Scanned ${item.codeFormat.label}',
                     style: Theme.of(sheetContext).textTheme.bodySmall,
                   ),
+                Text(
+                  '${item.codeFormat.label} · ${item.source.label}',
+                  style: Theme.of(sheetContext).textTheme.bodySmall,
+                ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: SingleChildScrollView(
@@ -491,7 +500,7 @@ class _HistoryPageState extends State<HistoryPage> {
                           if (sheetContext.mounted) {
                             Navigator.pop(sheetContext);
                           }
-                          if (mounted) _showMessage('QR saved.');
+                          if (mounted) _showMessage('Code saved.');
                         },
                         icon: const Icon(Icons.bookmark_add_outlined),
                         label: const Text('Save'),
@@ -605,6 +614,7 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Uint8List? _qrBytesFor(QrHistoryItem item) {
+    if (item.codeFormat != ScannedCodeFormat.qrCode) return null;
     if (item.qrPngBytes case final bytes?) return bytes;
     try {
       return _pngRenderer
@@ -694,7 +704,7 @@ class _HistoryPageState extends State<HistoryPage> {
         title: const Text('Turn off history?'),
         content: const Text(
           'New activity will not be saved. Choose whether to keep or delete '
-          'the history already on this device. Saved QRs will not be deleted.',
+          'the history already on this device. Saved codes will not be deleted.',
         ),
         actions: [
           TextButton(
@@ -830,20 +840,26 @@ final class _HistoryTile extends StatelessWidget {
       ),
       child: ListTile(
         leading: CircleAvatar(
-          child: Icon(created ? Icons.qr_code_2 : Icons.qr_code_scanner),
+          child: Icon(
+            created || item.codeFormat == ScannedCodeFormat.qrCode
+                ? Icons.qr_code_2
+                : Icons.view_week_outlined,
+          ),
         ),
         title: Text(
           item.title ?? item.displayHost ?? item.rawPayload,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        subtitle: Text('${created ? 'Created' : 'Scanned'} · $time'),
+        subtitle: Text(
+          '${created ? 'Created QR' : 'Scanned ${item.codeFormat.label}'} · $time',
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               onPressed: onToggleSaved,
-              tooltip: isSaved ? 'Remove from saved' : 'Save QR',
+              tooltip: isSaved ? 'Remove from saved' : 'Save code',
               icon: Icon(
                 isSaved ? Icons.bookmark : Icons.bookmark_border_outlined,
                 color: isSaved ? Theme.of(context).colorScheme.primary : null,
@@ -874,7 +890,7 @@ final class _LockedHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final noun = itemCount == 1 ? 'QR code is' : 'QR codes are';
+    final noun = itemCount == 1 ? 'code is' : 'codes are';
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Card(
@@ -938,13 +954,13 @@ final class _EmptyHistory extends StatelessWidget {
     if (savedOnly) {
       message = searching
           ? 'No saved history matches your search.'
-          : 'No saved QR codes yet. Tap the bookmark icon on any item to save it.';
+          : 'No saved codes yet. Tap the bookmark icon on any item to save it.';
     } else if (hasLockedItems && !searching) {
       message = 'No QR activity from the past week.';
     } else {
       message = searching
           ? 'No history matches your search.'
-          : 'Created and scanned QR codes will appear here.';
+          : 'Created and scanned codes will appear here.';
     }
     return Center(
       child: Padding(

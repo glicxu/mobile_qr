@@ -2,6 +2,7 @@ import 'package:dali_qr/features/history/application/history_controller.dart';
 import 'package:dali_qr/features/history/data/drift_qr_history_repository.dart';
 import 'package:dali_qr/features/history/data/history_database.dart';
 import 'package:dali_qr/features/history/domain/qr_history.dart';
+import 'package:dali_qr/features/scan/domain/scanned_code.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:typed_data';
@@ -167,6 +168,40 @@ void main() {
     expect(item.verificationCode, 'XYZ-789');
     expect(item.registrableDomain, 'example.com');
     expect(item.qrPngBytes, [7, 8, 9]);
+  });
+
+  test(
+    'scanned barcodes retain format and source without QR artwork',
+    () async {
+      await controller.enable();
+      await controller.recordScanned(
+        payload: '012345678905',
+        codeFormat: ScannedCodeFormat.upcA,
+        source: ScanSource.sharedImage,
+      );
+
+      final item = (await repository.watchRecent().first).single;
+      expect(item.codeFormat, ScannedCodeFormat.upcA);
+      expect(item.source, QrActivitySource.sharedImage);
+      expect(item.qrPngBytes, isNull);
+    },
+  );
+
+  test('same payload in QR and barcode formats remains distinct', () async {
+    await controller.enable();
+    await controller.recordScanned(payload: '12345670');
+    await controller.recordScanned(
+      payload: '12345670',
+      codeFormat: ScannedCodeFormat.ean8,
+      source: ScanSource.gallery,
+    );
+
+    final items = await repository.watchRecent().first;
+    expect(items, hasLength(2));
+    expect(items.map((item) => item.codeFormat).toSet(), {
+      ScannedCodeFormat.qrCode,
+      ScannedCodeFormat.ean8,
+    });
   });
 
   test('title and note can be added, changed, and cleared', () async {

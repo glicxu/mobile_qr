@@ -140,6 +140,18 @@ class $HistoryEntriesTable extends HistoryEntries
     type: DriftSqlType.blob,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _codeFormatMeta = const VerificationMeta(
+    'codeFormat',
+  );
+  @override
+  late final GeneratedColumn<String> codeFormat = GeneratedColumn<String>(
+    'code_format',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('qrCode'),
+  );
   static const VerificationMeta _sourceMeta = const VerificationMeta('source');
   @override
   late final GeneratedColumn<int> source = GeneratedColumn<int>(
@@ -174,6 +186,7 @@ class $HistoryEntriesTable extends HistoryEntries
     verificationCode,
     registrableDomain,
     qrPngBytes,
+    codeFormat,
     source,
     createdAtUtc,
   ];
@@ -290,6 +303,12 @@ class $HistoryEntriesTable extends HistoryEntries
         ),
       );
     }
+    if (data.containsKey('code_format')) {
+      context.handle(
+        _codeFormatMeta,
+        codeFormat.isAcceptableOrUnknown(data['code_format']!, _codeFormatMeta),
+      );
+    }
     if (data.containsKey('source')) {
       context.handle(
         _sourceMeta,
@@ -366,6 +385,10 @@ class $HistoryEntriesTable extends HistoryEntries
         DriftSqlType.blob,
         data['${effectivePrefix}qr_png_bytes'],
       ),
+      codeFormat: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}code_format'],
+      )!,
       source: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}source'],
@@ -396,6 +419,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
   final String? verificationCode;
   final String? registrableDomain;
   final Uint8List? qrPngBytes;
+  final String codeFormat;
   final int source;
   final DateTime createdAtUtc;
   const HistoryEntry({
@@ -411,6 +435,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     this.verificationCode,
     this.registrableDomain,
     this.qrPngBytes,
+    required this.codeFormat,
     required this.source,
     required this.createdAtUtc,
   });
@@ -443,6 +468,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     if (!nullToAbsent || qrPngBytes != null) {
       map['qr_png_bytes'] = Variable<Uint8List>(qrPngBytes);
     }
+    map['code_format'] = Variable<String>(codeFormat);
     map['source'] = Variable<int>(source);
     map['created_at_utc'] = Variable<DateTime>(createdAtUtc);
     return map;
@@ -474,6 +500,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       qrPngBytes: qrPngBytes == null && nullToAbsent
           ? const Value.absent()
           : Value(qrPngBytes),
+      codeFormat: Value(codeFormat),
       source: Value(source),
       createdAtUtc: Value(createdAtUtc),
     );
@@ -499,6 +526,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
         json['registrableDomain'],
       ),
       qrPngBytes: serializer.fromJson<Uint8List?>(json['qrPngBytes']),
+      codeFormat: serializer.fromJson<String>(json['codeFormat']),
       source: serializer.fromJson<int>(json['source']),
       createdAtUtc: serializer.fromJson<DateTime>(json['createdAtUtc']),
     );
@@ -519,6 +547,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       'verificationCode': serializer.toJson<String?>(verificationCode),
       'registrableDomain': serializer.toJson<String?>(registrableDomain),
       'qrPngBytes': serializer.toJson<Uint8List?>(qrPngBytes),
+      'codeFormat': serializer.toJson<String>(codeFormat),
       'source': serializer.toJson<int>(source),
       'createdAtUtc': serializer.toJson<DateTime>(createdAtUtc),
     };
@@ -537,6 +566,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     Value<String?> verificationCode = const Value.absent(),
     Value<String?> registrableDomain = const Value.absent(),
     Value<Uint8List?> qrPngBytes = const Value.absent(),
+    String? codeFormat,
     int? source,
     DateTime? createdAtUtc,
   }) => HistoryEntry(
@@ -556,6 +586,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
         ? registrableDomain.value
         : this.registrableDomain,
     qrPngBytes: qrPngBytes.present ? qrPngBytes.value : this.qrPngBytes,
+    codeFormat: codeFormat ?? this.codeFormat,
     source: source ?? this.source,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
   );
@@ -591,6 +622,9 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
       qrPngBytes: data.qrPngBytes.present
           ? data.qrPngBytes.value
           : this.qrPngBytes,
+      codeFormat: data.codeFormat.present
+          ? data.codeFormat.value
+          : this.codeFormat,
       source: data.source.present ? data.source.value : this.source,
       createdAtUtc: data.createdAtUtc.present
           ? data.createdAtUtc.value
@@ -613,6 +647,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           ..write('verificationCode: $verificationCode, ')
           ..write('registrableDomain: $registrableDomain, ')
           ..write('qrPngBytes: $qrPngBytes, ')
+          ..write('codeFormat: $codeFormat, ')
           ..write('source: $source, ')
           ..write('createdAtUtc: $createdAtUtc')
           ..write(')'))
@@ -633,6 +668,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
     verificationCode,
     registrableDomain,
     $driftBlobEquality.hash(qrPngBytes),
+    codeFormat,
     source,
     createdAtUtc,
   );
@@ -652,6 +688,7 @@ class HistoryEntry extends DataClass implements Insertable<HistoryEntry> {
           other.verificationCode == this.verificationCode &&
           other.registrableDomain == this.registrableDomain &&
           $driftBlobEquality.equals(other.qrPngBytes, this.qrPngBytes) &&
+          other.codeFormat == this.codeFormat &&
           other.source == this.source &&
           other.createdAtUtc == this.createdAtUtc);
 }
@@ -669,6 +706,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
   final Value<String?> verificationCode;
   final Value<String?> registrableDomain;
   final Value<Uint8List?> qrPngBytes;
+  final Value<String> codeFormat;
   final Value<int> source;
   final Value<DateTime> createdAtUtc;
   final Value<int> rowid;
@@ -685,6 +723,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     this.verificationCode = const Value.absent(),
     this.registrableDomain = const Value.absent(),
     this.qrPngBytes = const Value.absent(),
+    this.codeFormat = const Value.absent(),
     this.source = const Value.absent(),
     this.createdAtUtc = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -702,6 +741,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     this.verificationCode = const Value.absent(),
     this.registrableDomain = const Value.absent(),
     this.qrPngBytes = const Value.absent(),
+    this.codeFormat = const Value.absent(),
     required int source,
     required DateTime createdAtUtc,
     this.rowid = const Value.absent(),
@@ -724,6 +764,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     Expression<String>? verificationCode,
     Expression<String>? registrableDomain,
     Expression<Uint8List>? qrPngBytes,
+    Expression<String>? codeFormat,
     Expression<int>? source,
     Expression<DateTime>? createdAtUtc,
     Expression<int>? rowid,
@@ -741,6 +782,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
       if (verificationCode != null) 'verification_code': verificationCode,
       if (registrableDomain != null) 'registrable_domain': registrableDomain,
       if (qrPngBytes != null) 'qr_png_bytes': qrPngBytes,
+      if (codeFormat != null) 'code_format': codeFormat,
       if (source != null) 'source': source,
       if (createdAtUtc != null) 'created_at_utc': createdAtUtc,
       if (rowid != null) 'rowid': rowid,
@@ -760,6 +802,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     Value<String?>? verificationCode,
     Value<String?>? registrableDomain,
     Value<Uint8List?>? qrPngBytes,
+    Value<String>? codeFormat,
     Value<int>? source,
     Value<DateTime>? createdAtUtc,
     Value<int>? rowid,
@@ -777,6 +820,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
       verificationCode: verificationCode ?? this.verificationCode,
       registrableDomain: registrableDomain ?? this.registrableDomain,
       qrPngBytes: qrPngBytes ?? this.qrPngBytes,
+      codeFormat: codeFormat ?? this.codeFormat,
       source: source ?? this.source,
       createdAtUtc: createdAtUtc ?? this.createdAtUtc,
       rowid: rowid ?? this.rowid,
@@ -822,6 +866,9 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
     if (qrPngBytes.present) {
       map['qr_png_bytes'] = Variable<Uint8List>(qrPngBytes.value);
     }
+    if (codeFormat.present) {
+      map['code_format'] = Variable<String>(codeFormat.value);
+    }
     if (source.present) {
       map['source'] = Variable<int>(source.value);
     }
@@ -849,6 +896,7 @@ class HistoryEntriesCompanion extends UpdateCompanion<HistoryEntry> {
           ..write('verificationCode: $verificationCode, ')
           ..write('registrableDomain: $registrableDomain, ')
           ..write('qrPngBytes: $qrPngBytes, ')
+          ..write('codeFormat: $codeFormat, ')
           ..write('source: $source, ')
           ..write('createdAtUtc: $createdAtUtc, ')
           ..write('rowid: $rowid')
@@ -882,6 +930,7 @@ typedef $$HistoryEntriesTableCreateCompanionBuilder =
       Value<String?> verificationCode,
       Value<String?> registrableDomain,
       Value<Uint8List?> qrPngBytes,
+      Value<String> codeFormat,
       required int source,
       required DateTime createdAtUtc,
       Value<int> rowid,
@@ -900,6 +949,7 @@ typedef $$HistoryEntriesTableUpdateCompanionBuilder =
       Value<String?> verificationCode,
       Value<String?> registrableDomain,
       Value<Uint8List?> qrPngBytes,
+      Value<String> codeFormat,
       Value<int> source,
       Value<DateTime> createdAtUtc,
       Value<int> rowid,
@@ -971,6 +1021,11 @@ class $$HistoryEntriesTableFilterComposer
 
   ColumnFilters<Uint8List> get qrPngBytes => $composableBuilder(
     column: $table.qrPngBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get codeFormat => $composableBuilder(
+    column: $table.codeFormat,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1054,6 +1109,11 @@ class $$HistoryEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get codeFormat => $composableBuilder(
+    column: $table.codeFormat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get source => $composableBuilder(
     column: $table.source,
     builder: (column) => ColumnOrderings(column),
@@ -1128,6 +1188,11 @@ class $$HistoryEntriesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get codeFormat => $composableBuilder(
+    column: $table.codeFormat,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get source =>
       $composableBuilder(column: $table.source, builder: (column) => column);
 
@@ -1186,6 +1251,7 @@ class $$HistoryEntriesTableTableManager
                 Value<String?> verificationCode = const Value.absent(),
                 Value<String?> registrableDomain = const Value.absent(),
                 Value<Uint8List?> qrPngBytes = const Value.absent(),
+                Value<String> codeFormat = const Value.absent(),
                 Value<int> source = const Value.absent(),
                 Value<DateTime> createdAtUtc = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -1202,6 +1268,7 @@ class $$HistoryEntriesTableTableManager
                 verificationCode: verificationCode,
                 registrableDomain: registrableDomain,
                 qrPngBytes: qrPngBytes,
+                codeFormat: codeFormat,
                 source: source,
                 createdAtUtc: createdAtUtc,
                 rowid: rowid,
@@ -1220,6 +1287,7 @@ class $$HistoryEntriesTableTableManager
                 Value<String?> verificationCode = const Value.absent(),
                 Value<String?> registrableDomain = const Value.absent(),
                 Value<Uint8List?> qrPngBytes = const Value.absent(),
+                Value<String> codeFormat = const Value.absent(),
                 required int source,
                 required DateTime createdAtUtc,
                 Value<int> rowid = const Value.absent(),
@@ -1236,6 +1304,7 @@ class $$HistoryEntriesTableTableManager
                 verificationCode: verificationCode,
                 registrableDomain: registrableDomain,
                 qrPngBytes: qrPngBytes,
+                codeFormat: codeFormat,
                 source: source,
                 createdAtUtc: createdAtUtc,
                 rowid: rowid,

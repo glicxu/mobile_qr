@@ -44,8 +44,12 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).title,
+      'Dali QR',
+    );
 
-    expect(find.text('Scan QR code'), findsOneWidget);
+    expect(find.text('Scan QR code or barcode'), findsOneWidget);
     final scanner = tester.widget<MobileScanner>(find.byType(MobileScanner));
     expect(scanner.controller?.autoStart, isTrue);
     expect(scanner.controller?.facing, CameraFacing.back);
@@ -99,7 +103,7 @@ void main() {
     await tester.tap(find.text('Enable local history'));
     await tester.pumpAndSettle();
     expect(
-      find.text('Created and scanned QR codes will appear here.'),
+      find.text('Created and scanned codes will appear here.'),
       findsOneWidget,
     );
 

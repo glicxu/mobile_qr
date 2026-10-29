@@ -14,6 +14,8 @@ import EventKitUI
   private let eventStore = EKEventStore()
   private let sharedAppGroup = "group.com.dalifin.qr.shared"
   private let sharedImageKey = "pendingSharedImagePath"
+  private let sharedCodePrefix = "dali_shared_code_"
+  private let legacySharedQrPrefix = "dali_shared_qr_"
 
   override func application(
     _ application: UIApplication,
@@ -24,6 +26,7 @@ import EventKitUI
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    cleanupStaleSharedImages(excluding: pendingSharedImagePath())
     guard let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "QrClipboard") else {
       return
     }
@@ -164,6 +167,24 @@ import EventKitUI
       UserDefaults(suiteName: sharedAppGroup)?.string(forKey: sharedImageKey) == path
     else { return }
     UserDefaults(suiteName: sharedAppGroup)?.removeObject(forKey: sharedImageKey)
+  }
+
+  private func cleanupStaleSharedImages(excluding retainedPath: String?) {
+    guard
+      let container = FileManager.default.containerURL(
+        forSecurityApplicationGroupIdentifier: sharedAppGroup
+      ),
+      let files = try? FileManager.default.contentsOfDirectory(
+        at: container,
+        includingPropertiesForKeys: nil
+      )
+    else { return }
+    for file in files where
+      file.path != retainedPath &&
+      (file.lastPathComponent.hasPrefix(sharedCodePrefix) ||
+       file.lastPathComponent.hasPrefix(legacySharedQrPrefix)) {
+      try? FileManager.default.removeItem(at: file)
+    }
   }
 
   func contactViewController(
