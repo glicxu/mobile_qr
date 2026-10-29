@@ -21,7 +21,7 @@ extension QrPayloadPresentation on ClassifiedQrPayload {
 
   String get actionLabel => switch (action) {
     QrRouteAction.authenticatePasskey => 'Continue with passkey',
-    QrRouteAction.openUrl => 'Open in browser',
+    QrRouteAction.openUrl => 'Open',
     QrRouteAction.composeEmail => 'Compose email',
     QrRouteAction.call => 'Call number',
     QrRouteAction.composeSms => 'Compose message',
@@ -83,39 +83,43 @@ Future<void> routeQrPayload(
 }) async {
   if (!payload.canRoute) return;
 
-  if (comparisonCode != null && payload.type != QrContentType.passkey) {
-    final outcome = await showVerificationPrompt(
-      context,
-      code: comparisonCode,
-      registrableDomain: payload.primaryText,
-      unverifiedActionLabel: 'Continue unverified',
-      matchedActionLabel: 'Code matches - Continue',
-    );
-    if (outcome == VerificationPromptOutcome.cancel || !context.mounted) return;
-  } else {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        icon: Icon(payload.icon),
-        title: Text(payload.actionLabel),
-        content: Text(
-          payload.type == QrContentType.passkey
-              ? '${payload.primaryText}\n\n${payload.details.join('\n\n')}'
-              : payload.primaryText,
+  if (payload.action != QrRouteAction.openUrl) {
+    if (comparisonCode != null && payload.type != QrContentType.passkey) {
+      final outcome = await showVerificationPrompt(
+        context,
+        code: comparisonCode,
+        registrableDomain: payload.primaryText,
+        unverifiedActionLabel: 'Continue unverified',
+        matchedActionLabel: 'Code matches - Continue',
+      );
+      if (outcome == VerificationPromptOutcome.cancel || !context.mounted) {
+        return;
+      }
+    } else {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: Icon(payload.icon),
+          title: Text(payload.actionLabel),
+          content: Text(
+            payload.type == QrContentType.passkey
+                ? '${payload.primaryText}\n\n${payload.details.join('\n\n')}'
+                : payload.primaryText,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Continue'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Continue'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
+      );
+      if (confirmed != true || !context.mounted) return;
+    }
   }
 
   var opened = false;

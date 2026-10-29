@@ -19,7 +19,6 @@ final class QrScannerPage extends StatefulWidget {
   const QrScannerPage({
     required this.secureQrService,
     this.onScanned,
-    this.onSave,
     this.sharedImagePath,
     this.onSharedImageConsumed,
     super.key,
@@ -35,15 +34,6 @@ final class QrScannerPage extends StatefulWidget {
     required ScanSource source,
   })?
   onScanned;
-  final Future<void> Function({
-    required String payload,
-    String? verificationCode,
-    String? registrableDomain,
-    Uint8List? qrPngBytes,
-    required ScannedCodeFormat codeFormat,
-    required ScanSource source,
-  })?
-  onSave;
   final String? sharedImagePath;
   final ValueChanged<String>? onSharedImageConsumed;
 
@@ -66,12 +56,8 @@ class _QrScannerPageState extends State<QrScannerPage> {
 
   ScannedCode? _decodedCode;
   List<ScannedCode> _detectedCodes = const [];
-  Uint8List? _decodedQrPngBytes;
   bool _handlingDetection = false;
   bool _importingImage = false;
-  bool _saving = false;
-  bool _saved = false;
-  Future<void>? _recordingFuture;
 
   @override
   void initState() {
@@ -123,12 +109,9 @@ class _QrScannerPageState extends State<QrScannerPage> {
   }
 
   void _completeDetection(ScannedCode code) {
-    _recordingFuture = null;
     setState(() {
       _decodedCode = code;
       _detectedCodes = const [];
-      _saved = false;
-      _decodedQrPngBytes = null;
     });
     final onScanned = widget.onScanned;
     if (onScanned != null &&
@@ -148,18 +131,18 @@ class _QrScannerPageState extends State<QrScannerPage> {
           // Very large or unsupported values can still be retained as text.
         }
       }
-      _decodedQrPngBytes = qrPngBytes;
-      _recordingFuture = onScanned(
-        payload: code.value,
-        verificationCode: verification?.code,
-        registrableDomain: verification is SecureQrResult
-            ? verification.registrableDomain
-            : null,
-        qrPngBytes: qrPngBytes,
-        codeFormat: code.format,
-        source: code.source,
+      unawaited(
+        onScanned(
+          payload: code.value,
+          verificationCode: verification?.code,
+          registrableDomain: verification is SecureQrResult
+              ? verification.registrableDomain
+              : null,
+          qrPngBytes: qrPngBytes,
+          codeFormat: code.format,
+          source: code.source,
+        ),
       );
-      unawaited(_recordingFuture);
     }
   }
 
@@ -263,53 +246,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
       await _controller.start();
     } on Object {
       // The scanner widget reports camera startup failures in its error UI.
-    }
-  }
-
-  Future<void> _scanAgain() async {
-    setState(() {
-      _decodedCode = null;
-      _detectedCodes = const [];
-      _decodedQrPngBytes = null;
-      _saved = false;
-    });
-    _handlingDetection = false;
-    await _controller.start();
-  }
-
-  Future<void> _saveCode(ScannedCode code) async {
-    final onSave = widget.onSave;
-    if (onSave == null || _saving || _saved) return;
-    setState(() => _saving = true);
-    try {
-      await _recordingFuture;
-      final verification = verificationForScannedCode(
-        widget.secureQrService,
-        code,
-      );
-      await onSave(
-        payload: code.value,
-        verificationCode: verification?.code,
-        registrableDomain: verification is SecureQrResult
-            ? verification.registrableDomain
-            : null,
-        qrPngBytes: _decodedQrPngBytes,
-        codeFormat: code.format,
-        source: code.source,
-      );
-      if (!mounted) return;
-      setState(() => _saved = true);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Code saved.')));
-    } on Object {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('The code could not be saved.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -419,12 +355,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
                 onTap: () => _completeDetection(code),
               ),
             ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: _scanAgain,
-            icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Scan again'),
-          ),
         ],
       ),
     );
@@ -434,10 +364,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
     return ScannedCodeResultView(
       code: code,
       secureQrService: widget.secureQrService,
-      saving: _saving,
-      saved: _saved,
-      onSave: () => _saveCode(code),
-      onScanAgain: _scanAgain,
     );
   }
 }
@@ -446,10 +372,7 @@ final class ScannedCodeResultView extends StatelessWidget {
   const ScannedCodeResultView({
     required this.code,
     required this.secureQrService,
-    required this.onScanAgain,
-    this.onSave,
-    this.saving = false,
-    this.saved = false,
+    this.onScanAgain,
     this.allowRouting = true,
     this.scanAgainLabel = 'Scan again',
     super.key,
@@ -459,10 +382,7 @@ final class ScannedCodeResultView extends StatelessWidget {
 
   final ScannedCode code;
   final SecureQrService secureQrService;
-  final VoidCallback onScanAgain;
-  final VoidCallback? onSave;
-  final bool saving;
-  final bool saved;
+  final VoidCallback? onScanAgain;
   final bool allowRouting;
   final String scanAgainLabel;
 
@@ -482,15 +402,18 @@ final class ScannedCodeResultView extends StatelessWidget {
 
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         children: [
           Center(
-            child: Column(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Chip(
                   avatar: const Icon(Icons.barcode_reader),
                   label: Text(code.format.label),
+                  visualDensity: VisualDensity.compact,
                 ),
+                const SizedBox(width: 8),
                 Text(
                   code.source.label,
                   style: Theme.of(context).textTheme.bodySmall,
@@ -498,29 +421,29 @@ final class ScannedCodeResultView extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Icon(
             payload.icon,
-            size: 72,
+            size: 56,
             color: Theme.of(context).colorScheme.primary,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           if (verification != null) ...[
             Text(
-              'VERIFY IF AVAILABLE',
+              'Verify if available',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               verification.code,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 fontWeight: FontWeight.bold,
                 letterSpacing: 5,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               verification is SecureQrResult
                   ? verification.registrableDomain
@@ -528,87 +451,27 @@ final class ScannedCodeResultView extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             const Text(
               'If a trusted comparison code is printed beside the QR, '
               'compare it before opening.',
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 28),
           ] else ...[
             Text(
               payload.title,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               payload.type == QrContentType.passkey
-                  ? 'Your phone?s passkey provider handles verification.'
+                  ? 'Your phone’s passkey provider handles verification.'
                   : 'No comparison code is available for this payload.',
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 28),
           ],
-          Text(payload.title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 4),
-          SelectableText(
-            payload.primaryText,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          for (final detail in payload.details) ...[
-            const SizedBox(height: 4),
-            SelectableText(detail),
-          ],
-          QrSensitiveDetail(payload: payload),
-          if (payload.type != QrContentType.passkey) ...[
-            const SizedBox(height: 20),
-            Text('Raw content', style: Theme.of(context).textTheme.labelLarge),
-            const SizedBox(height: 12),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: SelectableText(text),
-              ),
-            ),
-            if (onSave != null) ...[
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: saving || saved ? null : onSave,
-                  icon: Icon(
-                    saved ? Icons.bookmark_added : Icons.bookmark_add_outlined,
-                  ),
-                  label: Text(
-                    saving
-                        ? 'Saving...'
-                        : saved
-                        ? 'Saved'
-                        : 'Save code',
-                  ),
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: OutlinedButton.icon(
-                onPressed: () => _copyRawContent(context, text),
-                icon: const Icon(Icons.copy_outlined),
-                label: const Text('Copy contents'),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'The decoded value is displayed only. Dali QR has not opened or sent it.',
-            ),
-          ],
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           if (allowRouting && payload.canRoute) ...[
             FilledButton.icon(
               onPressed: () => routeQrPayload(
@@ -619,12 +482,78 @@ final class ScannedCodeResultView extends StatelessWidget {
               icon: Icon(payload.icon),
               label: Text(payload.actionLabel),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
           ],
-          FilledButton.icon(
-            onPressed: onScanAgain,
-            icon: const Icon(Icons.qr_code_scanner),
-            label: Text(scanAgainLabel),
+          if (onScanAgain != null) ...[
+            FilledButton.icon(
+              onPressed: onScanAgain,
+              icon: const Icon(Icons.qr_code_scanner),
+              label: Text(scanAgainLabel),
+            ),
+            const SizedBox(height: 8),
+          ],
+          ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            leading: const Icon(Icons.info_outline),
+            title: const Text('Details'),
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (verification != null) ...[
+                      Text(
+                        payload.title,
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    SelectableText(
+                      payload.primaryText,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    for (final detail in payload.details) ...[
+                      const SizedBox(height: 4),
+                      SelectableText(detail),
+                    ],
+                    QrSensitiveDetail(payload: payload),
+                    if (payload.type != QrContentType.passkey) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Raw content',
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: SelectableText(text),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => _copyRawContent(context, text),
+                        icon: const Icon(Icons.copy_outlined),
+                        label: const Text('Copy contents'),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Dali QR has not opened or sent this value.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

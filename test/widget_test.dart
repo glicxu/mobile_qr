@@ -123,7 +123,7 @@ void main() {
     expect(find.text('Copy QR image'), findsOneWidget);
     expect(find.byTooltip('Copy verification code'), findsOneWidget);
     expect(find.byTooltip('Copy payload'), findsOneWidget);
-    expect(find.text('Open in browser'), findsOneWidget);
+    expect(find.text('Open'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(TextButton, 'Save'));
     await tester.pumpAndSettle();

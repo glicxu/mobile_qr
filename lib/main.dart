@@ -88,6 +88,7 @@ class DaliQrHome extends StatefulWidget {
 
 class _DaliQrHomeState extends State<DaliQrHome> {
   int _selectedIndex = 1;
+  int _scanSession = 0;
   final _createNavigatorKey = GlobalKey<NavigatorState>();
   late final Future<SecureQrService> _secureQrService;
   Future<HistoryController>? _historyController;
@@ -188,29 +189,6 @@ class _DaliQrHomeState extends State<DaliQrHome> {
     );
   }
 
-  Future<void> _saveScanned({
-    required String payload,
-    String? verificationCode,
-    String? registrableDomain,
-    Uint8List? qrPngBytes,
-    required ScannedCodeFormat codeFormat,
-    required ScanSource source,
-  }) async {
-    await (await _loadHistory()).savePayload(
-      payload: payload,
-      verificationCode: verificationCode,
-      registrableDomain: registrableDomain,
-      qrPngBytes: qrPngBytes,
-      codeFormat: codeFormat,
-      activityKind: QrActivityKind.scanned,
-      source: switch (source) {
-        ScanSource.camera => QrActivitySource.camera,
-        ScanSource.gallery => QrActivitySource.gallery,
-        ScanSource.sharedImage => QrActivitySource.sharedImage,
-      },
-    );
-  }
-
   @override
   void dispose() {
     _inboundImageShare.dispose();
@@ -265,9 +243,9 @@ class _DaliQrHomeState extends State<DaliQrHome> {
               },
             ),
             1 => QrScannerPage(
+              key: ValueKey(_scanSession),
               secureQrService: service,
               onScanned: _recordScanned,
-              onSave: _saveScanned,
               sharedImagePath: _sharedImagePath,
               onSharedImageConsumed: _sharedImageConsumed,
             ),
@@ -307,6 +285,9 @@ class _DaliQrHomeState extends State<DaliQrHome> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
+          if (index == 1 && _selectedIndex == 1) {
+            _scanSession += 1;
+          }
           if (index == 0 && _selectedIndex != 0) {
             _createNavigatorKey.currentState?.popUntil(
               (route) => route.isFirst,
@@ -711,12 +692,13 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
   }
 }
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({
     required this.customizationEntitlement,
     required this.packageInfo,
     this.customCenterImageStore,
     this.imagePicker,
+    this.hiddenUnlockEnabled = testFlightUnlockEnabled,
     super.key,
   });
 
@@ -724,11 +706,37 @@ class SettingsPage extends StatelessWidget {
   final Future<PackageInfo> packageInfo;
   final CustomCenterImageStore? customCenterImageStore;
   final ImagePicker? imagePicker;
+  final bool hiddenUnlockEnabled;
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  int _packageTapCount = 0;
+
+  Future<void> _handlePackageTap() async {
+    final entitlement = widget.customizationEntitlement;
+    if (entitlement.isUnlocked ||
+        entitlement is! HiddenCustomizationEntitlement) {
+      return;
+    }
+    _packageTapCount += 1;
+    if (_packageTapCount < 5) return;
+    _packageTapCount = 0;
+    await (entitlement as HiddenCustomizationEntitlement).unlockFromAbout();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('Lifetime customization unlocked.')),
+      );
+  }
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: customizationEntitlement,
+      listenable: widget.customizationEntitlement,
       builder: (context, _) => Scaffold(
         appBar: AppBar(title: const Text('Settings')),
         body: SafeArea(
@@ -740,23 +748,25 @@ class SettingsPage extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
-              _CustomizationStatus(entitlement: customizationEntitlement),
+              _CustomizationStatus(
+                entitlement: widget.customizationEntitlement,
+              ),
               const SizedBox(height: 16),
               _CustomizationPurchaseControls(
-                entitlement: customizationEntitlement,
+                entitlement: widget.customizationEntitlement,
               ),
-              if (customCenterImageStore != null) ...[
+              if (widget.customCenterImageStore != null) ...[
                 const SizedBox(height: 24),
                 _QrCenterImageSettings(
-                  store: customCenterImageStore!,
-                  imagePicker: imagePicker ?? ImagePicker(),
+                  store: widget.customCenterImageStore!,
+                  imagePicker: widget.imagePicker ?? ImagePicker(),
                 ),
               ],
               const SizedBox(height: 32),
-              Text('App', style: Theme.of(context).textTheme.titleLarge),
+              Text('About', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 12),
               FutureBuilder<PackageInfo>(
-                future: packageInfo,
+                future: widget.packageInfo,
                 builder: (context, snapshot) {
                   final info = snapshot.data;
                   return Column(
@@ -774,6 +784,9 @@ class SettingsPage extends StatelessWidget {
                       _SettingsRow(
                         label: 'Package',
                         value: info?.packageName ?? 'com.dalifin.qr',
+                        onTap: widget.hiddenUnlockEnabled
+                            ? () => unawaited(_handlePackageTap())
+                            : null,
                       ),
                     ],
                   );
@@ -975,29 +988,37 @@ class _CustomizationPurchaseControls extends StatelessWidget {
 }
 
 class _SettingsRow extends StatelessWidget {
-  const _SettingsRow({required this.label, required this.value});
+  const _SettingsRow({required this.label, required this.value, this.onTap});
 
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 88,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      excludeFromSemantics: onTap != null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 88,
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
-          ),
-          Expanded(child: SelectableText(value)),
-        ],
+            Expanded(
+              child: onTap == null ? SelectableText(value) : Text(value),
+            ),
+          ],
+        ),
       ),
     );
   }

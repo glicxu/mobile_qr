@@ -4,6 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const testFlightUnlockEnabled = bool.fromEnvironment(
+  'ENABLE_TESTFLIGHT_UNLOCK',
+);
+
 abstract class CustomizationEntitlement extends ChangeNotifier {
   bool get isUnlocked;
   bool get isStoreAvailable;
@@ -20,8 +24,15 @@ abstract interface class DebugCustomizationEntitlement {
   Future<void> unlockForTesting();
 }
 
+abstract interface class HiddenCustomizationEntitlement {
+  Future<void> unlockFromAbout();
+}
+
 final class StoreCustomizationEntitlement extends ChangeNotifier
-    implements CustomizationEntitlement, DebugCustomizationEntitlement {
+    implements
+        CustomizationEntitlement,
+        DebugCustomizationEntitlement,
+        HiddenCustomizationEntitlement {
   StoreCustomizationEntitlement._(this._preferences, this._store);
 
   static const productId = 'dali_secure_qr_lifetime';
@@ -30,6 +41,7 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
   static const productIds = {productId, googlePlayProductId};
   static const recognizedProductIds = {...productIds, legacyAppleProductId};
   static const _unlockedPreference = 'customization_lifetime_unlocked';
+  static const _hiddenUnlockedPreference = 'customization_hidden_unlocked';
   static const _testUnlockedPreference = 'customization_test_unlocked';
 
   final SharedPreferences _preferences;
@@ -70,6 +82,8 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
   Future<void> _initialize() async {
     _isUnlocked =
         (_preferences.getBool(_unlockedPreference) ?? false) ||
+        (testFlightUnlockEnabled &&
+            (_preferences.getBool(_hiddenUnlockedPreference) ?? false)) ||
         (kDebugMode &&
             (_preferences.getBool(_testUnlockedPreference) ?? false));
     if (kDebugMode) {
@@ -186,6 +200,17 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
     await _preferences.setBool(_testUnlockedPreference, true);
     _isUnlocked = true;
     _message = 'Lifetime customization unlocked for testing.';
+    notifyListeners();
+  }
+
+  @override
+  Future<void> unlockFromAbout() async {
+    if (!testFlightUnlockEnabled) {
+      throw StateError('The TestFlight unlock is disabled in this build.');
+    }
+    await _preferences.setBool(_hiddenUnlockedPreference, true);
+    _isUnlocked = true;
+    _message = 'Lifetime customization unlocked.';
     notifyListeners();
   }
 

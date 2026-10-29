@@ -53,7 +53,7 @@ final class _UnlockedEntitlement extends ChangeNotifier
 }
 
 final class _LockedEntitlement extends ChangeNotifier
-    implements CustomizationEntitlement {
+    implements CustomizationEntitlement, HiddenCustomizationEntitlement {
   var purchaseCalls = 0;
   var restoreCalls = 0;
   var _unlocked = false;
@@ -80,6 +80,12 @@ final class _LockedEntitlement extends ChangeNotifier
   @override
   Future<void> restore() async {
     restoreCalls++;
+  }
+
+  @override
+  Future<void> unlockFromAbout() async {
+    _unlocked = true;
+    notifyListeners();
   }
 }
 
@@ -285,6 +291,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('About'), findsOneWidget);
+    expect(find.text('App'), findsNothing);
     expect(find.text('Dali QR Custom'), findsOneWidget);
     expect(find.text('Locked'), findsOneWidget);
     expect(find.text('Benefits'), findsOneWidget);
@@ -308,6 +316,43 @@ void main() {
     expect(entitlement.purchaseCalls, 1);
     expect(find.text('Unlocked'), findsOneWidget);
     expect(find.text('Lifetime customization unlocked'), findsOneWidget);
+  });
+
+  testWidgets('SettingsPage unlocks after five package-name taps', (
+    tester,
+  ) async {
+    final entitlement = _LockedEntitlement();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SettingsPage(
+          customizationEntitlement: entitlement,
+          hiddenUnlockEnabled: true,
+          packageInfo: Future.value(
+            PackageInfo(
+              appName: 'Dali QR',
+              packageName: 'com.dalifin.qr',
+              version: '1.2.0',
+              buildNumber: '1',
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -800));
+    await tester.pumpAndSettle();
+
+    for (var tap = 0; tap < 4; tap++) {
+      await tester.tap(find.text('com.dalifin.qr'));
+      await tester.pump();
+      expect(entitlement.isUnlocked, isFalse);
+      expect(find.text('Lifetime customization unlocked.'), findsNothing);
+    }
+    await tester.tap(find.text('com.dalifin.qr'));
+    await tester.pumpAndSettle();
+
+    expect(entitlement.isUnlocked, isTrue);
+    expect(find.text('Lifetime customization unlocked.'), findsOneWidget);
   });
 
   testWidgets('SettingsPage allows choosing and removing custom image', (

@@ -225,6 +225,14 @@ void main() {
 
     expect(controller.lockedItemCount, 1);
     expect(find.text('1 older code is locked'), findsOneWidget);
+    expect(
+      find.textContaining('all codes are available for 7 days'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Codes you save remain available'),
+      findsOneWidget,
+    );
     expect(find.textContaining('Nothing was deleted.'), findsOneWidget);
 
     await tester.tap(find.text('Unlock history'));

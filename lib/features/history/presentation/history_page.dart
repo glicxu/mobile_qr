@@ -152,9 +152,9 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Free history gives you access to entries for one week. Older '
-              'entries stay safely on this device and become available when '
-              'you unlock lifetime customization.',
+              'Free History includes all codes for 7 days. Saved codes remain '
+              'available after that; other older entries become available '
+              'when you unlock lifetime customization.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -916,6 +916,13 @@ final class _LockedHistoryCard extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Free version: all codes are available for '
+                '${HistoryController.freeHistoryAccess.inDays} days. Codes '
+                'you save remain available after that.',
+                style: TextStyle(color: colorScheme.onSecondaryContainer),
               ),
               const SizedBox(height: 8),
               Text(

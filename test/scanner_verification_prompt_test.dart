@@ -6,6 +6,30 @@ import 'package:dali_qr/features/scan/domain/qr_payload_classifier.dart';
 import 'package:dali_qr/features/scan/presentation/qr_payload_action.dart';
 
 void main() {
+  testWidgets('web links open without a second confirmation', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => FilledButton(
+            onPressed: () => routeQrPayload(
+              context,
+              const QrPayloadClassifier().classify('https://example.com'),
+              comparisonCode: 'XIH-000',
+            ),
+            child: const Text('Open'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verify if available'), findsNothing);
+    expect(find.text('Continue'), findsNothing);
+    expect(find.text('Cancel'), findsNothing);
+  });
+
   testWidgets(
     'passkey handoff requires consent and bypasses comparison codes',
     (tester) async {
