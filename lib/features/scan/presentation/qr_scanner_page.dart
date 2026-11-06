@@ -30,7 +30,6 @@ final class QrScannerPage extends StatefulWidget {
   const QrScannerPage({
     required this.secureQrService,
     this.onScanned,
-    this.onSaveCode,
     this.sharedImagePath,
     this.onSharedImageConsumed,
     this.onCodeSelected,
@@ -44,7 +43,6 @@ final class QrScannerPage extends StatefulWidget {
   });
 
   final SecureQrService secureQrService;
-  final Future<void> Function(ScannedCode code)? onSaveCode;
   final Future<void> Function({
     required String payload,
     String? verificationCode,
@@ -89,7 +87,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
   bool _importingImage = false;
   bool _selectionDelivered = false;
   bool _openingBatch = false;
-  bool _savingCode = false;
   bool _binaryNoticeShown = false;
   int _imageGeneration = 0;
   late bool _cameraRequested;
@@ -583,9 +580,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
     return ScannedCodeResultView(
       code: code,
       secureQrService: widget.secureQrService,
-      onScanAgain: _scanAgain,
-      onSave: widget.onSaveCode == null ? null : () => _saveCode(code),
-      saving: _savingCode,
     );
   }
 
@@ -606,27 +600,6 @@ class _QrScannerPageState extends State<QrScannerPage> {
       // The camera error view still offers image import.
     }
   }
-
-  Future<void> _saveCode(ScannedCode code) async {
-    if (_savingCode || widget.onSaveCode == null) return;
-    setState(() => _savingCode = true);
-    try {
-      await widget.onSaveCode!(code);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Saved on this device.')));
-      }
-    } on Object {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('This code could not be saved.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _savingCode = false);
-    }
-  }
 }
 
 final class ScannedCodeResultView extends StatelessWidget {
@@ -634,8 +607,6 @@ final class ScannedCodeResultView extends StatelessWidget {
     required this.code,
     required this.secureQrService,
     this.onScanAgain,
-    this.onSave,
-    this.saving = false,
     this.allowRouting = true,
     this.scanAgainLabel = 'Scan again',
     super.key,
@@ -646,8 +617,6 @@ final class ScannedCodeResultView extends StatelessWidget {
   final ScannedCode code;
   final SecureQrService secureQrService;
   final VoidCallback? onScanAgain;
-  final VoidCallback? onSave;
-  final bool saving;
   final bool allowRouting;
   final String scanAgainLabel;
 
@@ -675,22 +644,14 @@ final class ScannedCodeResultView extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
         children: [
           Center(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                Chip(
-                  avatar: const Icon(Icons.barcode_reader),
-                  label: Text(code.format.label),
-                  visualDensity: VisualDensity.compact,
-                ),
-                Text(
-                  code.source.label,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+            child: Text(
+              '${code.format.label} · ${switch (code.source) {
+                ScanSource.camera => 'Scanned with camera',
+                ScanSource.gallery => 'From photo library',
+                ScanSource.sharedImage => 'From shared image',
+              }}',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
           const SizedBox(height: 8),
@@ -770,14 +731,6 @@ final class ScannedCodeResultView extends StatelessWidget {
               ),
               icon: Icon(payload.icon),
               label: Text(payload.actionLabel),
-            ),
-            const SizedBox(height: 8),
-          ],
-          if (onSave != null && !payload.isEphemeral) ...[
-            OutlinedButton.icon(
-              onPressed: saving ? null : onSave,
-              icon: const Icon(Icons.bookmark_add_outlined),
-              label: Text(saving ? 'Saving...' : 'Save to Saved'),
             ),
             const SizedBox(height: 8),
           ],

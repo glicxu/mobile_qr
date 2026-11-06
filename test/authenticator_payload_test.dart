@@ -151,7 +151,6 @@ void main() {
               source: ScanSource.gallery,
             ),
             secureQrService: SecureQrService(PublicSuffixList.parse('com')),
-            onSave: () async {},
           ),
         ),
       ),

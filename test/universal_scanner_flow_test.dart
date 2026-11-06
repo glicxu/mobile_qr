@@ -105,7 +105,6 @@ void registerUniversalScannerFlows(
           });
           QrHistoryItem? stored;
           var writes = 0;
-          var saves = 0;
           ImageSource? chosenSource;
           final watch = Stopwatch()..start();
           await tester.pumpWidget(
@@ -119,16 +118,6 @@ void registerUniversalScannerFlows(
                 imagePathPicker: (value) async {
                   chosenSource = value;
                   return file.path;
-                },
-                onSaveCode: (code) async {
-                  await history.savePayload(
-                    payload: code.value,
-                    codeFormat: code.format,
-                    activityKind: QrActivityKind.scanned,
-                    source: QrActivitySource.values.byName(code.source.name),
-                  );
-                  stored = (await repository.watchRecent().first).single;
-                  saves++;
                 },
                 onScanned:
                     ({
@@ -188,18 +177,9 @@ void registerUniversalScannerFlows(
           expect(stored!.rawPayload, code.value);
           expect(stored!.codeFormat, code.format);
           expect(stored!.source.name, source.name);
-          final save = find.widgetWithText(OutlinedButton, 'Save to Saved');
-          await tester.scrollUntilVisible(
-            save,
-            200,
-            scrollable: find.byType(Scrollable).first,
-          );
-          await tester.tap(save);
-          await waitForScanner(
-            tester,
-            () => saves == 1 && stored!.savedAtUtc != null,
-          );
-          expect(stored!.savedAtUtc, isNotNull);
+          expect(find.text('Save to Saved'), findsNothing);
+          expect(find.text('Scan again'), findsNothing);
+          expect(stored!.savedAtUtc, isNull);
           expect(writes, 1);
           if (source != ScanSource.sharedImage) {
             expect(chosenSource, ImageSource.gallery);
@@ -230,7 +210,7 @@ void registerUniversalScannerFlows(
                 'Owned shared copies are removed; library originals are retained.',
           );
           debugPrint(
-            'UNIVERSAL_FLOW_QA ${jsonEncode({'fixture': fixture['id'], 'format': code.format.storageKey, 'value': code.value, 'source': source.name, 'elapsedMs': watch.elapsedMilliseconds, 'copied': true, 'saved': true, 'historyWrites': writes})}',
+            'UNIVERSAL_FLOW_QA ${jsonEncode({'fixture': fixture['id'], 'format': code.format.storageKey, 'value': code.value, 'source': source.name, 'elapsedMs': watch.elapsedMilliseconds, 'copied': true, 'historyWrites': writes})}',
           );
           await tester.pumpWidget(const SizedBox.shrink());
           await tester.pumpAndSettle();
@@ -356,7 +336,7 @@ void registerScannerEdgeFlows() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Aztec'), findsOneWidget);
+    expect(find.text('Aztec · From shared image'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Open'), findsNothing);
     expect(
       tester
@@ -517,7 +497,7 @@ void registerScannerEdgeFlows() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets(
-    'the app saves scans with History off, rearms, and never offers to save passkey requests',
+    'scan results omit extra buttons and the Scan tab rearms the camera',
     (tester) async {
       final previous = MobileScannerPlatform.instance;
       MobileScannerPlatform.instance = _EmptyScanner();
@@ -557,24 +537,10 @@ void registerScannerEdgeFlows() {
         () => find.byType(ScannedCodeResultView).evaluate().isNotEmpty,
       );
       expect(history.items, isEmpty);
-      final save = find.widgetWithText(OutlinedButton, 'Save to Saved');
-      await tester.scrollUntilVisible(
-        save,
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(save);
-      await waitForScanner(tester, () => history.savedItems.isNotEmpty);
-      final item = history.savedItems.single;
-      expect(item.rawPayload, ' 00123 ');
-      expect(item.codeFormat, ScannedCodeFormat.dataMatrix);
-      expect(item.source, QrActivitySource.camera);
-      expect(item.isInHistory, false);
-      expect(item.verificationCode, isNull);
-      expect(item.qrPngBytes, isNull);
-      final again = find.widgetWithText(FilledButton, 'Scan again');
-      await tester.ensureVisible(again);
-      await tester.tap(again);
+      expect(find.text('Save to Saved'), findsNothing);
+      expect(find.text('Scan again'), findsNothing);
+      expect(history.savedItems, isEmpty);
+      await tester.tap(find.text('Scan').last);
       await waitForScanner(
         tester,
         () =>
@@ -597,7 +563,7 @@ void registerScannerEdgeFlows() {
         () => find.byType(ScannedCodeResultView).evaluate().isNotEmpty,
       );
       expect(find.text('Save to Saved'), findsNothing);
-      expect(history.savedItems, hasLength(1));
+      expect(history.savedItems, isEmpty);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
     },

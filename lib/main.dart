@@ -271,30 +271,6 @@ class _DaliQrHomeState extends State<DaliQrHome> {
     );
   }
 
-  Future<void> _saveScanned(ScannedCode code) async {
-    if (const QrPayloadClassifier().classify(code.value).isEphemeral) {
-      throw StateError('Authenticator and passkey setup codes are not saved.');
-    }
-    final verification = verificationForScannedCode(
-      await _secureQrService,
-      code,
-    );
-    await (await _loadHistory()).savePayload(
-      payload: code.value,
-      verificationCode: verification?.code,
-      registrableDomain: verification is SecureQrResult
-          ? verification.registrableDomain
-          : null,
-      codeFormat: code.format,
-      activityKind: QrActivityKind.scanned,
-      source: switch (code.source) {
-        ScanSource.camera => QrActivitySource.camera,
-        ScanSource.gallery => QrActivitySource.gallery,
-        ScanSource.sharedImage => QrActivitySource.sharedImage,
-      },
-    );
-  }
-
   @override
   void dispose() {
     _inboundImageShare.dispose();
@@ -367,7 +343,6 @@ class _DaliQrHomeState extends State<DaliQrHome> {
               onScanned: _recordScanned,
               startCamera: !_imageOnlyLaunch && _sharedImageError == null,
               imageError: _sharedImageError,
-              onSaveCode: _saveScanned,
               sharedImagePath: _sharedImagePath,
               onSharedImageConsumed: _sharedImageConsumed,
             ),

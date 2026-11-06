@@ -23,7 +23,10 @@ void main() {
     );
 
     expect(find.text('Save code'), findsNothing);
+    expect(find.text('Save to Saved'), findsNothing);
     expect(find.text('Scan again'), findsNothing);
+    expect(find.text('QR Code · Scanned with camera'), findsOneWidget);
+    expect(find.byIcon(Icons.barcode_reader), findsNothing);
     expect(find.text('Open').hitTestable(), findsOneWidget);
     expect(find.text('Website'), findsNothing);
     expect(find.text('Raw content'), findsNothing);

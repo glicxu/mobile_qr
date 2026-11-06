@@ -36,9 +36,9 @@ No online service is used for decoding.
 
 ## Result and lifecycle behavior
 
-- Copy retains the original text. Explicit Save to Saved works even with
-  automatic history disabled. Passkey requests cannot be saved.
-- Scan again rearms the live camera. Incoming shared-image
+- Copy retains the original text. Scanned results use automatic history when
+  enabled; passkey requests are not recorded.
+- Selecting the Scan tab again rearms the live camera. Incoming shared-image
   copies are cleaned after analysis; gallery originals are retained.
 - A newer share supersedes an older pending analysis. Failed imports show a
   persistent error and allow retry; image-only startup does not require camera

@@ -57,7 +57,7 @@ See the [Payments package](docs/payments_package.md).
   PDF417, and Aztec. Live scanning uses the native decoder; imported images
   also use a bounded local fallback for the three additional
   2D formats. Supported results require a decoded text value.
-- Explicit Save to Saved, exact-value copying, and Scan again from results;
+- Exact-value copying from results and camera re-entry through the Scan tab;
   see [Android implementation and validation](docs/qa/universal_scanner.md).
   Android validation is in progress; iOS changes await Mac/device validation.
 - Offline UPC/EAN and ISBN candidate checks, with original values retained and
