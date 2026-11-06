@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-29",
+  "device": "R9WN91CTWCJ",
+  "package": "com.dalifin.qr.scannerqa",
+  "model": "SM-T290",
+  "api": "30",
+  "scope": "Synthetic native QR round trips and confirmed action handoffs. No records saved, messages sent, calls placed or authenticator accounts added.",
+  "handoffs": [
+    {
+      "type": "contact",
+      "component": "com.samsung.android.app.contacts/com.samsung.android.contacts.editor.ContactEditorActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "event",
+      "component": "com.samsung.android.calendar/com.samsung.android.app.calendar.activity.DetailActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "location",
+      "component": "android/com.android.internal.app.ResolverActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "email",
+      "component": "android/com.android.internal.app.ResolverActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "phone",
+      "component": "us.zoom.videomeetings/com.zipow.videobox.JoinByURLActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "sms",
+      "component": "us.zoom.videomeetings/com.zipow.videobox.LauncherActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    }
+  ],
+  "cases": [
+    {
+      "type": "authenticator",
+      "reviewCancelled": true,
+      "providerAvailable": false,
+      "providerLaunched": false,
+      "result": "passed"
+    },
+    {
+      "type": "contact",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "event",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "location",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "email",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "phone",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "sms",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "contact_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "event_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "location_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "email_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "phone_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "sms_handoff",
+      "result": "handlerUnavailable",
+      "userDataCommitted": false
+    }
+  ],
+  "testedApkSha256": "cba0f442734855820f2d2fa79421ca6ec686b81458a9fa44ce9fc9028dbca854",
+  "result": "passed",
+  "qaAppRemoved": true
+}

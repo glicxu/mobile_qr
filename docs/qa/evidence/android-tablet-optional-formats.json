@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-29",
+  "device": {
+    "adbId": "R9WN91CTWCJ",
+    "model": "SM-T290",
+    "android": 11
+  },
+  "plugin": "mobile_scanner 7.4.0",
+  "scope": "Native candidate image analysis only; bypasses production allowlist. No camera/picker/share or iOS qualification.",
+  "result": {
+    "passed": 5,
+    "failed": 1,
+    "failedFixture": "aztec_short"
+  },
+  "observations": [
+    {
+      "fixture": "dataMatrix_short",
+      "elapsedMs": 1308,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "  KEEP-00123  "
+        }
+      ]
+    },
+    {
+      "fixture": "dataMatrix_long",
+      "elapsedMs": 151,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        }
+      ]
+    },
+    {
+      "fixture": "pdf417_short",
+      "elapsedMs": 124,
+      "results": [
+        {
+          "format": "pdf417",
+          "value": "  KEEP-00123  "
+        }
+      ]
+    },
+    {
+      "fixture": "pdf417_long",
+      "elapsedMs": 206,
+      "results": [
+        {
+          "format": "pdf417",
+          "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        }
+      ]
+    },
+    {
+      "fixture": "aztec_short",
+      "elapsedMs": 120,
+      "results": []
+    },
+    {
+      "fixture": "aztec_long",
+      "elapsedMs": 165,
+      "results": [
+        {
+          "format": "aztec",
+          "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        }
+      ]
+    }
+  ],
+  "independentDecode": "All 6 exact values passed ZXing-C++ 2.3.0",
+  "sha256": {
+    "integration_test/optional_formats_test.dart": "b003f443dc35c77ed9474bb24f68bda7be82e66592c62ba7490acd8364d7a1e9",
+    "integration_test/optional_format_data.g.dart": "8cf8b4ab258e2281f3255643b4675fbc8f32dcd22159ca44173d91727437551e",
+    "tool/generate_optional_format_fixtures.cjs": "8fc756c3759f00042c18a722dec0910bb1a1cd02d0e59b63b491298d4b28acbc",
+    "test/fixtures/optional_formats/manifest.json": "971a14005c887d8b2b4b9f8abcc476b3d1f6e2801ac4cb66151ef696b7c2a9d1"
+  },
+  "note": "Generator and embedded Dart declaration were formatted after this native probe; fixture images, encoded values and manifest are unchanged. sha256 records the tested snapshot.",
+  "currentFormattedSourceSha256": {
+    "tool/generate_optional_format_fixtures.cjs": "49213f9dbdaa6e914ac0abfc45e0b17ef14cc2b140388db5b4ac87d0ab4fb017",
+    "integration_test/optional_format_data.g.dart": "739ceca9151eb955a6403cfcc56098721ffb154e64990699e2a1b458d00c8475"
+  }
+}

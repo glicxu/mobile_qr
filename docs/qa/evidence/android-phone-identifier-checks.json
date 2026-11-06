@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-29",
+  "platform": "android",
+  "deviceModel": "SM-G975U",
+  "osVersion": "12",
+  "apiLevel": 31,
+  "appVersion": "1.2.0+2026102803",
+  "buildMode": "debug integration-test target",
+  "baseRevision": "0487c2a03c3940d2ba5487db492f2d2f520aa02c",
+  "workingTree": true,
+  "command": "flutter test integration_test/identifier_details_test.dart -d <device-id> --reporter expanded",
+  "result": "passed",
+  "testCount": 8,
+  "testCases": [
+    {
+      "name": "camera UPC-E shows an explicit derived value without lookup",
+      "result": "passed"
+    },
+    {
+      "name": "gallery keeps a zero-prefixed EAN-13 as scanned",
+      "result": "passed"
+    },
+    {
+      "name": "read-only share view interprets labeled ISBN without an app-link action",
+      "result": "passed"
+    },
+    {
+      "name": "history displays candidates without rewriting stored records",
+      "result": "passed"
+    },
+    {
+      "name": "Saved displays candidates without rewriting stored records",
+      "result": "passed"
+    },
+    {
+      "name": "invalid check digits do not invent a repaired identifier",
+      "result": "passed"
+    },
+    {
+      "name": "bare numeric text stays unclassified",
+      "result": "passed"
+    },
+    {
+      "name": "identifier details wrap at large text size on a narrow display",
+      "result": "passed"
+    }
+  ],
+  "scope": {
+    "inputs": "Synthetic decoded models; does not establish native capture/source matrix coverage",
+    "externalActions": "URL launcher replaced with denying fake; call count asserted zero in every case",
+    "network": "No provider used. Unit version rejects/counts HTTP clients; device uses normal debug transport",
+    "persistence": "Real in-memory Drift repositories; original value, format, source, metadata and Saved/history flags checked after rendering",
+    "clipboard": "Exact raw copy checked separately with mocked host clipboard; device clipboard not changed",
+    "iosShare": "Read-only Flutter view tested on Android, not native iOS extension delivery",
+    "largeText": "360 by 740 logical pixels, text scale 2.5",
+    "productLookup": "Unavailable; no product metadata, live provider testing, or lookup enablement"
+  },
+  "inputSha256": {
+    "lib/features/lookup/domain/identifier_recognizer.dart": "8b214bf9774d2c129614e58fb82f5dde752e668cb2077cc7bc1e529b82c4a491",
+    "lib/features/lookup/presentation/identifier_details.dart": "f7fb02bdafd611bed5c75316f561f74e76967eddfb78269e9895a1c8f114df07",
+    "lib/features/scan/domain/scanned_code.dart": "b77a5f408c5ce7cf24c9bbbecc735e2d5a22ddfce2eb1a24ba3b6d4137b895f9",
+    "lib/features/scan/presentation/qr_scanner_page.dart": "df3d3a2118dd8b385b75800aebac3bf4bbde23a4bdf13cae911e265f30233d48",
+    "lib/features/scan/presentation/share_extension_result_app.dart": "f3f7c42904973e4e41410a1efd74c7a5bb6611e7a7ac2b4d37c00b2f95bf8719",
+    "lib/features/history/presentation/history_page.dart": "dfd3297f7f48cf33f76ff8ffcf80ae4d202066cb5a3214fbf6778611ca29d9c4",
+    "lib/features/history/presentation/saved_page.dart": "6f205f4c49e18dd8740d74fb2c179069156f69f30a2cad65310bbec261be7666",
+    "test/identifier_details_test.dart": "7f86abaae20ecc64dc0b0b0a57c90bf02751a7687890de64f1ef267db20a5f9a",
+    "integration_test/identifier_details_test.dart": "08bbf388ecb4976f0707abcf342fed209204636a92a49ee76e9dfb0667d53909",
+    "pubspec.lock": "86f3222c267c51a7876e545dd7ffc7285baf1bb209eae8ef1018df23cdc5e795"
+  }
+}

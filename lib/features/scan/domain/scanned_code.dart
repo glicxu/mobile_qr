@@ -11,7 +11,11 @@ enum ScannedCodeFormat {
   code93('code93', 'Code 93'),
   codabar('codabar', 'Codabar'),
   itf14('itf14', 'ITF-14'),
-  unknown('unknown', 'Unknown format');
+  unknown('unknown', 'Unknown format'),
+  // Append values: existing enum positions and result priorities stay stable.
+  dataMatrix('dataMatrix', 'Data Matrix'),
+  pdf417('pdf417', 'PDF417'),
+  aztec('aztec', 'Aztec');
 
   const ScannedCodeFormat(this.storageKey, this.label);
 
@@ -24,6 +28,19 @@ enum ScannedCodeFormat {
       orElse: () => ScannedCodeFormat.unknown,
     );
   }
+}
+
+List<ScannedCode> orderScannedCodes(Iterable<ScannedCode> codes) {
+  final seen = <(ScannedCodeFormat, String)>{};
+  final results = [
+    for (final code in codes)
+      if (seen.add((code.format, code.value))) code,
+  ];
+  results.sort((a, b) {
+    final priority = a.format.index.compareTo(b.format.index);
+    return priority != 0 ? priority : a.value.compareTo(b.value);
+  });
+  return List.unmodifiable(results);
 }
 
 enum ScanSource {

@@ -3,11 +3,51 @@ import 'package:drift/drift.dart';
 import '../../scan/domain/scanned_code.dart';
 import '../domain/qr_history.dart';
 import 'history_database.dart';
+import 'drift_saved_organization_repository.dart';
+import '../domain/saved_organization.dart';
 
-final class DriftQrHistoryRepository implements QrHistoryRepository {
+final class DriftQrHistoryRepository
+    implements QrHistoryRepository, SavedOrganizationRepository {
   const DriftQrHistoryRepository(this._database);
 
   final HistoryDatabase _database;
+
+  DriftSavedOrganizationRepository get _organization =>
+      DriftSavedOrganizationRepository(_database);
+  @override
+  Stream<SavedOrganization> watchOrganization() =>
+      _organization.watchOrganization();
+  @override
+  Future<void> createCollection(String id, String name) =>
+      _organization.createCollection(id, name);
+  @override
+  Future<void> renameCollection(String id, String name) =>
+      _organization.renameCollection(id, name);
+  @override
+  Future<void> deleteCollection(String id) =>
+      _organization.deleteCollection(id);
+  @override
+  Future<void> organizeSavedItem(
+    String entryId, {
+    required Set<String> collectionIds,
+    required List<String> tags,
+  }) => _organization.organizeSavedItem(
+    entryId,
+    collectionIds: collectionIds,
+    tags: tags,
+  );
+
+  Future<void> _clearOrganization(String id) async {
+    await (_database.delete(
+      _database.savedCollectionItems,
+    )..where((row) => row.entryId.equals(id))).go();
+    await (_database.delete(
+      _database.savedTagItems,
+    )..where((row) => row.entryId.equals(id))).go();
+    await _database.customStatement(
+      'DELETE FROM saved_tags WHERE id NOT IN (SELECT tag_id FROM saved_tag_items)',
+    );
+  }
 
   @override
   Stream<List<QrHistoryItem>> watchRecent() {
@@ -82,9 +122,12 @@ final class DriftQrHistoryRepository implements QrHistoryRepository {
 
   @override
   Future<void> setSavedAt(String id, DateTime? savedAtUtc) async {
-    await (_database.update(_database.historyEntries)
-          ..where((row) => row.id.equals(id)))
-        .write(HistoryEntriesCompanion(savedAtUtc: Value(savedAtUtc)));
+    await _database.transaction(() async {
+      if (savedAtUtc == null) await _clearOrganization(id);
+      await (_database.update(_database.historyEntries)
+            ..where((row) => row.id.equals(id)))
+          .write(HistoryEntriesCompanion(savedAtUtc: Value(savedAtUtc)));
+    });
   }
 
   @override
@@ -116,6 +159,7 @@ final class DriftQrHistoryRepository implements QrHistoryRepository {
   @override
   Future<void> removeFromSaved(String id) async {
     await _database.transaction(() async {
+      await _clearOrganization(id);
       await (_database.delete(_database.historyEntries)
             ..where((row) => row.id.equals(id) & row.isInHistory.equals(false)))
           .go();

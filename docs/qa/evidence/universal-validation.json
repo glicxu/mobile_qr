@@ -1,0 +1,131 @@
+{
+  "date": "2026-10-29",
+  "baselineCommit": "0487c2a",
+  "version": "1.2.0+2026102803",
+  "hostTests": {
+    "passed": 236,
+    "failed": 0
+  },
+  "analysis": "No issues found",
+  "formatting": "Both modified Dart files formatted; no pending changes",
+  "independentFixtureDecoding": 27,
+  "fixtureGenerators": "All three reproducibility checks passed",
+  "debugApk": {
+    "path": "build/app/outputs/flutter-apk/app-debug.apk",
+    "package": "com.dalifin.qr.test",
+    "sizeBytes": 217993652,
+    "sha256": "882fe0a422183ba5a3ff132df013b676c4b7878f16f86dffe42beba0fb4e3571"
+  },
+  "releaseCompilation": {
+    "result": "passed",
+    "note": "Baseline local release compilation before photo-capture removal; not installed or published. Current debug build passed after removal.",
+    "path": "build/app/outputs/flutter-apk/app-release.apk",
+    "sizeBytes": 87321748,
+    "sha256": "21bb9f3957624486ae1d98b335f0e06c2a1051505e6884eb4ce0b0cb82130e54"
+  },
+  "normalDebugInstallations": [
+    {
+      "device": "R58M44F3BGJ",
+      "package": "com.dalifin.qr.test",
+      "apkSha256": "882fe0a422183ba5a3ff132df013b676c4b7878f16f86dffe42beba0fb4e3571",
+      "method": "adb install -r; no app-data reset"
+    },
+    {
+      "device": "R9WN91CTWCJ",
+      "package": "com.dalifin.qr.test",
+      "apkSha256": "882fe0a422183ba5a3ff132df013b676c4b7878f16f86dffe42beba0fb4e3571",
+      "method": "adb install -r; no app-data reset"
+    }
+  ],
+  "sourceSnapshot": {
+    "note": "Current source hashes captured after the 236-test regression and updated debug build. Native integration/optical reports retain their baseline APK scope; their decoders and live-camera path are unchanged.",
+    "sha256": {
+      "android/app/build.gradle.kts": "bbd4229d7ce3eff88524906c6d13dc4d6337a81c50df4f8910808535c41c3a6f",
+      "android/app/src/main/AndroidManifest.xml": "1c973af7e2c5bb9d9a96fd730731cabc7f4e7b0397d5dd8d415eea3fdaf5aaae",
+      "android/app/src/main/kotlin/com/dalifin/qr/MainActivity.kt": "a18af47a8a57f7693dbd4d53746b1cbd93c9fd5ee68e1187cd812059b28eb8cf",
+      "integration_test/ean13_scanner_flow_test.dart": "8edaea6a7142c0fe6fec1cd18bfa41e05016905cfe21e0fec6e5d3228a9e7243",
+      "integration_test/optional_formats_test.dart": "8f01d4b31d452922a402f1a8489b93f12d318ffc17bea6a599f3ba1fd5b70af1",
+      "integration_test/universal_scanner_flow_test.dart": "df2f7fe3d12d324c978b56551873e3602901a3225e766a9130487ec2f882a078",
+      "lib/features/batch/application/batch_export.dart": "02299736cedb74aa22ec16921ad7fc80a9a49f139771d754f4135c73834ba73a",
+      "lib/features/batch/data/batch_database.dart": "bb2ee6edbb08c6f5d80c6d2e3bef8728ac337829aaa885e6b741d464498e89e6",
+      "lib/features/batch/data/local_batch_repository.dart": "6107d3fbec0464051cc6190a6a9fa1f0474e35bb4690f565f0f9c8ad88dbcb13",
+      "lib/features/batch/domain/batch_session.dart": "5d23845399fe3d305620e22d8b7d6cf70120adecc578963858226d6e86d9d733",
+      "lib/features/batch/presentation/batch_sessions_page.dart": "a7096c69f9b22a5d81025aa5a1192d2ae2b203cc4ce38858e820e8e6016fb96c",
+      "lib/features/create/application/custom_center_image_store.dart": "6b8b9d1f562b5390103e3982dd161c82d4f14c6b4ca992e5fe837522dba1dcf0",
+      "lib/features/create/application/qr_encoder.dart": "cf91f69f358605502ab2bb2d3e32f0b682bc2c21b4f9069ec7747c46f93f3684",
+      "lib/features/create/application/qr_png_validator.dart": "b137b652e60fe1aa53022ef11ca17bbb9066395cf302abeaefc8e9ef1d4af344",
+      "lib/features/create/application/qr_share.dart": "a6a286995df45567e02a33357d8fdd6fbbaf47fc8d4aea8b47ad6227eac0c153",
+      "lib/features/create/data/dart_qr_encoder.dart": "e6a206b64e7219f6c5db03b641467284af0c6db8edc81fc81b526399c011fd30",
+      "lib/features/create/data/qr_png_renderer.dart": "2ce2d41252a21862bc74b549e0aa19ac73be1fb50fe8bbcc439d26909e30747b",
+      "lib/features/create/domain/qr_center_decoration.dart": "0206ea7452bc7ce83fd26da3ba5fd6b51893664d69c1b1c1909ba88e52d88296",
+      "lib/features/create/domain/qr_creation_payload_policy.dart": "7d01931af94c84ce6145b708317badef1357852b6122fdcd539aeb7f9e3d1329",
+      "lib/features/create/domain/qr_matrix.dart": "7de7ff56468824ab52a2a3fde085ef5ca7ec5a65834e2f776d43c808b88603fc",
+      "lib/features/create/domain/url_payload_policy.dart": "4b3ce6eb213af8367372b2fc89897f8a197f10695539ab0e30096c875fa7266d",
+      "lib/features/create/presentation/generated_qr_page.dart": "008be0b990ad81a4da317e4bb8cc2d1978823933b3e2ab40ae7b3e972c194d9a",
+      "lib/features/create/presentation/image_crop_page.dart": "9c3e6a1d623fb456acd4f15241911ed972953f083a4cfc84c385c9ec1d2c4682",
+      "lib/features/create/presentation/qr_matrix_painter.dart": "f0025555c2cb1af3146105c6619a905dcea73d313095ca138c65e97e071ce197",
+      "lib/features/history/application/history_controller.dart": "21207efe212e9583b2caf8aa457f4bbb3b432176c849cf621275e34f140d3418",
+      "lib/features/history/application/qr_clipboard.dart": "8fa5119e0ccacdf9072d238afce56381e3f4db37107a9b50949be8aa7aa23476",
+      "lib/features/history/data/drift_qr_history_repository.dart": "2b13b1c1ae0b98e17f838d54d7802432a595f84e83b9ca0513168b06a3711be4",
+      "lib/features/history/data/drift_saved_organization_repository.dart": "1087c80ed57aa785a6f037faa5421520ae97892677a046145bd69a8742619240",
+      "lib/features/history/data/history_database.dart": "5faf2cbe7c27fb6a3b9ad8553b37a5b388b24547590058ec9326250e3145dae4",
+      "lib/features/history/data/history_database.g.dart": "3fa6d67d6e9b14a16407b6db0ec3828da063334fa96c250afe7cfdcecb1194c2",
+      "lib/features/history/data/shared_preferences_history_settings.dart": "43b2deaf5e90ed41afdc772e7df406294adb6561dd12e6678acd30c71b264866",
+      "lib/features/history/domain/qr_history.dart": "23279b3337e08483375751778259cf5a2d46b580cde888edc234d4aca1c65ce8",
+      "lib/features/history/domain/saved_organization.dart": "4a0390a25f1999c569184d2e395439fed72becf12790750cbbf6f6cb79196976",
+      "lib/features/history/presentation/history_page.dart": "49dbd4697a921898999eee880b3017b486a02d72e79725c352d8f625cbb2c030",
+      "lib/features/history/presentation/saved_page.dart": "2f62408b056dc549911516273719608c0e1515b6f0b9d9f1177bc712052ddc43",
+      "lib/features/lookup/domain/gs1_digital_link.dart": "3de02c4e4b59730bdd0606a3e38c6de8182ddeced913da81e0b036361cd9c8d5",
+      "lib/features/lookup/domain/identifier_recognizer.dart": "8b214bf9774d2c129614e58fb82f5dde752e668cb2077cc7bc1e529b82c4a491",
+      "lib/features/lookup/presentation/gs1_details.dart": "fb69ff5ff752f90c6df90279b2a15e8e0d10a33510ea64026550bdd796d4a5cb",
+      "lib/features/lookup/presentation/identifier_details.dart": "f7fb02bdafd611bed5c75316f561f74e76967eddfb78269e9895a1c8f114df07",
+      "lib/features/monetization/application/customization_entitlement.dart": "ce08702300b7187e7ba54836f5ac45b3a0e9be6584984dbf43d8ac9e30b4074b",
+      "lib/features/scan/application/inbound_image_share.dart": "cd0344cb24e2eb43d9491221a028ae9b6e6771283b09d367171ff7525bf00cda",
+      "lib/features/scan/application/qr_payload_router.dart": "837bc9e42d743b156f05c754ff34feec4dee6ab207d1365f6e497bfd55a44d53",
+      "lib/features/scan/application/scanned_code_verification.dart": "78fb74675141f15e50ccbb429f0b2feab1134383d56805116d7c7583bfdcbbd8",
+      "lib/features/scan/data/code_image_analyzer.dart": "2c815cfd64619030281472bc0298b457923d747fcf55cb15ec1993c466e0b694",
+      "lib/features/scan/data/mobile_scanner_code_adapter.dart": "41b1c61b5bf6fe993ab4ec868ad12a56b6e772584d07d1cae15f87486520d673",
+      "lib/features/scan/data/offline_image_decoder.dart": "1d983c3d87d4ea890b49bdb976898c9cb75dbd2bcdeb6ce639713062162dbe6d",
+      "lib/features/scan/domain/link_inspection.dart": "349b8407f09db0a7742e06f5eb91be0c63dbef76e68b65975d9a362f90ffa683",
+      "lib/features/scan/domain/qr_payload_classifier.dart": "fab66ef092b0ff4b8031e3f05712cd7956249a3f5af734f5ce9b18229b3cb360",
+      "lib/features/scan/domain/scanned_code.dart": "b3408a9df98e2e4c3edcdfb2bc92aa154ea1f845783af85ffe5afeaf52845eaa",
+      "lib/features/scan/presentation/qr_link_review.dart": "4804554fb8d61f94cebca9758c8dabeecb4d8fef48f171ea51f3ded307f96859",
+      "lib/features/scan/presentation/qr_payload_action.dart": "ecae229227069e73cb0a609108f4531caa782bca72db080ceec2fdeffb20d436",
+      "lib/features/scan/presentation/qr_scanner_page.dart": "1c337b06394a545f7dbabaea2470cbf5aa096eb75cc05efe014e1c4eed263f40",
+      "lib/features/scan/presentation/share_extension_result_app.dart": "83c31df0ff159c4b814827c8254aa9c784fb255b79199c19715acfb8defe75f5",
+      "lib/features/secure_qr/application/secure_qr_loader.dart": "e46ea9d0acba446197fb87ce3875b7eac9711084eea78e8cc9020f5f31c85663",
+      "lib/features/secure_qr/domain/public_suffix_list.dart": "98b459aaac22bcad4e0649dec2ee0e9fa765666e6ba067fd7aa2dd93e5564f0e",
+      "lib/features/secure_qr/domain/secure_qr_service.dart": "a2b01456f97e3f943dbabb0186a09554962e94c6f1f4e609c12af406343b9064",
+      "lib/features/secure_qr/presentation/verification_prompt.dart": "4b201b8be1ac82ab8b29288f7c2a145f3cddf236449437f04e787d54e4c6518c",
+      "lib/main.dart": "5a820fe7e413c661da3b0ce21f6e249e5c62c35fba17222b5b93d34ca3f9e51a",
+      "pubspec.lock": "f8da36d07a33b73c48ebab2a17049109a71b084ed80a9137c0a80941e5e1e79e",
+      "pubspec.yaml": "3ce2980dbb744dba4ff79bec02923006345605e62236b275e518db5f10a78335",
+      "test/offline_image_decoder_test.dart": "2a695784715870e298d366c4879b814f62984ea56c7028178228209f6b02396d",
+      "test/universal_scanner_flow_test.dart": "68e0115007f3d99025424b1228da8adbdaca1a1cb33495edd57a0d1865820670",
+      "tool/qa_android_shared_images.py": "e5d739699b26588a8d3be6f81b3a1bd2376b0d0a96a96129541ca0b0db3caff0",
+      "tool/generate_scanner_fixture_viewer.cjs": "e7c4d571cb2d9834f3f3deb829daf5af508b58e8315f47eccb4c89ece26646db",
+      "docs/qa/scanner_fixture_viewer.html": "7f0cdd38861fadabe140eca6c598aa5c2491a3158bcb28f81695eaa2b129d170"
+    }
+  },
+  "remaining": [
+    "Real image-picker checks, broader capture coverage and live-camera Copy/Save validation; photo capture was removed and requires no QA.",
+    "Third-party share chooser UI",
+    "Android API 24 minimum / API 36 target coverage and store release checks",
+    "iOS build/device validation deferred by user direction"
+  ],
+  "productProvider": "Unavailable; product lookup remains disabled",
+  "androidOpticalTablet": {
+    "formatsDetected": 13,
+    "source": "camera",
+    "evidence": "universal-android-tablet-optical.json",
+    "scope": "13 live-camera format/value/source checks on the baseline APK before photo-capture removal; live-camera decoding is unchanged."
+  },
+  "androidBaselinePerDeviceBeforePhotoRemoval": {
+    "uiPersistenceFlows": 42,
+    "production2DImages": 6,
+    "realOfflineColdWarmShares": 26
+  },
+  "baselineEvidence": "universal-validation-before-photo-removal.json",
+  "currentChange": "Removed Take photo UI and camera-app photo-capture path at user request. Live scanning, Choose image, and inbound image shares remain.",
+  "temporaryGalleryFixtureCleanup": true
+}

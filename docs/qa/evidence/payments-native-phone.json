@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-30",
+  "device": "R58M44F3BGJ",
+  "package": "com.dalifin.qr.scannerqa",
+  "model": "SM-G975U",
+  "api": "31",
+  "scope": "Synthetic local Payments persistence and native QR/card decoding. Test-only entitlement; no store or checkout calls.",
+  "protectedPackagesBefore": {
+    "com.dalifin.qr.test": true,
+    "com.dalifin.qr": true
+  },
+  "initialFlutterApkIdentity": "com.dalifin.qr.scannerqa",
+  "cases": [
+    {
+      "persistence": true,
+      "snapshotPreserved": true,
+      "nativeQr": true,
+      "nativeCard": true,
+      "revokedExportBlocked": true,
+      "recordExportAndDeletion": true,
+      "sampleIsolated": true,
+      "liveBilling": false,
+      "result": "passed"
+    }
+  ],
+  "nativePreviewSha256": "85fd460ba2e29be76b5390d225f2cc883c1783b870435b31c6c60d481a2f8479",
+  "testedApkSha256": "4d23633d3b686af4d5a8bf0d3de93ae6546c0519e09b6020498ee4c48690c80e",
+  "result": "passed",
+  "qaAppRemoved": true,
+  "protectedPackagesAfter": {
+    "com.dalifin.qr.test": true,
+    "com.dalifin.qr": true
+  }
+}

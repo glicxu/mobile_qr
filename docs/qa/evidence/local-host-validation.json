@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-29",
+  "baselineCommit": "0487c2a",
+  "hostTests": {
+    "passed": 206,
+    "failed": 0
+  },
+  "analysis": "No issues found",
+  "format": "91 Dart files; 0 changed",
+  "androidWorkflows": {
+    "phone": 13,
+    "tablet": 13
+  },
+  "optionalQualification": {
+    "phone": {
+      "passed": 5,
+      "failed": 1
+    },
+    "tablet": {
+      "passed": 5,
+      "failed": 1
+    },
+    "failedFixture": "aztec_short",
+    "productionEnabled": false
+  },
+  "debugApk": {
+    "path": "build/app/outputs/flutter-apk/app-debug.apk",
+    "sizeBytes": 206470615,
+    "sha256": "0b29a2d648ec9ebaf731ad44d36605b2fa0e743dbe445e46c06714aa7f3c19ef",
+    "target": "lib/main.dart; normal debug application, not integration harness"
+  },
+  "limitations": "Foundation and manual/iOS release gates remain open; see ../local_workflows.md and ../scanner_matrix.md."
+}

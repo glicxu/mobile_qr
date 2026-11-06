@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-29",
+  "scope": "WP12 six structured QR creation forms and WP13 sensitive authenticator recognition/handoff; Android first",
+  "host": {
+    "testsPassed": 304,
+    "analysis": "No issues found",
+    "independentDecoder": "ZXing-C++; all six structured PNGs decode exactly"
+  },
+  "native": {
+    "devices": [
+      {
+        "model": "SM-T290",
+        "api": 30
+      },
+      {
+        "model": "SM-G975U",
+        "api": 31
+      }
+    ],
+    "fullRunCasesPerDevice": 13,
+    "exactGeneratedQrTypesPerDevice": [
+      "contact",
+      "event",
+      "location",
+      "email",
+      "phone",
+      "sms"
+    ],
+    "reports": [
+      "protocol-native-tablet.json",
+      "protocol-native-phone.json"
+    ],
+    "ordinaryHandoffs": "Editors, composers, maps or app chooser reached; no Send/Save/Call pressed. SMS handler unavailable on tablet; available on phone. Full provider prefill/completion not established.",
+    "authenticator": "Masked review cancellation and handler availability passed on both. Tablet no handler; phone handlers available. Actual provider not launched or account imported.",
+    "credentialFreeProbeReports": [
+      "authenticator-native-tablet.json",
+      "authenticator-native-phone.json"
+    ]
+  },
+  "qaSafety": {
+    "incident": "../qa_cleanup_incident.md",
+    "priorTabletTestAppInstallationRemoved": true,
+    "previousTestDataRecoveryConfirmed": false,
+    "workspaceBackupFound": false,
+    "correction": "Prebuild and verify actual QA APK identity; --no-uninstall; explicit QA-only cleanup; before/after protected-package checks",
+    "followupReports": [
+      "protocol-qa-safety-tablet.json",
+      "protocol-qa-safety-phone.json"
+    ],
+    "followupProtectedPackagePresencePreservedOnBothDevices": true,
+    "historicalFunctionalReportsDoNotEstablishDataPreservation": true
+  },
+  "artifacts": {
+    "debug": {
+      "path": "build/app/outputs/flutter-apk/app-debug.apk",
+      "package": "com.dalifin.qr.test",
+      "sha256": "c677158d54d05d82870c690c9fd7186daa41cb5cde584d889137c62a2169748f",
+      "bytes": 189176287,
+      "published": false
+    },
+    "release": {
+      "path": "build/app/outputs/flutter-apk/app-release.apk",
+      "package": "com.dalifin.qr",
+      "sha256": "7cbd83a011c34402d4a7847c9cc1b951bf2d03493ffab29912784268e9434d73",
+      "bytes": 92057252,
+      "published": false
+    }
+  },
+  "installed": [
+    {
+      "device": "R9WN91CTWCJ",
+      "package": "com.dalifin.qr.test",
+      "installedSha256MatchesBuiltDebug": true
+    },
+    {
+      "device": "R58M44F3BGJ",
+      "package": "com.dalifin.qr.test",
+      "installedSha256MatchesBuiltDebug": true
+    }
+  ],
+  "tabletUiEvidence": "protocol-create-tablet-ui.json",
+  "userDeferred": [
+    "Matter",
+    "Payments"
+  ],
+  "pending": [
+    "Actual authenticator-provider import/handoff validation with user control",
+    "Full native composer/editor recipient/body/date prefill verification",
+    "Additional Android OS/OEM coverage",
+    "iOS Xcode compile, signing and physical device validation",
+    "Recovery of previous tablet test-app data remains unverified after cleanup incident"
+  ],
+  "sourceSha256": {
+    "lib/main.dart": "3ef4646edb68c531b9f49d858c569124192358a2a6986001eeb09b577d6540ca",
+    "lib/features/create/domain/structured_qr_payload.dart": "e2af028aea5023fce153dd66be2f54a0ddcf3ad7168115016a6a4cae9ce1a371",
+    "lib/features/create/presentation/structured_qr_fields.dart": "45dd9f672c027de9e476acd1b1a53620aa118a1ce96548e2436157aeb0325d75",
+    "lib/features/create/domain/qr_creation_payload_policy.dart": "efe7bd9be3bcb976cadeea6886fea2312feb55f3ebb9f2ac55c80c760a2fcd8d",
+    "lib/features/create/application/barcode_generator.dart": "c05b2fc6cca089c855117c4d42435ccba5bb4a7db33f0a497560c95a4401d181",
+    "lib/features/create/presentation/generated_barcode_page.dart": "2e2702af935fc72a56323e5d4071f7dd46787431357e8e0686fbcc60d5616413",
+    "lib/features/scan/domain/authenticator_payload.dart": "26a5eed5c215534ef21263b501cfc2c7d6e4f6d8dcf15f19d97072379893e52e",
+    "lib/features/scan/domain/qr_payload_classifier.dart": "7a36e36446df9b2db34fdf407136102a2dd081f8a1e0e59f55fa4fb8c5726d89",
+    "lib/features/scan/application/qr_payload_router.dart": "7f631f90bb5a606fefee2b099b1386387ecd7e5fc5ae84dd38e8e5b14b916152",
+    "lib/features/scan/presentation/qr_payload_action.dart": "469c52e293d5ad3f2de94624cd8ecf41b25ad53059a55ce3a9c73bb066ff53cc",
+    "lib/features/scan/presentation/qr_scanner_page.dart": "fedf16a18f7094158e45aa65b84880cd9102b38861f3a5afc7dce4540166f9b1",
+    "lib/features/scan/presentation/share_extension_result_app.dart": "6b8276a10e40752fc396fdc186b56a2a00a8b46dfa795405888c99ab674d2672",
+    "lib/features/secure_qr/domain/secure_qr_service.dart": "13c34aeb5e6cae058d2f3d4c49d07b9ebcabe17962fd08a2732d672b8bdc12d4",
+    "lib/features/history/application/history_controller.dart": "abe9fd4d33da13f52cb389d29e03c813b083b7cca77fe2f3f20db67db35d74cb",
+    "lib/features/history/presentation/history_page.dart": "c82c058662efc1226c83f6856eafebdf84cc36233591a4d4bf1b2ae59f8c2ee1",
+    "lib/features/history/presentation/saved_page.dart": "1dd1742c6ca96c8a7411651ab5c7d9e7968ffd73cf7de77bad5a9eb0753e9285",
+    "lib/features/batch/application/batch_export.dart": "6de8141dcae715546741beef554061689e3d3ee7bc21da0636d67ec455f23f6a",
+    "lib/features/batch/domain/batch_session.dart": "27238eedc41b9acb8dddcdd54cbce5b8d44022df457b9cf39ac4a8e1577e87a8",
+    "lib/features/batch/presentation/batch_sessions_page.dart": "28eacb33c26bd16ec002dfec5ce8d96d92e2790f1b2806713ff1f3a45975aefc",
+    "android/app/src/main/AndroidManifest.xml": "3bc1ef6bdacdae6013f27d11341ca64ff5946b4ebcffe1b598f46c8e59b44da5",
+    "android/app/src/main/kotlin/com/dalifin/qr/MainActivity.kt": "fe7b2128da957bd9c5f9f9c10adfd46c1c6a35c27d7e58b34b765c9f58426584",
+    "ios/Runner/Info.plist": "96a2caa3243ad7a3b7242bf4270555d8633b5f48161c5e39d4cd6e1b638d1941",
+    "test/structured_qr_creation_test.dart": "5dcaa62656374c8d2f318339d779b4beba02b161db0b8944882223a0e3ec8cde",
+    "test/authenticator_payload_test.dart": "8e0767ebd8af57fc088a30bebed2f7fc06909e195c2734256e9f6413e192933d",
+    "test/barcode_creation_flow_test.dart": "72a1a1d277e1794f6caf2948dce465108b13b2d51d6ccda1cc95235a1a845243",
+    "integration_test/structured_qr_test.dart": "a7edafaabf112daedeeafcd41bac082f07f99144f989fef9a5ea797e14edd362",
+    "tool/android_qa_safety.py": "ec72e45f784a7d0f478ab08f7bd3465a76ac27c8397ea06f9b070db38fc61526",
+    "tool/qa_structured_qr.py": "0c38b472f78927a5cbec0041abe5c8085065bf0cfb6639a0bd0a8ce5f33b0826",
+    "tool/qa_wifi_join.py": "5a65bc50d39cc2695225586df964d31b087c36b9d863510745ab75bee32024ef",
+    "tool/verify_structured_qr.py": "8ad3ceedc653ebd188864b0ff5f150826a398fc5fb302ecfb8faf4f1a4b71069",
+    "pubspec.lock": "f8da36d07a33b73c48ebab2a17049109a71b084ed80a9137c0a80941e5e1e79e"
+  }
+}

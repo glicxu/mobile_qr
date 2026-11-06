@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-29",
+  "platform": "android",
+  "deviceModel": "SM-G975U",
+  "osVersion": "12",
+  "apiLevel": 31,
+  "appVersion": "1.2.0+2026102803",
+  "buildMode": "debug integration-test target",
+  "baseRevision": "0487c2a03c3940d2ba5487db492f2d2f520aa02c",
+  "workingTree": true,
+  "command": "flutter test integration_test/link_review_flow_test.dart -d <device-id> --reporter expanded",
+  "result": "passed",
+  "testCount": 6,
+  "testCases": [
+    {
+      "name": "camera result reviews the real destination before launch",
+      "result": "passed"
+    },
+    {
+      "name": "gallery result reviews the real destination before launch",
+      "result": "passed"
+    },
+    {
+      "name": "history uses the same review and confirmation",
+      "result": "passed"
+    },
+    {
+      "name": "Saved uses the same review and confirmation",
+      "result": "passed"
+    },
+    {
+      "name": "iOS share view remains read-only and shows destination warnings",
+      "result": "passed"
+    },
+    {
+      "name": "destination dialog stays usable at large text size",
+      "result": "passed"
+    }
+  ],
+  "scope": {
+    "inputs": "Synthetic decoded result models; capture and share delivery not exercised",
+    "externalHandoff": "Replaced with recording UrlLauncherPlatform fake; no real browser handoff validated",
+    "network": "Unit version rejects HTTP clients; device runner uses normal debug network transport",
+    "iosShare": "Flutter read-only view only, rendered on Android; no native iOS validation",
+    "largeText": "360 by 740 logical pixels, text scale 2.5",
+    "productLookup": "Deferred; no online product provider tested or enabled"
+  },
+  "inputSha256": {
+    "lib/features/scan/domain/link_inspection.dart": "349b8407f09db0a7742e06f5eb91be0c63dbef76e68b65975d9a362f90ffa683",
+    "lib/features/scan/domain/qr_payload_classifier.dart": "fab66ef092b0ff4b8031e3f05712cd7956249a3f5af734f5ce9b18229b3cb360",
+    "lib/features/scan/application/qr_payload_router.dart": "837bc9e42d743b156f05c754ff34feec4dee6ab207d1365f6e497bfd55a44d53",
+    "lib/features/scan/presentation/qr_payload_action.dart": "ecae229227069e73cb0a609108f4531caa782bca72db080ceec2fdeffb20d436",
+    "lib/features/scan/presentation/qr_link_review.dart": "4804554fb8d61f94cebca9758c8dabeecb4d8fef48f171ea51f3ded307f96859",
+    "lib/features/scan/presentation/qr_scanner_page.dart": "312cb2390bee370e02ef80333509e03e348f18facb66c1f95dbde857871e84fd",
+    "lib/features/scan/presentation/share_extension_result_app.dart": "f3f7c42904973e4e41410a1efd74c7a5bb6611e7a7ac2b4d37c00b2f95bf8719",
+    "lib/features/history/presentation/history_page.dart": "24eb3a3ef512a3b25428e048ed0ce7784c007d31c66ec395599b1b59d792aa23",
+    "lib/features/history/presentation/saved_page.dart": "bf162a0c6447552379c0732600dd3330cd7905971d48611726594c3573dc0191",
+    "test/link_review_flow_test.dart": "06aff5e92d56b7dd59a7a3112e6117bdc0fe97953b4594f6eed5471d5678c382",
+    "integration_test/link_review_flow_test.dart": "e8101c835e12ede3bd110e41059882276f1c3e84255166227af7851eb84c396d",
+    "pubspec.lock": "86f3222c267c51a7876e545dd7ffc7285baf1bb209eae8ef1018df23cdc5e795"
+  }
+}

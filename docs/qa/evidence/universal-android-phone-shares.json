@@ -1,0 +1,316 @@
+{
+  "device": "R58M44F3BGJ",
+  "date": "2026-10-29",
+  "scope": "Real ACTION_SEND with temporary MediaStore image URIs and read grants; normal Flutter entrypoint",
+  "freshInstall": true,
+  "temporaryMediaFolder": "Pictures/DaliScannerQA_864bfbe2af45/",
+  "offline": true,
+  "cases": [
+    {
+      "fixture": "aztec_short",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 28000,
+      "format": "aztec",
+      "value": "  KEEP-00123  ",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "aztec_long",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 29219,
+      "format": "aztec",
+      "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "qr_url",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 31516,
+      "format": "qrCode",
+      "value": "https://example.com/qa",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "qr_whitespace",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 24766,
+      "format": "qrCode",
+      "value": "  exact payload\n",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "upca_zero",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 28062,
+      "format": "upcA",
+      "value": "012345678905",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "upca_other",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 37313,
+      "format": "upcA",
+      "value": "036000291452",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "upce_example",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 28093,
+      "format": "upcE",
+      "value": "04252614",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "upce_other",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 24485,
+      "format": "upcE",
+      "value": "01234565",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "ean8_example",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 27954,
+      "format": "ean8",
+      "value": "96385074",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "ean8_zero",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 24890,
+      "format": "ean8",
+      "value": "00000000",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "ean13_book",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 27953,
+      "format": "ean13",
+      "value": "9780306406157",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "ean13_upca_pair",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 24937,
+      "format": "upcA",
+      "value": "012345678905",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "code128_short",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 24844,
+      "format": "code128",
+      "value": "DALI-128",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "code128_whitespace",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 21734,
+      "format": "code128",
+      "value": "  KEEP ZERO 00123  ",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "code39_short",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 24953,
+      "format": "code39",
+      "value": "DALI39",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "code39_long",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 21453,
+      "format": "code39",
+      "value": "ORDER-00123-ABC",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "code93_short",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 24469,
+      "format": "code93",
+      "value": "DALI93",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "code93_long",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 21672,
+      "format": "code93",
+      "value": "ORDER-0093/ABC",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "codabar_short",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 24953,
+      "format": "codabar",
+      "value": "A123456A",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "codabar_long",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 22140,
+      "format": "codabar",
+      "value": "B1234567890-12B",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "itf14_zero",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 27469,
+      "format": "itf14",
+      "value": "10012345000017",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "itf14_other",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 36766,
+      "format": "itf14",
+      "value": "12345678901231",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "dataMatrix_short",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 24766,
+      "format": "dataMatrix",
+      "value": "  KEEP-00123  ",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "dataMatrix_long",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 40625,
+      "format": "dataMatrix",
+      "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "pdf417_short",
+      "phase": "cold",
+      "source": "sharedImage",
+      "elapsedMs": 24594,
+      "format": "pdf417",
+      "value": "  KEEP-00123  ",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    },
+    {
+      "fixture": "pdf417_long",
+      "phase": "warm",
+      "source": "sharedImage",
+      "elapsedMs": 28172,
+      "format": "pdf417",
+      "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+      "copied": true,
+      "saved": true,
+      "cacheClean": true
+    }
+  ],
+  "apkSha256": "c1970accbfac292f87d0d8d5ddf2e31ba924fc77bc63f858b6c5f8dfd8b5fceb",
+  "limitations": [
+    "Exercises MediaStore URI grants; does not exercise third-party Photos/Files/messaging share chooser UI.",
+    "Does not validate optical live-camera capture or the real image picker.",
+    "Clipboard API completion is observed; global clipboard contents are not read."
+  ],
+  "networkObservation": [
+    "Active default network: none"
+  ],
+  "cameraPermissionGranted": false,
+  "result": "passed",
+  "temporaryMedia": {
+    "created": 26,
+    "cleanupVerified": true
+  },
+  "connectivityRestored": {
+    "airplane": "0",
+    "wifi": "0"
+  },
+  "qaAppRemoved": true
+}

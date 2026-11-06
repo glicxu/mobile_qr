@@ -1,0 +1,321 @@
+{
+  "date": "2026-10-29",
+  "device": "R58M44F3BGJ",
+  "api": 31,
+  "scope": "Generate PNG on-device with production BarcodeGenerator, then scan using production native-plus-fallback image analyzer; every returned result must match an allowed representation.",
+  "result": "passed",
+  "cases": [
+    {
+      "fixture": "upca_zero",
+      "width": 920,
+      "height": 640,
+      "results": [
+        {
+          "format": "upcA",
+          "value": "012345678905"
+        }
+      ]
+    },
+    {
+      "fixture": "upca_other",
+      "width": 920,
+      "height": 640,
+      "results": [
+        {
+          "format": "upcA",
+          "value": "036000291452"
+        }
+      ]
+    },
+    {
+      "fixture": "upce_example",
+      "width": 568,
+      "height": 640,
+      "results": [
+        {
+          "format": "upcE",
+          "value": "04252614"
+        }
+      ]
+    },
+    {
+      "fixture": "upce_other",
+      "width": 568,
+      "height": 640,
+      "results": [
+        {
+          "format": "upcE",
+          "value": "01234565"
+        }
+      ]
+    },
+    {
+      "fixture": "ean8_example",
+      "width": 696,
+      "height": 640,
+      "results": [
+        {
+          "format": "ean8",
+          "value": "96385074"
+        }
+      ]
+    },
+    {
+      "fixture": "ean8_zero",
+      "width": 696,
+      "height": 640,
+      "results": [
+        {
+          "format": "ean8",
+          "value": "00000000"
+        }
+      ]
+    },
+    {
+      "fixture": "ean13_upca_pair",
+      "width": 920,
+      "height": 640,
+      "results": [
+        {
+          "format": "upcA",
+          "value": "012345678905"
+        }
+      ]
+    },
+    {
+      "fixture": "ean13_book",
+      "width": 920,
+      "height": 640,
+      "results": [
+        {
+          "format": "ean13",
+          "value": "9780306406157"
+        }
+      ]
+    },
+    {
+      "fixture": "code128_short",
+      "width": 1001,
+      "height": 560,
+      "results": [
+        {
+          "format": "code128",
+          "value": "DALI-128"
+        }
+      ]
+    },
+    {
+      "fixture": "code128_url",
+      "width": 704,
+      "height": 160,
+      "results": [
+        {
+          "format": "code128",
+          "value": "https://example.com/barcode"
+        }
+      ]
+    },
+    {
+      "fixture": "code128_whitespace",
+      "width": 792,
+      "height": 240,
+      "results": [
+        {
+          "format": "code128",
+          "value": "  KEEP ZERO 00123  "
+        }
+      ]
+    },
+    {
+      "fixture": "code39_short",
+      "width": 984,
+      "height": 640,
+      "results": [
+        {
+          "format": "code39",
+          "value": "DALI39"
+        }
+      ]
+    },
+    {
+      "fixture": "code39_long",
+      "width": 960,
+      "height": 320,
+      "results": [
+        {
+          "format": "code39",
+          "value": "ORDER-00123-ABC"
+        }
+      ]
+    },
+    {
+      "fixture": "code93_short",
+      "width": 888,
+      "height": 640,
+      "results": [
+        {
+          "format": "code93",
+          "value": "DALI93"
+        }
+      ]
+    },
+    {
+      "fixture": "code93_long",
+      "width": 915,
+      "height": 400,
+      "results": [
+        {
+          "format": "code93",
+          "value": "ORDER-0093/ABC"
+        }
+      ]
+    },
+    {
+      "fixture": "codabar_short",
+      "width": 808,
+      "height": 640,
+      "results": [
+        {
+          "format": "codabar",
+          "value": "A123456A"
+        }
+      ]
+    },
+    {
+      "fixture": "codabar_long",
+      "width": 855,
+      "height": 400,
+      "results": [
+        {
+          "format": "codabar",
+          "value": "B1234567890-12B"
+        }
+      ]
+    },
+    {
+      "fixture": "itf14_zero",
+      "width": 925,
+      "height": 450,
+      "results": [
+        {
+          "format": "itf14",
+          "value": "10012345000017"
+        }
+      ]
+    },
+    {
+      "fixture": "itf14_other",
+      "width": 925,
+      "height": 450,
+      "results": [
+        {
+          "format": "itf14",
+          "value": "12345678901231"
+        }
+      ]
+    },
+    {
+      "fixture": "dataMatrix_short",
+      "width": 192,
+      "height": 192,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "  KEEP-00123  "
+        }
+      ]
+    },
+    {
+      "fixture": "dataMatrix_long",
+      "width": 448,
+      "height": 448,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        }
+      ]
+    },
+    {
+      "fixture": "pdf417_short",
+      "width": 1024,
+      "height": 288,
+      "results": [
+        {
+          "format": "pdf417",
+          "value": "  KEEP-00123  "
+        }
+      ]
+    },
+    {
+      "fixture": "pdf417_long",
+      "width": 792,
+      "height": 204,
+      "results": [
+        {
+          "format": "pdf417",
+          "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        }
+      ]
+    },
+    {
+      "fixture": "aztec_short",
+      "width": 216,
+      "height": 216,
+      "results": [
+        {
+          "format": "aztec",
+          "value": "  KEEP-00123  "
+        }
+      ]
+    },
+    {
+      "fixture": "aztec_long",
+      "width": 456,
+      "height": 456,
+      "results": [
+        {
+          "format": "aztec",
+          "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        }
+      ]
+    },
+    {
+      "fixture": "dataMatrix_unicode",
+      "width": 224,
+      "height": 224,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "  Caf\u00e9 Gr\u00fc\u00dfe\nend  "
+        }
+      ]
+    },
+    {
+      "fixture": "pdf417_unicode",
+      "width": 1015,
+      "height": 280,
+      "results": [
+        {
+          "format": "pdf417",
+          "value": "  Caf\u00e9 \u4e2d\u6587 \ud83d\ude00\nend  "
+        }
+      ]
+    },
+    {
+      "fixture": "aztec_unicode",
+      "width": 248,
+      "height": 248,
+      "results": [
+        {
+          "format": "aztec",
+          "value": "  Caf\u00e9 \u4e2d\u6587 \ud83d\ude00\nend  "
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Not an optical-camera test of every generated image.",
+    "Not a third-party share destination or clipboard-consumer test."
+  ]
+}

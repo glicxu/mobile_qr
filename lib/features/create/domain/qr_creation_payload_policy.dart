@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'url_payload_policy.dart';
+import '../../scan/domain/authenticator_payload.dart';
 
-enum QrCreationPayloadError { empty, tooLong }
+enum QrCreationPayloadError { empty, tooLong, sensitive }
 
 final class QrCreationPayloadValidationException implements Exception {
   const QrCreationPayloadValidationException(this.error, this.message);
@@ -33,6 +34,12 @@ final class QrCreationPayloadPolicy {
   static const _urlPolicy = UrlPayloadPolicy();
 
   QrCreationPayload validate(String input) {
+    if (EphemeralCodePolicy.isAuthenticator(input)) {
+      throw const QrCreationPayloadValidationException(
+        QrCreationPayloadError.sensitive,
+        'Authenticator setup codes are scan-only. Create account setup codes through the account provider.',
+      );
+    }
     if (input.trim().isEmpty) {
       throw const QrCreationPayloadValidationException(
         QrCreationPayloadError.empty,

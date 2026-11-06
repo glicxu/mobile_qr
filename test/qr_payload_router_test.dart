@@ -62,4 +62,50 @@ void main() {
 
     expect(await const QrPayloadRouter().route(payload), isFalse);
   });
+
+  test(
+    'rejects malformed, substituted, and unknown-scheme destinations',
+    () async {
+      const channel = MethodChannel('plugins.flutter.io/url_launcher');
+      var calls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (_) async {
+            calls++;
+            return true;
+          });
+      addTearDown(
+        () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(channel, null),
+      );
+      for (final payload in [
+        ClassifiedQrPayload(
+          rawPayload: 'https://example.com/%ZZ',
+          type: QrContentType.webUrl,
+          action: QrRouteAction.openUrl,
+          title: '',
+          primaryText: '',
+          launchUri: Uri.parse('https://example.com'),
+        ),
+        ClassifiedQrPayload(
+          rawPayload: 'https://example.com',
+          type: QrContentType.webUrl,
+          action: QrRouteAction.openUrl,
+          title: '',
+          primaryText: '',
+          launchUri: Uri.parse('https://different.example'),
+        ),
+        ClassifiedQrPayload(
+          rawPayload: 'someapp://account',
+          type: QrContentType.deepLink,
+          action: QrRouteAction.openDeepLink,
+          title: '',
+          primaryText: '',
+          launchUri: Uri.parse('someapp://account'),
+        ),
+      ]) {
+        expect(await const QrPayloadRouter().route(payload), isFalse);
+      }
+      expect(calls, 0);
+    },
+  );
 }

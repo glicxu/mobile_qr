@@ -12,7 +12,13 @@ import 'features/create/data/qr_png_renderer.dart';
 import 'features/create/domain/qr_center_decoration.dart';
 import 'features/create/domain/qr_creation_payload_policy.dart';
 import 'features/create/domain/qr_matrix.dart';
+import 'features/create/domain/wifi_qr_payload.dart';
+import 'features/create/domain/structured_qr_payload.dart';
+import 'features/create/presentation/structured_qr_fields.dart';
+import 'features/create/presentation/wifi_qr_fields.dart';
 import 'features/create/presentation/generated_qr_page.dart';
+import 'features/create/application/barcode_generator.dart';
+import 'features/create/presentation/generated_barcode_page.dart';
 import 'features/history/application/history_controller.dart';
 import 'features/history/domain/qr_history.dart';
 import 'features/history/presentation/history_page.dart';
@@ -21,12 +27,18 @@ import 'features/create/presentation/image_crop_page.dart';
 import 'features/monetization/application/customization_entitlement.dart';
 import 'features/scan/application/inbound_image_share.dart';
 import 'features/scan/domain/scanned_code.dart';
+import 'features/scan/domain/qr_payload_classifier.dart';
 import 'features/scan/presentation/qr_scanner_page.dart';
 import 'features/scan/presentation/share_extension_result_app.dart';
 import 'features/secure_qr/application/secure_qr_loader.dart';
 import 'features/secure_qr/domain/secure_qr_service.dart';
+import 'features/batch/presentation/batch_sessions_page.dart';
+import 'features/batch/application/batch_export.dart';
+import 'features/payments/application/payments_entitlement.dart';
 
-void main() => runApp(const DaliQrApp());
+void main(List<String> arguments) => runApp(
+  DaliQrApp(initialSharedLaunch: arguments.contains('--dali-shared-image')),
+);
 
 @pragma('vm:entry-point')
 void shareExtensionMain() => runDaliQrShareExtension();
@@ -38,6 +50,8 @@ class DaliQrApp extends StatelessWidget {
     this.customizationEntitlement,
     this.customCenterImageStore,
     this.inboundImageShare,
+    this.paymentsEntitlement,
+    this.initialSharedLaunch = false,
     super.key,
   });
 
@@ -46,6 +60,8 @@ class DaliQrApp extends StatelessWidget {
   final CustomizationEntitlement? customizationEntitlement;
   final CustomCenterImageStore? customCenterImageStore;
   final InboundImageShareSource? inboundImageShare;
+  final PaymentsEntitlement? paymentsEntitlement;
+  final bool initialSharedLaunch;
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +77,8 @@ class DaliQrApp extends StatelessWidget {
         customizationEntitlement: customizationEntitlement,
         customCenterImageStore: customCenterImageStore,
         inboundImageShare: inboundImageShare,
+        paymentsEntitlement: paymentsEntitlement,
+        initialSharedLaunch: initialSharedLaunch,
       ),
     );
   }
@@ -73,6 +91,8 @@ class DaliQrHome extends StatefulWidget {
     this.customizationEntitlement,
     this.customCenterImageStore,
     this.inboundImageShare,
+    this.paymentsEntitlement,
+    this.initialSharedLaunch = false,
     super.key,
   });
 
@@ -81,6 +101,8 @@ class DaliQrHome extends StatefulWidget {
   final CustomizationEntitlement? customizationEntitlement;
   final CustomCenterImageStore? customCenterImageStore;
   final InboundImageShareSource? inboundImageShare;
+  final PaymentsEntitlement? paymentsEntitlement;
+  final bool initialSharedLaunch;
 
   @override
   State<DaliQrHome> createState() => _DaliQrHomeState();
@@ -97,10 +119,15 @@ class _DaliQrHomeState extends State<DaliQrHome> {
   Future<PackageInfo>? _packageInfo;
   late final InboundImageShareSource _inboundImageShare;
   String? _sharedImagePath;
+  String? _sharedImageError;
+  bool _inboundShareReady = false;
+  late bool _imageOnlyLaunch;
 
   @override
   void initState() {
     super.initState();
+    _imageOnlyLaunch = widget.initialSharedLaunch;
+    unawaited(BatchExport.cleanupStale().catchError((Object _) {}));
     final suppliedService = widget.secureQrService;
     _secureQrService = suppliedService == null
         ? SecureQrLoader.load()
@@ -116,14 +143,47 @@ class _DaliQrHomeState extends State<DaliQrHome> {
     _customCenterImageStore =
         widget.customCenterImageStore ?? CustomCenterImageStore();
     unawaited(_customCenterImageStore.initialize());
-    _inboundImageShare = widget.inboundImageShare ?? InboundImageShare();
-    unawaited(_inboundImageShare.start(_receiveSharedImage));
+    _inboundImageShare =
+        widget.inboundImageShare ??
+        InboundImageShare(
+          onError: (message) {
+            if (!mounted) return;
+            setState(() {
+              _sharedImageError = message;
+              _imageOnlyLaunch = true;
+              _sharedImagePath = null;
+              _selectedIndex = 1;
+              _scanSession++;
+            });
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(message)));
+              }
+            });
+          },
+        );
+    unawaited(
+      _inboundImageShare
+          .start(_receiveSharedImage)
+          .then(
+            (_) {
+              if (mounted) setState(() => _inboundShareReady = true);
+            },
+            onError: (Object _) {
+              if (mounted) setState(() => _inboundShareReady = true);
+            },
+          ),
+    );
   }
 
   void _receiveSharedImage(String path) {
     if (!mounted) return;
     setState(() {
       _sharedImagePath = path;
+      _imageOnlyLaunch = true;
+      _sharedImageError = null;
       _selectedIndex = 1;
     });
   }
@@ -152,6 +212,28 @@ class _DaliQrHomeState extends State<DaliQrHome> {
       verificationCode: verificationCode,
       registrableDomain: registrableDomain,
       qrPngBytes: qrPngBytes,
+    );
+  }
+
+  Future<void> _recordBarcodeCreated(GeneratedBarcode code) async {
+    if (const QrPayloadClassifier().classify(code.value).isEphemeral) {
+      return;
+    }
+    await (await _loadHistory()).recordCreated(
+      payload: code.value,
+      codeFormat: code.format,
+    );
+  }
+
+  Future<void> _saveBarcodeCreated(GeneratedBarcode code) async {
+    if (const QrPayloadClassifier().classify(code.value).isEphemeral) {
+      return;
+    }
+    await (await _loadHistory()).savePayload(
+      payload: code.value,
+      codeFormat: code.format,
+      activityKind: QrActivityKind.created,
+      source: QrActivitySource.manual,
     );
   }
 
@@ -189,6 +271,30 @@ class _DaliQrHomeState extends State<DaliQrHome> {
     );
   }
 
+  Future<void> _saveScanned(ScannedCode code) async {
+    if (const QrPayloadClassifier().classify(code.value).isEphemeral) {
+      throw StateError('Authenticator and passkey setup codes are not saved.');
+    }
+    final verification = verificationForScannedCode(
+      await _secureQrService,
+      code,
+    );
+    await (await _loadHistory()).savePayload(
+      payload: code.value,
+      verificationCode: verification?.code,
+      registrableDomain: verification is SecureQrResult
+          ? verification.registrableDomain
+          : null,
+      codeFormat: code.format,
+      activityKind: QrActivityKind.scanned,
+      source: switch (code.source) {
+        ScanSource.camera => QrActivitySource.camera,
+        ScanSource.gallery => QrActivitySource.gallery,
+        ScanSource.sharedImage => QrActivitySource.sharedImage,
+      },
+    );
+  }
+
   @override
   void dispose() {
     _inboundImageShare.dispose();
@@ -218,7 +324,7 @@ class _DaliQrHomeState extends State<DaliQrHome> {
               ),
             );
           }
-          if (service == null) {
+          if (service == null || !_inboundShareReady) {
             return const Center(child: CircularProgressIndicator());
           }
           return switch (_selectedIndex) {
@@ -228,15 +334,21 @@ class _DaliQrHomeState extends State<DaliQrHome> {
                 final entitlement = entitlementSnapshot.data;
                 return entitlement == null
                     ? const Center(child: CircularProgressIndicator())
-                    : Navigator(
-                        key: _createNavigatorKey,
-                        onGenerateRoute: (_) => MaterialPageRoute<void>(
-                          builder: (_) => QrGenerationSpikePage(
-                            secureQrService: service,
-                            customizationEntitlement: entitlement,
-                            customCenterImageStore: _customCenterImageStore,
-                            onCreated: _recordCreated,
-                            onSave: _saveCreated,
+                    : NavigatorPopHandler<void>(
+                        onPopWithResult: (_) =>
+                            _createNavigatorKey.currentState?.pop(),
+                        child: Navigator(
+                          key: _createNavigatorKey,
+                          onGenerateRoute: (_) => MaterialPageRoute<void>(
+                            builder: (_) => QrGenerationSpikePage(
+                              secureQrService: service,
+                              customizationEntitlement: entitlement,
+                              customCenterImageStore: _customCenterImageStore,
+                              onCreated: _recordCreated,
+                              onSave: _saveCreated,
+                              onBarcodeCreated: _recordBarcodeCreated,
+                              onBarcodeSave: _saveBarcodeCreated,
+                            ),
                           ),
                         ),
                       );
@@ -245,7 +357,17 @@ class _DaliQrHomeState extends State<DaliQrHome> {
             1 => QrScannerPage(
               key: ValueKey(_scanSession),
               secureQrService: service,
+              onBatchRequested: () async {
+                await Navigator.of(context).push<void>(
+                  MaterialPageRoute(
+                    builder: (_) => BatchSessionsPage(secureQrService: service),
+                  ),
+                );
+              },
               onScanned: _recordScanned,
+              startCamera: !_imageOnlyLaunch && _sharedImageError == null,
+              imageError: _sharedImageError,
+              onSaveCode: _saveScanned,
               sharedImagePath: _sharedImagePath,
               onSharedImageConsumed: _sharedImageConsumed,
             ),
@@ -285,6 +407,10 @@ class _DaliQrHomeState extends State<DaliQrHome> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
+          if (index == 1) {
+            _sharedImageError = null;
+            _imageOnlyLaunch = false;
+          }
           if (index == 1 && _selectedIndex == 1) {
             _scanSession += 1;
           }
@@ -321,6 +447,8 @@ class QrGenerationSpikePage extends StatefulWidget {
     this.imagePicker,
     this.onCreated,
     this.onSave,
+    this.onBarcodeCreated,
+    this.onBarcodeSave,
     super.key,
   });
 
@@ -328,6 +456,8 @@ class QrGenerationSpikePage extends StatefulWidget {
   final CustomizationEntitlement customizationEntitlement;
   final CustomCenterImageStore? customCenterImageStore;
   final ImagePicker? imagePicker;
+  final Future<void> Function(GeneratedBarcode)? onBarcodeCreated;
+  final Future<void> Function(GeneratedBarcode)? onBarcodeSave;
   final Future<void> Function({
     required String payload,
     String? verificationCode,
@@ -359,7 +489,16 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
   Uint8List? _customImageBytes;
   var _decorationMode = QrCenterDecorationMode.daliIcon;
   bool _generating = false;
+  bool _trialNoticeAcknowledged = false;
   bool _hasQrContent = true;
+  ScannedCodeFormat _format = ScannedCodeFormat.qrCode;
+  QrCreationType _contentType = QrCreationType.text;
+  StructuredQrDraft _structuredDraft = const StructuredQrDraft(
+    type: QrCreationType.contact,
+  );
+  bool get _wifiMode => _contentType == QrCreationType.wifi;
+  bool get _structuredMode => _contentType != QrCreationType.text && !_wifiMode;
+  WifiQrDraft _wifiDraft = const WifiQrDraft();
 
   @override
   void initState() {
@@ -446,9 +585,51 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
   }
 
   Future<void> _generate() async {
+    if (_generating) return;
     setState(() => _generating = true);
     try {
-      final payload = _policy.validate(_controller.text);
+      if (_format != ScannedCodeFormat.qrCode ||
+          _contentType != QrCreationType.text) {
+        final entitlement = widget.customizationEntitlement;
+        if (entitlement is TrialCustomizationEntitlement) {
+          final trial = entitlement as TrialCustomizationEntitlement;
+          if (trial.canStartTrial) await trial.startTrial();
+          if (!mounted) return;
+        }
+        if (!_trialNoticeAcknowledged &&
+            entitlement is TrialCustomizationEntitlement &&
+            (entitlement as TrialCustomizationEntitlement).trialRemaining !=
+                null) {
+          final continued = await showCustomizationTrial(context, entitlement);
+          if (!mounted || !continued) return;
+          _trialNoticeAcknowledged = true;
+        }
+        if (!entitlement.isUnlocked) {
+          await _showCreationUnlock();
+          if (!mounted || !entitlement.isUnlocked) return;
+        }
+      }
+      if (_format != ScannedCodeFormat.qrCode) {
+        final code = await BarcodeGenerator.generate(_controller.text, _format);
+        if (!mounted) return;
+        await widget.onBarcodeCreated?.call(code);
+        if (!mounted) return;
+        setState(() => _error = null);
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                GeneratedBarcodePage(code: code, onSave: widget.onBarcodeSave),
+          ),
+        );
+        return;
+      }
+      final payload = _policy.validate(
+        _wifiMode
+            ? _wifiDraft.encode()
+            : _structuredMode
+            ? _structuredDraft.encode()
+            : _controller.text,
+      );
       final verification = widget.secureQrService.calculateForPayload(
         payload.value,
       );
@@ -524,18 +705,59 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
         ),
       );
     } on QrCreationPayloadValidationException catch (error) {
-      setState(() => _error = error.message);
+      if (mounted) setState(() => _error = error.message);
     } on QrPayloadTooLongException {
-      setState(
-        () => _error =
-            'This content is too large for a decorated Level H QR code.',
-      );
+      if (mounted) {
+        setState(
+          () => _error =
+              'This content is too large for a decorated Level H QR code.',
+        );
+      }
     } on FormatException catch (error) {
-      setState(() => _error = error.message);
-    } on Object catch (error) {
-      setState(() => _error = 'QR generation failed: $error');
+      if (mounted) setState(() => _error = error.message);
+    } on Object {
+      if (mounted) {
+        setState(
+          () => _error =
+              'Code generation failed. Check the content and try again.',
+        );
+      }
     } finally {
       if (mounted) setState(() => _generating = false);
+    }
+  }
+
+  Future<void> _showCreationUnlock() async {
+    final entitlement = widget.customizationEntitlement;
+    final navigator = Navigator.of(context);
+    var closed = false;
+    void closeWhenUnlocked() {
+      if (entitlement.isUnlocked && mounted && !closed) {
+        closed = true;
+        navigator.pop();
+      }
+    }
+
+    entitlement.addListener(closeWhenUnlocked);
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => SingleChildScrollView(
+          child: CustomizationUnlockSheet(
+            entitlement: entitlement,
+            title: 'Unlock more code types',
+            description:
+                'Create barcodes and QR codes for Wi-Fi, contacts, events, '
+                'locations, email, phone, and SMS with your lifetime unlock. '
+                'Custom logo exports and extended history are also included.',
+          ),
+        ),
+      );
+    } finally {
+      closed = true;
+      entitlement.removeListener(closeWhenUnlocked);
     }
   }
 
@@ -565,72 +787,193 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
     return ListenableBuilder(
       listenable: widget.customizationEntitlement,
       builder: (context, _) => Scaffold(
-        appBar: AppBar(title: const Text('Create QR code')),
+        appBar: AppBar(
+          title: Text(
+            _format == ScannedCodeFormat.qrCode
+                ? 'Create QR code'
+                : 'Create ${_format.label}',
+          ),
+        ),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              TextField(
-                controller: _controller,
-                keyboardType: TextInputType.multiline,
-                minLines: 1,
-                maxLines: 5,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: InputDecoration(
-                  labelText: 'QR content',
-                  errorText: _error,
-                  border: const OutlineInputBorder(),
-                  suffixIcon: _hasQrContent
-                      ? IconButton(
-                          tooltip: 'Clear QR content',
-                          onPressed: () {
-                            _controller.clear();
-                            setState(() => _error = null);
-                          },
-                          icon: const Icon(Icons.clear),
-                        )
-                      : null,
+              DropdownButtonFormField<ScannedCodeFormat>(
+                initialValue: _format,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Code format',
+                  border: OutlineInputBorder(),
                 ),
-                onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                onSubmitted: (_) => _generate(),
-              ),
-              const SizedBox(height: 12),
-              SegmentedButton<QrCenterDecorationMode>(
-                expandedInsets: EdgeInsets.zero,
-                showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(
-                    value: QrCenterDecorationMode.none,
-                    label: Text('Plain'),
-                  ),
-                  ButtonSegment(
-                    value: QrCenterDecorationMode.verificationCode,
-                    label: Text('Code'),
-                  ),
-                  ButtonSegment(
-                    value: QrCenterDecorationMode.daliIcon,
-                    label: Text('Dali'),
-                  ),
-                  ButtonSegment(
-                    value: QrCenterDecorationMode.customImage,
-                    label: Text('Custom'),
-                  ),
+                items: [
+                  for (final format in BarcodeGenerator.formats)
+                    DropdownMenuItem(value: format, child: Text(format.label)),
                 ],
-                selected: {_decorationMode},
-                onSelectionChanged: (selection) {
-                  final selected = selection.single;
-                  if (selected == QrCenterDecorationMode.customImage &&
-                      _customImageBytes == null) {
-                    unawaited(_pickCustomImage());
-                    return;
-                  }
-                  setState(() {
-                    _decorationMode = selected;
-                  });
-                },
+                onChanged: _generating
+                    ? null
+                    : (format) {
+                        if (format != null && format != _format) {
+                          setState(() {
+                            _format = format;
+                            _contentType = QrCreationType.text;
+                            _wifiDraft = const WifiQrDraft();
+                            _error = null;
+                          });
+                        }
+                      },
               ),
-              if (_decorationMode == QrCenterDecorationMode.customImage) ...[
+              const SizedBox(height: 16),
+              if (!widget.customizationEntitlement.isUnlocked &&
+                  (_format != ScannedCodeFormat.qrCode ||
+                      _contentType != QrCreationType.text)) ...[
+                Text(
+                  widget.customizationEntitlement
+                              is TrialCustomizationEntitlement &&
+                          (widget.customizationEntitlement
+                                  as TrialCustomizationEntitlement)
+                              .canStartTrial
+                      ? 'This code type includes a free one-month trial. Your trial starts when you generate it.'
+                      : 'This code type is included with the lifetime unlock. You can fill in the details before unlocking.',
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (_format == ScannedCodeFormat.qrCode) ...[
+                DropdownButtonFormField<QrCreationType>(
+                  key: ValueKey(_format),
+                  initialValue: _contentType,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'QR content type',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    for (final type in QrCreationType.values)
+                      DropdownMenuItem(
+                        value: type,
+                        child: Text(
+                          type.label,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: _generating
+                      ? null
+                      : (value) {
+                          if (value == null || value == _contentType) return;
+                          setState(() {
+                            _contentType = value;
+                            _structuredDraft = StructuredQrDraft(type: value);
+                            _wifiDraft = const WifiQrDraft();
+                            _error = null;
+                          });
+                        },
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (_wifiMode) ...[
+                WifiQrFields(
+                  onChanged: (draft) => setState(() {
+                    _wifiDraft = draft;
+                    _error = null;
+                  }),
+                ),
+                if (_error != null)
+                  Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+              ] else if (_structuredMode) ...[
+                StructuredQrFields(
+                  key: ValueKey(_contentType),
+                  type: _contentType,
+                  enabled: !_generating,
+                  onChanged: (draft) => setState(() {
+                    _structuredDraft = draft;
+                    _error = null;
+                  }),
+                ),
+                if (_error != null)
+                  Text(
+                    _error!,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+              ] else
+                TextField(
+                  controller: _controller,
+                  keyboardType: TextInputType.multiline,
+                  minLines: 1,
+                  maxLines: 5,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(
+                    labelText: _format == ScannedCodeFormat.qrCode
+                        ? 'QR content'
+                        : 'Code content',
+                    helperText: _format == ScannedCodeFormat.qrCode
+                        ? null
+                        : BarcodeGenerator.help(_format),
+                    helperMaxLines: 4,
+                    errorMaxLines: 4,
+                    errorText: _error,
+                    border: const OutlineInputBorder(),
+                    suffixIcon: _hasQrContent
+                        ? IconButton(
+                            tooltip: _format == ScannedCodeFormat.qrCode
+                                ? 'Clear QR content'
+                                : 'Clear code content',
+                            onPressed: () {
+                              _controller.clear();
+                              setState(() => _error = null);
+                            },
+                            icon: const Icon(Icons.clear),
+                          )
+                        : null,
+                  ),
+                  onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                  onSubmitted: (_) => _generate(),
+                ),
+              const SizedBox(height: 12),
+              if (_format == ScannedCodeFormat.qrCode)
+                SegmentedButton<QrCenterDecorationMode>(
+                  expandedInsets: EdgeInsets.zero,
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(
+                      value: QrCenterDecorationMode.none,
+                      label: Text('Plain'),
+                    ),
+                    ButtonSegment(
+                      value: QrCenterDecorationMode.verificationCode,
+                      label: Text('Code'),
+                    ),
+                    ButtonSegment(
+                      value: QrCenterDecorationMode.daliIcon,
+                      label: Text('Dali'),
+                    ),
+                    ButtonSegment(
+                      value: QrCenterDecorationMode.customImage,
+                      label: Text('Custom'),
+                    ),
+                  ],
+                  selected: {_decorationMode},
+                  onSelectionChanged: (selection) {
+                    final selected = selection.single;
+                    if (selected == QrCenterDecorationMode.customImage &&
+                        _customImageBytes == null) {
+                      unawaited(_pickCustomImage());
+                      return;
+                    }
+                    setState(() {
+                      _decorationMode = selected;
+                    });
+                  },
+                ),
+              if (_format == ScannedCodeFormat.qrCode &&
+                  _decorationMode == QrCenterDecorationMode.customImage) ...[
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -679,10 +1022,22 @@ class _QrGenerationSpikePageState extends State<QrGenerationSpikePage> {
               ],
               const SizedBox(height: 12),
               FilledButton(
-                onPressed: !_hasQrContent || _generating
+                onPressed:
+                    (_wifiMode
+                            ? _wifiDraft.ssid.isEmpty
+                            : _structuredMode
+                            ? false
+                            : !_hasQrContent) ||
+                        _generating
                     ? null
                     : () => unawaited(_generate()),
-                child: Text(_generating ? 'Generating...' : 'Generate QR code'),
+                child: Text(
+                  _generating
+                      ? 'Generating...'
+                      : _format == ScannedCodeFormat.qrCode
+                      ? 'Generate QR code'
+                      : 'Generate ${_format.label}',
+                ),
               ),
             ],
           ),
@@ -809,6 +1164,12 @@ class _CustomizationStatus extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final unlocked = entitlement.isUnlocked;
+    final trial = entitlement is TrialCustomizationEntitlement
+        ? (entitlement as TrialCustomizationEntitlement).trialRemaining
+        : null;
+    final trialAvailable =
+        entitlement is TrialCustomizationEntitlement &&
+        (entitlement as TrialCustomizationEntitlement).canStartTrial;
     return DecoratedBox(
       decoration: BoxDecoration(
         border: Border.all(color: colorScheme.outlineVariant),
@@ -872,7 +1233,11 @@ class _CustomizationStatus extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        unlocked ? 'Unlocked' : 'Locked',
+                        trial != null
+                            ? 'Trial'
+                            : unlocked
+                            ? 'Unlocked'
+                            : 'Locked',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: unlocked
                               ? colorScheme.onPrimaryContainer
@@ -886,13 +1251,28 @@ class _CustomizationStatus extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              unlocked
-                  ? 'Your lifetime customization features are ready to use.'
-                  : 'Unlock once to make your QR codes more personal and keep them useful for longer.',
+              trial != null
+                  ? 'Free trial: ${trialCountdown(trial)}. Unlock once to keep your benefits.'
+                  : trialAvailable
+                  ? 'Try the creation benefits free for one month when you first use them.'
+                  : unlocked
+                  ? 'Your lifetime creation and customization features are ready to use.'
+                  : 'Unlock once for more code types, personalized QR codes, and extended history.',
             ),
             const SizedBox(height: 20),
             Text('Benefits', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 12),
+            const _CustomizationBenefit(
+              icon: Icons.qr_code_2,
+              text:
+                  'Create Wi-Fi, contact, event, location, email, phone, and SMS QR codes',
+            ),
+            const SizedBox(height: 10),
+            const _CustomizationBenefit(
+              icon: Icons.view_week_outlined,
+              text: 'Create barcodes in all supported formats',
+            ),
+            const SizedBox(height: 10),
             const _CustomizationBenefit(
               icon: Icons.add_photo_alternate_outlined,
               text: 'Add your own image or logo to QR codes',
@@ -941,6 +1321,9 @@ class _CustomizationPurchaseControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final lifetimeOwned = entitlement is TrialCustomizationEntitlement
+        ? (entitlement as TrialCustomizationEntitlement).hasLifetimeAccess
+        : entitlement.isUnlocked;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -949,7 +1332,7 @@ class _CustomizationPurchaseControls extends StatelessWidget {
           const SizedBox(height: 12),
         ],
         FilledButton.icon(
-          onPressed: entitlement.isUnlocked || entitlement.isBusy
+          onPressed: lifetimeOwned || entitlement.isBusy
               ? null
               : () => unawaited(
                   entitlement.price == null
@@ -962,12 +1345,12 @@ class _CustomizationPurchaseControls extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Icon(
-                  entitlement.isUnlocked
+                  lifetimeOwned
                       ? Icons.check_circle_outline
                       : Icons.lock_open_outlined,
                 ),
           label: Text(
-            entitlement.isUnlocked
+            lifetimeOwned
                 ? 'Lifetime customization unlocked'
                 : entitlement.price == null
                 ? 'Check unlock availability'

@@ -291,11 +291,20 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('About'), findsOneWidget);
     expect(find.text('App'), findsNothing);
     expect(find.text('Dali QR Custom'), findsOneWidget);
     expect(find.text('Locked'), findsOneWidget);
     expect(find.text('Benefits'), findsOneWidget);
+    expect(
+      find.text(
+        'Create Wi-Fi, contact, event, location, email, phone, and SMS QR codes',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Create barcodes in all supported formats'),
+      findsOneWidget,
+    );
     expect(find.text('Add your own image or logo to QR codes'), findsOneWidget);
     expect(
       find.text('Save, copy, and share your personalized QR codes'),
@@ -307,6 +316,7 @@ void main() {
     );
 
     await tester.ensureVisible(find.text('Restore purchases'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Restore purchases'));
     await tester.pump();
     expect(entitlement.restoreCalls, 1);
@@ -316,6 +326,12 @@ void main() {
     expect(entitlement.purchaseCalls, 1);
     expect(find.text('Unlocked'), findsOneWidget);
     expect(find.text('Lifetime customization unlocked'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('About'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('About'), findsOneWidget);
   });
 
   testWidgets('SettingsPage unlocks after five package-name taps', (
@@ -382,6 +398,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(find.text('QR Center Image'), 200);
     expect(find.text('QR Center Image'), findsOneWidget);
     expect(find.text('Default Dali icon'), findsOneWidget);
     expect(find.bySemanticsLabel('Default Dali center icon'), findsOneWidget);

@@ -6,7 +6,18 @@ import 'package:dali_qr/features/scan/domain/qr_payload_classifier.dart';
 import 'package:dali_qr/features/scan/presentation/qr_payload_action.dart';
 
 void main() {
-  testWidgets('web links open without a second confirmation', (tester) async {
+  testWidgets('opening a reviewed web link launches it once', (tester) async {
+    const channel = MethodChannel('plugins.flutter.io/url_launcher');
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (call) async {
+          calls.add(call);
+          return true;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null),
+    );
     await tester.pumpWidget(
       MaterialApp(
         home: Builder(
@@ -22,12 +33,15 @@ void main() {
       ),
     );
 
+    expect(calls, isEmpty);
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
 
     expect(find.text('Verify if available'), findsNothing);
-    expect(find.text('Continue'), findsNothing);
-    expect(find.text('Cancel'), findsNothing);
+    expect(find.text('Review destination'), findsNothing);
+    expect(calls, hasLength(1));
+    expect(calls.single.method, 'launch');
+    expect((calls.single.arguments as Map)['url'], 'https://example.com');
   });
 
   testWidgets(

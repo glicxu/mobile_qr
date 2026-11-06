@@ -1,0 +1,83 @@
+{
+  "generator": "bwip-js 4.11.4",
+  "fixtures": [
+    {
+      "id": "dataMatrix_short",
+      "format": "dataMatrix",
+      "value": "  KEEP-00123  ",
+      "generatorOptions": {
+        "bcid": "datamatrix",
+        "text": "  KEEP-00123  ",
+        "scale": 4,
+        "padding": 20,
+        "backgroundcolor": "FFFFFF"
+      },
+      "sha256": "67e5f852eee0bb5651a96bdb9eaee00c3c7be6b0e033545b1cee29a86ffde484"
+    },
+    {
+      "id": "dataMatrix_long",
+      "format": "dataMatrix",
+      "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+      "generatorOptions": {
+        "bcid": "datamatrix",
+        "text": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+        "scale": 4,
+        "padding": 20,
+        "backgroundcolor": "FFFFFF"
+      },
+      "sha256": "062cf39e62f5b73b3f4bc89550569435f4d7128fd077507f2550824caf1358a7"
+    },
+    {
+      "id": "pdf417_short",
+      "format": "pdf417",
+      "value": "  KEEP-00123  ",
+      "generatorOptions": {
+        "bcid": "pdf417",
+        "text": "  KEEP-00123  ",
+        "scale": 4,
+        "padding": 20,
+        "backgroundcolor": "FFFFFF"
+      },
+      "sha256": "31f3f72fd792b28eb94bf54a1cd5c04410f08742cd7a41480c17703da6915491"
+    },
+    {
+      "id": "pdf417_long",
+      "format": "pdf417",
+      "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+      "generatorOptions": {
+        "bcid": "pdf417",
+        "text": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+        "scale": 4,
+        "padding": 20,
+        "backgroundcolor": "FFFFFF"
+      },
+      "sha256": "dc5f569e1626b3a07e0358825a7fe4b8d1b1d913ab544e420ddf3360f9a10d9c"
+    },
+    {
+      "id": "aztec_short",
+      "format": "aztec",
+      "value": "  KEEP-00123  ",
+      "generatorOptions": {
+        "bcid": "azteccode",
+        "text": "  KEEP-00123  ",
+        "scale": 4,
+        "padding": 20,
+        "backgroundcolor": "FFFFFF"
+      },
+      "sha256": "b598731a816c52f185cdf803e7decf2a703556c7226908faf00ee3c620905f41"
+    },
+    {
+      "id": "aztec_long",
+      "format": "aztec",
+      "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+      "generatorOptions": {
+        "bcid": "azteccode",
+        "text": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+        "scale": 4,
+        "padding": 20,
+        "backgroundcolor": "FFFFFF"
+      },
+      "sha256": "dcd3da8333cd85ec8aea934e4797ef33f17a36b89af63ae19899605f6616e26c"
+    }
+  ]
+}

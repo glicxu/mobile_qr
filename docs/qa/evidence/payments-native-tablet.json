@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-30",
+  "device": "R9WN91CTWCJ",
+  "package": "com.dalifin.qr.scannerqa",
+  "model": "SM-T290",
+  "api": "30",
+  "scope": "Synthetic local Payments persistence and native QR/card decoding. Test-only entitlement; no store or checkout calls.",
+  "protectedPackagesBefore": {
+    "com.dalifin.qr.test": true,
+    "com.dalifin.qr": false
+  },
+  "initialFlutterApkIdentity": "com.dalifin.qr.scannerqa",
+  "cases": [
+    {
+      "persistence": true,
+      "snapshotPreserved": true,
+      "nativeQr": true,
+      "nativeCard": true,
+      "revokedExportBlocked": true,
+      "recordExportAndDeletion": true,
+      "sampleIsolated": true,
+      "liveBilling": false,
+      "result": "passed"
+    }
+  ],
+  "nativePreviewSha256": "1fa6fc73d42f491a613a14bd75546ea201e8aa9ef2466f9735246009c218d460",
+  "testedApkSha256": "78275dd810721ba0bc368725a05ce894be45129f552767d750d0c034fea660ec",
+  "result": "passed",
+  "qaAppRemoved": true,
+  "protectedPackagesAfter": {
+    "com.dalifin.qr.test": true,
+    "com.dalifin.qr": false
+  }
+}

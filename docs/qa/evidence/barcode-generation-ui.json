@@ -1,0 +1,26 @@
+{
+  "date": "2026-10-29",
+  "device": "R9WN91CTWCJ",
+  "package": "com.dalifin.qr.test",
+  "defaultFormat": "qrCode",
+  "visibleDropdownFormats": [
+    "QR Code",
+    "UPC-A",
+    "UPC-E",
+    "EAN-8",
+    "EAN-13",
+    "Code 128",
+    "Code 39",
+    "Code 93",
+    "Codabar",
+    "ITF-14",
+    "Data Matrix",
+    "PDF417",
+    "Aztec"
+  ],
+  "formatCount": 13,
+  "result": "passed",
+  "screenshotCaptured": false,
+  "creationActionInvoked": false,
+  "explicitSaveInvoked": false
+}

@@ -10,21 +10,41 @@ import '../../create/application/qr_encoder.dart';
 import '../../create/data/dart_qr_encoder.dart';
 import '../../create/data/qr_png_renderer.dart';
 import '../../secure_qr/domain/secure_qr_service.dart';
+import '../../lookup/domain/gs1_digital_link.dart';
+import '../../lookup/presentation/gs1_details.dart';
+import '../../lookup/domain/identifier_recognizer.dart';
+import '../../lookup/presentation/identifier_details.dart';
+import '../application/scanned_code_verification.dart';
 import '../data/mobile_scanner_code_adapter.dart';
+import '../data/code_image_analyzer.dart';
+import '../data/offline_image_decoder.dart';
 import '../domain/qr_payload_classifier.dart';
 import '../domain/scanned_code.dart';
 import 'qr_payload_action.dart';
+import 'qr_link_review.dart';
+
+export '../application/scanned_code_verification.dart'
+    show verificationForScannedCode;
 
 final class QrScannerPage extends StatefulWidget {
   const QrScannerPage({
     required this.secureQrService,
     this.onScanned,
+    this.onSaveCode,
     this.sharedImagePath,
     this.onSharedImageConsumed,
+    this.onCodeSelected,
+    this.onBatchRequested,
+    this.imageAnalyzer,
+    this.scannerController,
+    this.startCamera = true,
+    this.imageError,
+    this.imagePathPicker,
     super.key,
   });
 
   final SecureQrService secureQrService;
+  final Future<void> Function(ScannedCode code)? onSaveCode;
   final Future<void> Function({
     required String payload,
     String? verificationCode,
@@ -36,6 +56,13 @@ final class QrScannerPage extends StatefulWidget {
   onScanned;
   final String? sharedImagePath;
   final ValueChanged<String>? onSharedImageConsumed;
+  final ValueChanged<ScannedCode>? onCodeSelected;
+  final Future<void> Function()? onBatchRequested;
+  final CodeImageAnalyzer? imageAnalyzer;
+  final MobileScannerController? scannerController;
+  final bool startCamera;
+  final String? imageError;
+  final Future<String?> Function(ImageSource source)? imagePathPicker;
 
   @override
   State<QrScannerPage> createState() => _QrScannerPageState();
@@ -45,29 +72,43 @@ class _QrScannerPageState extends State<QrScannerPage> {
   static const _maxImageBytes = 25 * 1024 * 1024;
   static const QrEncoder _encoder = DartQrEncoder();
   static const _pngRenderer = QrPngRenderer();
-  late final MobileScannerController _controller = MobileScannerController(
-    autoStart: true,
-    formats: MobileScannerCodeAdapter.formats,
-    detectionSpeed: DetectionSpeed.noDuplicates,
-    facing: CameraFacing.back,
-    returnImage: false,
-  );
+  late final MobileScannerController _controller =
+      widget.scannerController ??
+      MobileScannerController(
+        autoStart: widget.startCamera && widget.sharedImagePath == null,
+        formats: MobileScannerCodeAdapter.formats,
+        detectionSpeed: DetectionSpeed.noDuplicates,
+        facing: CameraFacing.back,
+        returnImage: false,
+      );
   final ImagePicker _imagePicker = ImagePicker();
 
   ScannedCode? _decodedCode;
   List<ScannedCode> _detectedCodes = const [];
   bool _handlingDetection = false;
   bool _importingImage = false;
+  bool _selectionDelivered = false;
+  bool _openingBatch = false;
+  bool _savingCode = false;
+  bool _binaryNoticeShown = false;
+  int _imageGeneration = 0;
+  late bool _cameraRequested;
+  String? _imageError;
 
   @override
   void initState() {
     super.initState();
+    _cameraRequested = _controller.autoStart;
+    _imageError = widget.imageError;
     _scheduleSharedImage(widget.sharedImagePath);
   }
 
   @override
   void didUpdateWidget(covariant QrScannerPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.imageError != oldWidget.imageError) {
+      _imageError = widget.imageError;
+    }
     if (widget.sharedImagePath != oldWidget.sharedImagePath) {
       _scheduleSharedImage(widget.sharedImagePath);
     }
@@ -90,33 +131,55 @@ class _QrScannerPageState extends State<QrScannerPage> {
 
   @override
   void dispose() {
-    unawaited(_controller.dispose());
+    if (widget.scannerController == null) unawaited(_controller.dispose());
     super.dispose();
   }
 
-  void _handleDetection(BarcodeCapture capture) {
-    if (_handlingDetection) return;
+  Future<void> _handleDetection(BarcodeCapture capture) async {
+    if (_handlingDetection || _openingBatch) return;
 
     final codes = MobileScannerCodeAdapter.extract(
       capture,
       source: ScanSource.camera,
     );
-    if (codes.isEmpty) return;
+    if (codes.isEmpty) {
+      if (!_binaryNoticeShown &&
+          MobileScannerCodeAdapter.hasBinaryOnlyResults(capture)) {
+        _binaryNoticeShown = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'This code contains binary data without readable text. It cannot be opened or saved here.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
     _handlingDetection = true;
-    unawaited(_controller.pause());
-    _completeDetection(codes.first);
+    try {
+      await _controller.pause();
+    } on Object {
+      // A decoded result remains usable if the camera has already stopped.
+    }
+    if (mounted) _completeDetection(codes.first);
   }
 
   void _completeDetection(ScannedCode code) {
+    if (widget.onCodeSelected case final select?) {
+      if (_selectionDelivered) return;
+      _selectionDelivered = true;
+      select(code);
+      return;
+    }
     setState(() {
       _decodedCode = code;
       _detectedCodes = const [];
     });
     final onScanned = widget.onScanned;
     if (onScanned != null &&
-        const QrPayloadClassifier().classify(code.value).type !=
-            QrContentType.passkey) {
+        !const QrPayloadClassifier().classify(code.value).isEphemeral) {
       final verification = verificationForScannedCode(
         widget.secureQrService,
         code,
@@ -152,16 +215,26 @@ class _QrScannerPageState extends State<QrScannerPage> {
     setState(() => _importingImage = true);
     _handlingDetection = true;
     try {
-      await _controller.pause();
-      final image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        requestFullMetadata: false,
-      );
-      if (image == null) {
+      try {
+        await _controller.pause();
+      } on Object {
+        // Image import remains available when camera access is unavailable.
+      }
+      final String? path;
+      if (widget.imagePathPicker case final pick?) {
+        path = await pick(ImageSource.gallery);
+      } else {
+        final image = await _imagePicker.pickImage(
+          source: ImageSource.gallery,
+          requestFullMetadata: false,
+        );
+        path = image?.path;
+      }
+      if (path == null) {
         await _resumeAfterImport();
         return;
       }
-      await _scanImagePath(image.path, source: ScanSource.gallery);
+      await _scanImagePath(path, source: ScanSource.gallery);
     } on Object {
       await _showImageScanError();
     }
@@ -172,19 +245,25 @@ class _QrScannerPageState extends State<QrScannerPage> {
     required ScanSource source,
     bool deleteAfterScan = false,
   }) async {
-    if (!_handlingDetection) {
-      _handlingDetection = true;
-      if (mounted) setState(() => _importingImage = true);
-      try {
-        await _controller.pause();
-      } on Object {
-        // Image analysis does not require a running camera.
-      }
+    final generation = ++_imageGeneration;
+    _handlingDetection = true;
+    if (mounted) {
+      setState(() {
+        _importingImage = true;
+        _decodedCode = null;
+        _detectedCodes = const [];
+        _imageError = null;
+      });
+    }
+    try {
+      await _controller.pause();
+    } on Object {
+      // Still-image analysis does not need an active camera.
     }
 
     try {
       if (await File(path).length() > _maxImageBytes) {
-        if (mounted) {
+        if (mounted && generation == _imageGeneration) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Choose an image smaller than 25 MB.'),
@@ -194,16 +273,24 @@ class _QrScannerPageState extends State<QrScannerPage> {
         }
         return;
       }
-      final capture = await _controller.analyzeImage(path);
-      if (!mounted) return;
-      final codes = capture == null
-          ? const <ScannedCode>[]
-          : MobileScannerCodeAdapter.extract(capture, source: source);
+      final analysis =
+          await (widget.imageAnalyzer ?? NativeCodeImageAnalyzer(_controller))
+              .analyze(path, source: source);
+      if (!mounted || generation != _imageGeneration) return;
+      final codes = analysis.codes;
       if (codes.isEmpty) {
+        _imageError =
+            analysis.notice ??
+            (analysis.binaryOnly
+                ? 'This code contains binary data without readable text. It cannot be opened or saved here.'
+                : 'No readable QR code or supported barcode was found. Try cropping closer to the code.');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'No readable QR code or supported barcode was found in that image.',
+              analysis.notice ??
+                  (analysis.binaryOnly
+                      ? 'This code contains binary data without readable text. It cannot be opened or saved here.'
+                      : 'No readable QR code or supported barcode was found. Try cropping closer to the code.'),
             ),
           ),
         );
@@ -211,14 +298,27 @@ class _QrScannerPageState extends State<QrScannerPage> {
         return;
       }
 
+      if (analysis.notice case final notice?) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(notice)));
+      }
       setState(() => _importingImage = false);
       if (codes.length == 1) {
         _completeDetection(codes.single);
       } else {
         setState(() => _detectedCodes = codes);
       }
+    } on ImageDecodeException catch (error) {
+      if (mounted && generation == _imageGeneration) {
+        _imageError = error.message;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+        await _resumeAfterImport();
+      }
     } on Object {
-      await _showImageScanError();
+      if (generation == _imageGeneration) await _showImageScanError();
     } finally {
       if (deleteAfterScan) {
         try {
@@ -232,6 +332,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
 
   Future<void> _showImageScanError() async {
     if (!mounted) return;
+    _imageError = 'The selected image could not be scanned.';
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('The selected image could not be scanned.')),
     );
@@ -242,6 +343,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
     if (!mounted) return;
     setState(() => _importingImage = false);
     _handlingDetection = false;
+    if (!_cameraRequested || !_controller.value.hasCameraPermission) return;
     try {
       await _controller.start();
     } on Object {
@@ -256,11 +358,95 @@ class _QrScannerPageState extends State<QrScannerPage> {
       appBar: AppBar(
         title: const Text('Scan QR code or barcode'),
         actions: [
-          if (decodedCode == null && _detectedCodes.isEmpty)
+          IconButton(
+            tooltip: 'Supported formats',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showDialog<void>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Scan 13 code formats'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        ScannedCodeFormat.values
+                            .where(
+                              (format) => format != ScannedCodeFormat.unknown,
+                            )
+                            .map((format) => format.label)
+                            .join(', '),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Reads text locally. Center one code in the frame, especially Data Matrix. Use Choose image to scan an existing image. Binary-only payloads cannot be opened or saved.',
+                      ),
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (widget.onBatchRequested != null)
             IconButton(
-              onPressed: _controller.toggleTorch,
-              tooltip: 'Toggle flashlight',
-              icon: const Icon(Icons.flashlight_on_outlined),
+              tooltip: 'Batch sessions',
+              onPressed: _openingBatch || _importingImage
+                  ? null
+                  : () async {
+                      if (_openingBatch ||
+                          (_handlingDetection &&
+                              _decodedCode == null &&
+                              _detectedCodes.isEmpty)) {
+                        return;
+                      }
+                      setState(() => _openingBatch = true);
+                      try {
+                        try {
+                          await _controller.pause();
+                        } on Object {
+                          /* Stored sessions do not require camera access. */
+                        }
+                        await widget.onBatchRequested!();
+                      } finally {
+                        if (mounted) {
+                          setState(() => _openingBatch = false);
+                          if (_decodedCode == null && _detectedCodes.isEmpty) {
+                            try {
+                              await _controller.start();
+                            } on Object {
+                              /* Scanner error UI handles restart failures. */
+                            }
+                          }
+                        }
+                      }
+                    },
+              icon: const Icon(Icons.playlist_add_check),
+            ),
+          if (decodedCode == null && _detectedCodes.isEmpty)
+            ValueListenableBuilder<MobileScannerState>(
+              valueListenable: _controller,
+              builder: (context, state, _) => IconButton(
+                onPressed:
+                    state.isRunning &&
+                        state.torchState != TorchState.unavailable
+                    ? () async {
+                        try {
+                          await _controller.toggleTorch();
+                        } on Object {
+                          // Camera shutdown can race a flashlight tap.
+                        }
+                      }
+                    : null,
+                tooltip: 'Toggle flashlight',
+                icon: const Icon(Icons.flashlight_on_outlined),
+              ),
             ),
         ],
       ),
@@ -294,32 +480,65 @@ class _QrScannerPageState extends State<QrScannerPage> {
                   color: Color(0xcc000000),
                   borderRadius: BorderRadius.all(Radius.circular(12)),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Point the camera at a QR code or barcode. Nothing is opened or sent.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      const SizedBox(height: 8),
-                      FilledButton.tonalIcon(
-                        onPressed: _importingImage ? null : _importImage,
-                        icon: _importingImage
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(context).height * 0.5,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_imageError case final message?) ...[
+                            Text(
+                              message,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          const Text(
+                            'Center a QR code or barcode. Reading stays on your device.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (!_cameraRequested)
+                                FilledButton.tonalIcon(
+                                  onPressed: _importingImage
+                                      ? null
+                                      : _scanAgain,
+                                  icon: const Icon(Icons.qr_code_scanner),
+                                  label: const Text('Start camera'),
                                 ),
-                              )
-                            : const Icon(Icons.image_outlined),
-                        label: Text(
-                          _importingImage ? 'Reading image...' : 'Choose image',
-                        ),
+                              FilledButton.tonalIcon(
+                                onPressed: _importingImage
+                                    ? null
+                                    : () => _importImage(),
+                                icon: _importingImage
+                                    ? const SizedBox.square(
+                                        dimension: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.image_outlined),
+                                label: Text(
+                                  _importingImage
+                                      ? 'Reading image...'
+                                      : 'Choose image',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -348,7 +567,7 @@ class _QrScannerPageState extends State<QrScannerPage> {
                 leading: const Icon(Icons.barcode_reader),
                 title: Text(code.format.label),
                 subtitle: Text(
-                  code.value,
+                  const QrPayloadClassifier().classify(code.value).previewText,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -364,7 +583,49 @@ class _QrScannerPageState extends State<QrScannerPage> {
     return ScannedCodeResultView(
       code: code,
       secureQrService: widget.secureQrService,
+      onScanAgain: _scanAgain,
+      onSave: widget.onSaveCode == null ? null : () => _saveCode(code),
+      saving: _savingCode,
     );
+  }
+
+  Future<void> _scanAgain() async {
+    ++_imageGeneration;
+    setState(() {
+      _cameraRequested = true;
+      _imageError = null;
+      _decodedCode = null;
+      _detectedCodes = const [];
+      _handlingDetection = false;
+      _selectionDelivered = false;
+      _binaryNoticeShown = false;
+    });
+    try {
+      await _controller.start();
+    } on Object {
+      // The camera error view still offers image import.
+    }
+  }
+
+  Future<void> _saveCode(ScannedCode code) async {
+    if (_savingCode || widget.onSaveCode == null) return;
+    setState(() => _savingCode = true);
+    try {
+      await widget.onSaveCode!(code);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Saved on this device.')));
+      }
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This code could not be saved.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingCode = false);
+    }
   }
 }
 
@@ -373,6 +634,8 @@ final class ScannedCodeResultView extends StatelessWidget {
     required this.code,
     required this.secureQrService,
     this.onScanAgain,
+    this.onSave,
+    this.saving = false,
     this.allowRouting = true,
     this.scanAgainLabel = 'Scan again',
     super.key,
@@ -383,6 +646,8 @@ final class ScannedCodeResultView extends StatelessWidget {
   final ScannedCode code;
   final SecureQrService secureQrService;
   final VoidCallback? onScanAgain;
+  final VoidCallback? onSave;
+  final bool saving;
   final bool allowRouting;
   final String scanAgainLabel;
 
@@ -398,22 +663,29 @@ final class ScannedCodeResultView extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = code.value;
     final payload = _classifier.classify(text);
+    final digitalLink = const Gs1DigitalLinkParser().parse(text);
+    final identifier = const IdentifierRecognizer().recognize(
+      value: text,
+      format: code.format,
+    );
     final verification = verificationForScannedCode(secureQrService, code);
 
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
         children: [
           Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
               children: [
                 Chip(
                   avatar: const Icon(Icons.barcode_reader),
                   label: Text(code.format.label),
                   visualDensity: VisualDensity.compact,
                 ),
-                const SizedBox(width: 8),
                 Text(
                   code.source.label,
                   style: Theme.of(context).textTheme.bodySmall,
@@ -423,7 +695,9 @@ final class ScannedCodeResultView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Icon(
-            payload.icon,
+            identifier != null && !payload.canRoute
+                ? Icons.numbers
+                : payload.icon,
             size: 56,
             color: Theme.of(context).colorScheme.primary,
           ),
@@ -459,19 +733,34 @@ final class ScannedCodeResultView extends StatelessWidget {
             ),
           ] else ...[
             Text(
-              payload.title,
+              identifier == null ? payload.title : 'Identifier',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 4),
-            Text(
-              payload.type == QrContentType.passkey
-                  ? 'Your phone’s passkey provider handles verification.'
-                  : 'No comparison code is available for this payload.',
-              textAlign: TextAlign.center,
-            ),
+            if (identifier == null) ...[
+              const SizedBox(height: 4),
+              Text(
+                payload.type == QrContentType.passkey
+                    ? 'Your phone’s passkey provider handles verification.'
+                    : 'No comparison code is available for this payload.',
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
           const SizedBox(height: 16),
+          if (digitalLink != null) ...[
+            Gs1Details(link: digitalLink),
+            const SizedBox(height: 16),
+          ],
+          if (identifier != null) ...[
+            IdentifierDetails(recognition: identifier),
+            const SizedBox(height: 16),
+          ],
+          if (payload.linkInspection case final inspection?
+              when identifier == null || payload.canRoute) ...[
+            QrLinkReview(inspection: inspection),
+            const SizedBox(height: 16),
+          ],
           if (allowRouting && payload.canRoute) ...[
             FilledButton.icon(
               onPressed: () => routeQrPayload(
@@ -481,6 +770,14 @@ final class ScannedCodeResultView extends StatelessWidget {
               ),
               icon: Icon(payload.icon),
               label: Text(payload.actionLabel),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (onSave != null && !payload.isEphemeral) ...[
+            OutlinedButton.icon(
+              onPressed: saving ? null : onSave,
+              icon: const Icon(Icons.bookmark_add_outlined),
+              label: Text(saving ? 'Saving...' : 'Save to Saved'),
             ),
             const SizedBox(height: 8),
           ],
@@ -505,13 +802,17 @@ final class ScannedCodeResultView extends StatelessWidget {
                   children: [
                     if (verification != null) ...[
                       Text(
-                        payload.title,
+                        identifier == null
+                            ? payload.title
+                            : '${identifier.kind.label} candidate',
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
                       const SizedBox(height: 4),
                     ],
                     SelectableText(
-                      payload.primaryText,
+                      identifier == null
+                          ? payload.primaryText
+                          : identifier.originalValue,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     for (final detail in payload.details) ...[
@@ -535,7 +836,7 @@ final class ScannedCodeResultView extends StatelessWidget {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
-                          child: SelectableText(text),
+                          child: QrRawContent(payload: payload),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -559,15 +860,6 @@ final class ScannedCodeResultView extends StatelessWidget {
       ),
     );
   }
-}
-
-@visibleForTesting
-QrVerificationResult? verificationForScannedCode(
-  SecureQrService service,
-  ScannedCode code,
-) {
-  if (code.format != ScannedCodeFormat.qrCode) return null;
-  return service.calculateForPayload(code.value);
 }
 
 final class _ScannerError extends StatelessWidget {

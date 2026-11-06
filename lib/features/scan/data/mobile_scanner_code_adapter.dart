@@ -16,6 +16,9 @@ abstract final class MobileScannerCodeAdapter {
     BarcodeFormat.code93,
     BarcodeFormat.codabar,
     BarcodeFormat.itf14,
+    BarcodeFormat.dataMatrix,
+    BarcodeFormat.pdf417,
+    BarcodeFormat.aztec,
   ];
 
   static List<ScannedCode> extract(
@@ -28,6 +31,12 @@ abstract final class MobileScannerCodeAdapter {
       final format = _mapFormat(barcode.format);
       final value = barcode.rawValue;
       if (format == null || value == null || value.isEmpty) continue;
+      // ML Kit's FORMAT_ITF is generic Interleaved 2 of 5, despite the plugin's
+      // itf14 enum name. Do not label shorter/other ITF payloads as ITF-14.
+      if (format == ScannedCodeFormat.itf14 &&
+          !RegExp(r'^[0-9]{14}$').hasMatch(value)) {
+        continue;
+      }
       if (!seen.add((format, value))) continue;
       results.add(
         ScannedCode(
@@ -38,11 +47,7 @@ abstract final class MobileScannerCodeAdapter {
         ),
       );
     }
-    results.sort((a, b) {
-      final formatOrder = a.format.index.compareTo(b.format.index);
-      return formatOrder != 0 ? formatOrder : a.value.compareTo(b.value);
-    });
-    return List.unmodifiable(results);
+    return orderScannedCodes(results);
   }
 
   static ScannedCodeFormat? _mapFormat(BarcodeFormat format) =>
@@ -57,8 +62,19 @@ abstract final class MobileScannerCodeAdapter {
         BarcodeFormat.code93 => ScannedCodeFormat.code93,
         BarcodeFormat.codabar => ScannedCodeFormat.codabar,
         BarcodeFormat.itf14 => ScannedCodeFormat.itf14,
+        BarcodeFormat.dataMatrix => ScannedCodeFormat.dataMatrix,
+        BarcodeFormat.pdf417 => ScannedCodeFormat.pdf417,
+        BarcodeFormat.aztec => ScannedCodeFormat.aztec,
         _ => null,
       };
+
+  static bool hasBinaryOnlyResults(BarcodeCapture capture) =>
+      capture.barcodes.any(
+        (barcode) =>
+            _mapFormat(barcode.format) != null &&
+            (barcode.rawValue == null || barcode.rawValue!.isEmpty) &&
+            (_decodedBytes(barcode.rawDecodedBytes)?.isNotEmpty ?? false),
+      );
 
   static Uint8List? _decodedBytes(BarcodeBytes? bytes) => switch (bytes) {
     DecodedBarcodeBytes(:final bytes) => bytes,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../scan/domain/authenticator_payload.dart';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -9,6 +10,7 @@ import '../data/drift_qr_history_repository.dart';
 import '../data/history_database.dart';
 import '../data/shared_preferences_history_settings.dart';
 import '../domain/qr_history.dart';
+import '../domain/saved_organization.dart';
 
 final class HistoryController extends ChangeNotifier {
   HistoryController(
@@ -34,6 +36,27 @@ final class HistoryController extends ChangeNotifier {
   static const freeHistoryAccess = Duration(days: 7);
 
   StreamSubscription<List<QrHistoryItem>>? _subscription;
+  StreamSubscription<SavedOrganization>? _organizationSubscription;
+  SavedOrganization _organization = const SavedOrganization();
+  SavedOrganization get organization => _organization;
+  bool get organizationAvailable => _repository is SavedOrganizationRepository;
+  SavedOrganizationRepository get _organizationRepository =>
+      _repository as SavedOrganizationRepository;
+  Future<void> createCollection(String name) =>
+      _organizationRepository.createCollection(_newId(_now().toUtc()), name);
+  Future<void> renameCollection(String id, String name) =>
+      _organizationRepository.renameCollection(id, name);
+  Future<void> deleteCollection(String id) =>
+      _organizationRepository.deleteCollection(id);
+  Future<void> organizeSavedItem(
+    String id, {
+    required Set<String> collectionIds,
+    required List<String> tags,
+  }) => _organizationRepository.organizeSavedItem(
+    id,
+    collectionIds: collectionIds,
+    tags: tags,
+  );
   List<QrHistoryItem> _allItems = const [];
   bool _enabled = false;
   bool _extendedHistoryUnlocked = false;
@@ -58,6 +81,22 @@ final class HistoryController extends ChangeNotifier {
   Future<void> initialize() async {
     _enabled = await _settings.historyEnabled();
     await _watch();
+    if (organizationAvailable) {
+      final ready = Completer<void>();
+      _organizationSubscription = _organizationRepository
+          .watchOrganization()
+          .listen(
+            (value) {
+              _organization = value;
+              if (!ready.isCompleted) ready.complete();
+              notifyListeners();
+            },
+            onError: (Object error, StackTrace stack) {
+              if (!ready.isCompleted) ready.completeError(error, stack);
+            },
+          );
+      await ready.future;
+    }
     notifyListeners();
   }
 
@@ -85,13 +124,15 @@ final class HistoryController extends ChangeNotifier {
     required String payload,
     String? verificationCode,
     String? registrableDomain,
-    required Uint8List qrPngBytes,
+    Uint8List? qrPngBytes,
+    ScannedCodeFormat codeFormat = ScannedCodeFormat.qrCode,
   }) {
     return _record(
       payload: payload,
       verificationCode: verificationCode,
       registrableDomain: registrableDomain,
       qrPngBytes: qrPngBytes,
+      codeFormat: codeFormat,
       activityKind: QrActivityKind.created,
       source: QrActivitySource.manual,
     );
@@ -125,7 +166,7 @@ final class HistoryController extends ChangeNotifier {
     required QrActivityKind activityKind,
     required QrActivitySource source,
   }) async {
-    if (!_enabled) return;
+    if (!_enabled || EphemeralCodePolicy.blocksPersistence(payload)) return;
     final existing = await _repository.findMostRecentByPayload(
       payload,
       codeFormat: codeFormat,
@@ -164,7 +205,18 @@ final class HistoryController extends ChangeNotifier {
 
   Future<void> delete(String id) => _repository.removeFromHistory(id);
 
-  Future<void> save(String id) => _repository.setSavedAt(id, _now().toUtc());
+  Future<void> save(String id) {
+    if (_allItems.any(
+      (item) =>
+          item.id == id &&
+          EphemeralCodePolicy.blocksPersistence(item.rawPayload),
+    )) {
+      throw StateError(
+        'Authenticator and passkey setup codes cannot be saved.',
+      );
+    }
+    return _repository.setSavedAt(id, _now().toUtc());
+  }
 
   Future<void> removeFromSaved(String id) => _repository.removeFromSaved(id);
 
@@ -177,6 +229,11 @@ final class HistoryController extends ChangeNotifier {
     required QrActivityKind activityKind,
     required QrActivitySource source,
   }) async {
+    if (EphemeralCodePolicy.blocksPersistence(payload)) {
+      throw StateError(
+        'Authenticator and passkey setup codes cannot be saved.',
+      );
+    }
     final nowUtc = _now().toUtc();
     final existing = await _repository.findMostRecentByPayload(
       payload,
@@ -262,6 +319,7 @@ final class HistoryController extends ChangeNotifier {
   @override
   void dispose() {
     unawaited(_subscription?.cancel());
+    unawaited(_organizationSubscription?.cancel());
     unawaited(_repository.close());
     super.dispose();
   }

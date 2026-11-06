@@ -1,0 +1,329 @@
+{
+  "date": "2026-10-29",
+  "baselineCommit": "0487c2a",
+  "version": "1.2.0+2026102803",
+  "hostTests": {
+    "passed": 267,
+    "failed": 0
+  },
+  "analysis": "No issues found",
+  "independentDecoding": {
+    "decoder": "ZXing-C++ 2.3.0",
+    "passed": 28,
+    "formats": 12
+  },
+  "androidGenerateScan": {
+    "phone": 28,
+    "tablet": 28
+  },
+  "nativeCreationUI": {
+    "device": "R9WN91CTWCJ",
+    "defaultFormat": "qrCode",
+    "dropdownFormats": 13,
+    "systemBack": "Closes dropdown without leaving creation"
+  },
+  "generatedFixtures": [
+    {
+      "id": "upca_zero",
+      "format": "upcA",
+      "value": "012345678905",
+      "file": "upca_zero.png",
+      "sha256": "ae543af2a99c8794b38a46491b89bfcde27e95708abba5d373e7cdc839e92c8f"
+    },
+    {
+      "id": "upca_other",
+      "format": "upcA",
+      "value": "036000291452",
+      "file": "upca_other.png",
+      "sha256": "bf8db6b57fffb1ee3a02c70c5224a1ae24f3b4ac61ee0d41bc7c5639637b2886"
+    },
+    {
+      "id": "upce_example",
+      "format": "upcE",
+      "value": "04252614",
+      "file": "upce_example.png",
+      "sha256": "ee18dda08c6bfce788a59992db93cabf06e74fca32262c72acbfed5420a9ed17"
+    },
+    {
+      "id": "upce_other",
+      "format": "upcE",
+      "value": "01234565",
+      "file": "upce_other.png",
+      "sha256": "0ae4b2da38ad9b8bff1f3c6652e724ce119caf3886b10b25eef44e59ea914478"
+    },
+    {
+      "id": "ean8_example",
+      "format": "ean8",
+      "value": "96385074",
+      "file": "ean8_example.png",
+      "sha256": "0188e38eab1e9b27b329ac4c4c4c1f7e4abb4b7f1076cdf75d2580072c1b01a0"
+    },
+    {
+      "id": "ean8_zero",
+      "format": "ean8",
+      "value": "00000000",
+      "file": "ean8_zero.png",
+      "sha256": "58b30d0afcab8e947e9ae1b1711f1f4dbcd2394df5c241c89d79afea80595756"
+    },
+    {
+      "id": "ean13_upca_pair",
+      "format": "ean13",
+      "value": "0012345678905",
+      "file": "ean13_upca_pair.png",
+      "sha256": "ae543af2a99c8794b38a46491b89bfcde27e95708abba5d373e7cdc839e92c8f"
+    },
+    {
+      "id": "ean13_book",
+      "format": "ean13",
+      "value": "9780306406157",
+      "file": "ean13_book.png",
+      "sha256": "ce87722710a6326548a86920cfd17d500d6c0af9acb8bc6d44ce32704912a0ee"
+    },
+    {
+      "id": "code128_short",
+      "format": "code128",
+      "value": "DALI-128",
+      "file": "code128_short.png",
+      "sha256": "facd727f4ccf22c32ebd3806ab425d24d9fbb50e2acb4c5fe35e5b417d19ee74"
+    },
+    {
+      "id": "code128_url",
+      "format": "code128",
+      "value": "https://example.com/barcode",
+      "file": "code128_url.png",
+      "sha256": "08ab45f969134ea2f374c3c7acc23f817fe41e1c77a1582f848299556fde47e3"
+    },
+    {
+      "id": "code128_whitespace",
+      "format": "code128",
+      "value": "  KEEP ZERO 00123  ",
+      "file": "code128_whitespace.png",
+      "sha256": "460e8aec063bd2a0d331f724f140decd28dcea553d6621154149b500d8c1dff5"
+    },
+    {
+      "id": "code39_short",
+      "format": "code39",
+      "value": "DALI39",
+      "file": "code39_short.png",
+      "sha256": "c5dd1113536903cc95fa278795929901629617576f8d40ec9c73618539759a14"
+    },
+    {
+      "id": "code39_long",
+      "format": "code39",
+      "value": "ORDER-00123-ABC",
+      "file": "code39_long.png",
+      "sha256": "d2daf58b9441664e77a9e0c9722e4374f0984967e2c743090aa72f972c6e7fd5"
+    },
+    {
+      "id": "code93_short",
+      "format": "code93",
+      "value": "DALI93",
+      "file": "code93_short.png",
+      "sha256": "92858e2d4a1d49c70c7f329c438cece314b1344f8329ea8befb29ff865e021c4"
+    },
+    {
+      "id": "code93_long",
+      "format": "code93",
+      "value": "ORDER-0093/ABC",
+      "file": "code93_long.png",
+      "sha256": "7d45994f9bbd6a69251b3a22b7d721dba5d1d9dcd54b24aa2eccfd8227701814"
+    },
+    {
+      "id": "codabar_short",
+      "format": "codabar",
+      "value": "A123456A",
+      "file": "codabar_short.png",
+      "sha256": "1825ebf6978025fbdc4066626ee8ddf32e0480a281239597b5fa67726e637108"
+    },
+    {
+      "id": "codabar_long",
+      "format": "codabar",
+      "value": "B1234567890-12B",
+      "file": "codabar_long.png",
+      "sha256": "7385d09963ad9a7b90265f428c9597588ab99f5f69c5eeace1426f5981a760a1"
+    },
+    {
+      "id": "itf14_zero",
+      "format": "itf14",
+      "value": "10012345000017",
+      "file": "itf14_zero.png",
+      "sha256": "86a2ad55545dc99e9764688c75b63d5616dcab8af9ddd533fac0e097161d4c18"
+    },
+    {
+      "id": "itf14_other",
+      "format": "itf14",
+      "value": "12345678901231",
+      "file": "itf14_other.png",
+      "sha256": "7f99266c033a2ed51ff3deaf29a3f500695558d50d55e610bd45aea38b5afb69"
+    },
+    {
+      "id": "dataMatrix_short",
+      "format": "dataMatrix",
+      "value": "  KEEP-00123  ",
+      "file": "dataMatrix_short.png",
+      "sha256": "d0af3e804711a53f96350023fb0b23cf4d7930d23e27dc7c41e68db20dcb78e0"
+    },
+    {
+      "id": "dataMatrix_long",
+      "format": "dataMatrix",
+      "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+      "file": "dataMatrix_long.png",
+      "sha256": "92481ac093b3206e1a6690f4b9c6acf07bd6df7495851f055c3eecf6984b5bee"
+    },
+    {
+      "id": "pdf417_short",
+      "format": "pdf417",
+      "value": "  KEEP-00123  ",
+      "file": "pdf417_short.png",
+      "sha256": "3325afd02a809b824c0e17d2a9c63c797903eb875ffe492ee25cccf8467f4b8a"
+    },
+    {
+      "id": "pdf417_long",
+      "format": "pdf417",
+      "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+      "file": "pdf417_long.png",
+      "sha256": "48f20226cd2930b91c12aae40e01ffabe3dd5357ecd24918529584bba21a8f73"
+    },
+    {
+      "id": "aztec_short",
+      "format": "aztec",
+      "value": "  KEEP-00123  ",
+      "file": "aztec_short.png",
+      "sha256": "df593169837700f13942fd312c48ca2517411e6b7fcf187dd3b8900bfd2b7a9c"
+    },
+    {
+      "id": "aztec_long",
+      "format": "aztec",
+      "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end",
+      "file": "aztec_long.png",
+      "sha256": "1ae7b03755d050acea4ff7757264f3393af5dfaa6d55fa844ad06a6c8de0ee81"
+    },
+    {
+      "id": "dataMatrix_unicode",
+      "format": "dataMatrix",
+      "value": "  Caf\u00e9 Gr\u00fc\u00dfe\nend  ",
+      "file": "dataMatrix_text.png",
+      "sha256": "c13725f201f6f9a84522fa088824505b750ee36bea28554e0ab8c98186be238b"
+    },
+    {
+      "id": "pdf417_unicode",
+      "format": "pdf417",
+      "value": "  Caf\u00e9 \u4e2d\u6587 \ud83d\ude00\nend  ",
+      "file": "pdf417_text.png",
+      "sha256": "e91274b8b4d4ee6e7ff9f161583281bb9de50ec0787f2cf58890a7a04a9e5213"
+    },
+    {
+      "id": "aztec_unicode",
+      "format": "aztec",
+      "value": "  Caf\u00e9 \u4e2d\u6587 \ud83d\ude00\nend  ",
+      "file": "aztec_text.png",
+      "sha256": "d56bcb9a6b9d5715222838086351cf06f5497b24926bbf493cd1bfcb77a4341e"
+    }
+  ],
+  "normalDebugInstallations": [
+    {
+      "device": "R58M44F3BGJ",
+      "package": "com.dalifin.qr.test",
+      "apkSha256": "14ad0af75ca67572d2e60e0f978cf0f9e7dd3f0b6df4d1253db7470494cc8ea8",
+      "method": "adb install -r"
+    },
+    {
+      "device": "R9WN91CTWCJ",
+      "package": "com.dalifin.qr.test",
+      "apkSha256": "14ad0af75ca67572d2e60e0f978cf0f9e7dd3f0b6df4d1253db7470494cc8ea8",
+      "method": "adb install -r"
+    }
+  ],
+  "debugApk": {
+    "path": "build/app/outputs/flutter-apk/app-debug.apk",
+    "sha256": "14ad0af75ca67572d2e60e0f978cf0f9e7dd3f0b6df4d1253db7470494cc8ea8",
+    "sizeBytes": 218014320
+  },
+  "releaseCompilation": {
+    "result": "passed",
+    "path": "build/app/outputs/flutter-apk/app-release.apk",
+    "sha256": "b7f0024cd2e08af91e91acaac52c395289712d06ea5b907899fd7a29a9d81ea8",
+    "sizeBytes": 90631312,
+    "note": "Local compilation only; not installed or published."
+  },
+  "sourceSnapshot": {
+    "note": "Current application/UI hashes after regression checks and final APK build. On-device encode/scan tests exercise unchanged generator/analyzer code; UI/back handling is checked separately.",
+    "sha256": {
+      "android/app/build.gradle.kts": "bbd4229d7ce3eff88524906c6d13dc4d6337a81c50df4f8910808535c41c3a6f",
+      "android/app/src/main/AndroidManifest.xml": "1c973af7e2c5bb9d9a96fd730731cabc7f4e7b0397d5dd8d415eea3fdaf5aaae",
+      "android/app/src/main/kotlin/com/dalifin/qr/MainActivity.kt": "a18af47a8a57f7693dbd4d53746b1cbd93c9fd5ee68e1187cd812059b28eb8cf",
+      "integration_test/barcode_generation_test.dart": "31eefb4e59eb270753c424132f4484a32c31732b1f5e49e181682b8fc29b0b71",
+      "lib/features/batch/application/batch_export.dart": "02299736cedb74aa22ec16921ad7fc80a9a49f139771d754f4135c73834ba73a",
+      "lib/features/batch/data/batch_database.dart": "bb2ee6edbb08c6f5d80c6d2e3bef8728ac337829aaa885e6b741d464498e89e6",
+      "lib/features/batch/data/local_batch_repository.dart": "6107d3fbec0464051cc6190a6a9fa1f0474e35bb4690f565f0f9c8ad88dbcb13",
+      "lib/features/batch/domain/batch_session.dart": "5d23845399fe3d305620e22d8b7d6cf70120adecc578963858226d6e86d9d733",
+      "lib/features/batch/presentation/batch_sessions_page.dart": "a7096c69f9b22a5d81025aa5a1192d2ae2b203cc4ce38858e820e8e6016fb96c",
+      "lib/features/create/application/barcode_generator.dart": "53b8c6a0bd0fb9021112ad03cc5903e6b930b9b19cd198d108c03a5d5a7648e4",
+      "lib/features/create/application/custom_center_image_store.dart": "6b8b9d1f562b5390103e3982dd161c82d4f14c6b4ca992e5fe837522dba1dcf0",
+      "lib/features/create/application/qr_encoder.dart": "cf91f69f358605502ab2bb2d3e32f0b682bc2c21b4f9069ec7747c46f93f3684",
+      "lib/features/create/application/qr_png_validator.dart": "b137b652e60fe1aa53022ef11ca17bbb9066395cf302abeaefc8e9ef1d4af344",
+      "lib/features/create/application/qr_share.dart": "734e3cc439294f5b3233341c3fe0f266c591ce19e076cb63c6d92a67166d4b6e",
+      "lib/features/create/data/dart_qr_encoder.dart": "e6a206b64e7219f6c5db03b641467284af0c6db8edc81fc81b526399c011fd30",
+      "lib/features/create/data/qr_png_renderer.dart": "2ce2d41252a21862bc74b549e0aa19ac73be1fb50fe8bbcc439d26909e30747b",
+      "lib/features/create/domain/qr_center_decoration.dart": "0206ea7452bc7ce83fd26da3ba5fd6b51893664d69c1b1c1909ba88e52d88296",
+      "lib/features/create/domain/qr_creation_payload_policy.dart": "7d01931af94c84ce6145b708317badef1357852b6122fdcd539aeb7f9e3d1329",
+      "lib/features/create/domain/qr_matrix.dart": "7de7ff56468824ab52a2a3fde085ef5ca7ec5a65834e2f776d43c808b88603fc",
+      "lib/features/create/domain/url_payload_policy.dart": "4b3ce6eb213af8367372b2fc89897f8a197f10695539ab0e30096c875fa7266d",
+      "lib/features/create/presentation/generated_barcode_page.dart": "97643eddccdfb40e62998747d91eba121f6f1db4193b7668d8ae5bf9a62d3204",
+      "lib/features/create/presentation/generated_qr_page.dart": "008be0b990ad81a4da317e4bb8cc2d1978823933b3e2ab40ae7b3e972c194d9a",
+      "lib/features/create/presentation/image_crop_page.dart": "9c3e6a1d623fb456acd4f15241911ed972953f083a4cfc84c385c9ec1d2c4682",
+      "lib/features/create/presentation/qr_matrix_painter.dart": "f0025555c2cb1af3146105c6619a905dcea73d313095ca138c65e97e071ce197",
+      "lib/features/history/application/history_controller.dart": "11be1ea73b24907ef0575673a5d13d72a313bae559511f2980c37cd4163f8341",
+      "lib/features/history/application/qr_clipboard.dart": "8fa5119e0ccacdf9072d238afce56381e3f4db37107a9b50949be8aa7aa23476",
+      "lib/features/history/data/drift_qr_history_repository.dart": "2b13b1c1ae0b98e17f838d54d7802432a595f84e83b9ca0513168b06a3711be4",
+      "lib/features/history/data/drift_saved_organization_repository.dart": "1087c80ed57aa785a6f037faa5421520ae97892677a046145bd69a8742619240",
+      "lib/features/history/data/history_database.dart": "5faf2cbe7c27fb6a3b9ad8553b37a5b388b24547590058ec9326250e3145dae4",
+      "lib/features/history/data/history_database.g.dart": "3fa6d67d6e9b14a16407b6db0ec3828da063334fa96c250afe7cfdcecb1194c2",
+      "lib/features/history/data/shared_preferences_history_settings.dart": "43b2deaf5e90ed41afdc772e7df406294adb6561dd12e6678acd30c71b264866",
+      "lib/features/history/domain/qr_history.dart": "23279b3337e08483375751778259cf5a2d46b580cde888edc234d4aca1c65ce8",
+      "lib/features/history/domain/saved_organization.dart": "4a0390a25f1999c569184d2e395439fed72becf12790750cbbf6f6cb79196976",
+      "lib/features/history/presentation/history_page.dart": "58a645977f569da00edf3e542dbe1f1613d38bcdd91b764cd4db2153dd7737d5",
+      "lib/features/history/presentation/saved_page.dart": "05296459b1de9b4a7b86a240993b2666a627c0e9a08167c89fff083e588163f5",
+      "lib/features/lookup/domain/gs1_digital_link.dart": "3de02c4e4b59730bdd0606a3e38c6de8182ddeced913da81e0b036361cd9c8d5",
+      "lib/features/lookup/domain/identifier_recognizer.dart": "8b214bf9774d2c129614e58fb82f5dde752e668cb2077cc7bc1e529b82c4a491",
+      "lib/features/lookup/presentation/gs1_details.dart": "fb69ff5ff752f90c6df90279b2a15e8e0d10a33510ea64026550bdd796d4a5cb",
+      "lib/features/lookup/presentation/identifier_details.dart": "f7fb02bdafd611bed5c75316f561f74e76967eddfb78269e9895a1c8f114df07",
+      "lib/features/monetization/application/customization_entitlement.dart": "ce08702300b7187e7ba54836f5ac45b3a0e9be6584984dbf43d8ac9e30b4074b",
+      "lib/features/scan/application/inbound_image_share.dart": "cd0344cb24e2eb43d9491221a028ae9b6e6771283b09d367171ff7525bf00cda",
+      "lib/features/scan/application/qr_payload_router.dart": "837bc9e42d743b156f05c754ff34feec4dee6ab207d1365f6e497bfd55a44d53",
+      "lib/features/scan/application/scanned_code_verification.dart": "78fb74675141f15e50ccbb429f0b2feab1134383d56805116d7c7583bfdcbbd8",
+      "lib/features/scan/data/code_image_analyzer.dart": "2c815cfd64619030281472bc0298b457923d747fcf55cb15ec1993c466e0b694",
+      "lib/features/scan/data/mobile_scanner_code_adapter.dart": "41b1c61b5bf6fe993ab4ec868ad12a56b6e772584d07d1cae15f87486520d673",
+      "lib/features/scan/data/offline_image_decoder.dart": "1d983c3d87d4ea890b49bdb976898c9cb75dbd2bcdeb6ce639713062162dbe6d",
+      "lib/features/scan/domain/link_inspection.dart": "349b8407f09db0a7742e06f5eb91be0c63dbef76e68b65975d9a362f90ffa683",
+      "lib/features/scan/domain/qr_payload_classifier.dart": "fab66ef092b0ff4b8031e3f05712cd7956249a3f5af734f5ce9b18229b3cb360",
+      "lib/features/scan/domain/scanned_code.dart": "b3408a9df98e2e4c3edcdfb2bc92aa154ea1f845783af85ffe5afeaf52845eaa",
+      "lib/features/scan/presentation/qr_link_review.dart": "4804554fb8d61f94cebca9758c8dabeecb4d8fef48f171ea51f3ded307f96859",
+      "lib/features/scan/presentation/qr_payload_action.dart": "ecae229227069e73cb0a609108f4531caa782bca72db080ceec2fdeffb20d436",
+      "lib/features/scan/presentation/qr_scanner_page.dart": "1c337b06394a545f7dbabaea2470cbf5aa096eb75cc05efe014e1c4eed263f40",
+      "lib/features/scan/presentation/share_extension_result_app.dart": "83c31df0ff159c4b814827c8254aa9c784fb255b79199c19715acfb8defe75f5",
+      "lib/features/secure_qr/application/secure_qr_loader.dart": "e46ea9d0acba446197fb87ce3875b7eac9711084eea78e8cc9020f5f31c85663",
+      "lib/features/secure_qr/domain/public_suffix_list.dart": "98b459aaac22bcad4e0649dec2ee0e9fa765666e6ba067fd7aa2dd93e5564f0e",
+      "lib/features/secure_qr/domain/secure_qr_service.dart": "a2b01456f97e3f943dbabb0186a09554962e94c6f1f4e609c12af406343b9064",
+      "lib/features/secure_qr/presentation/verification_prompt.dart": "4b201b8be1ac82ab8b29288f7c2a145f3cddf236449437f04e787d54e4c6518c",
+      "lib/main.dart": "8e2a4292ef930b70bab2c8230e43968234ed9a68eaf3a3f1cace2aaf56c8ad28",
+      "pubspec.lock": "f8da36d07a33b73c48ebab2a17049109a71b084ed80a9137c0a80941e5e1e79e",
+      "pubspec.yaml": "3ce2980dbb744dba4ff79bec02923006345605e62236b275e518db5f10a78335",
+      "test/barcode_creation_flow_test.dart": "f26f599e0c8dfa1087e75295bd15a5c5f65a5c6aa0781a7cd3340e3d7805e3fb",
+      "test/barcode_generation_test.dart": "633ae9c7f0b10c5788e5a6e8b7ff8c457580213f1eed2bb2623f3bcb344f46d4",
+      "tool/verify_generated_barcodes.py": "2c3182f26c43f780fe9ee30ffbdb80744e317933cc4adb7b5f7258dc048ab2f8"
+    }
+  },
+  "scope": {
+    "formats": 13,
+    "default": "qrCode",
+    "dataMatrix": "Latin-1 text without ECI; unsupported Unicode is rejected.",
+    "code39AndCode93": "Basic uppercase alphabet only",
+    "productLookup": "Disabled; provider unavailable",
+    "photoCapture": "Removed; live scanning and existing-image import remain."
+  },
+  "pending": [
+    "iOS compilation and device validation",
+    "Broader Android OS/optical/printing coverage and store release checks"
+  ]
+}

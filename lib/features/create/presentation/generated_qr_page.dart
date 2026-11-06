@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 
 import '../../../features/monetization/application/customization_entitlement.dart';
 import '../../../features/secure_qr/domain/secure_qr_service.dart';
+import '../../scan/domain/qr_payload_classifier.dart';
+import '../../scan/presentation/qr_payload_action.dart';
 import '../application/qr_png_validator.dart';
 import '../application/qr_share.dart';
 import '../domain/qr_center_decoration.dart';
@@ -60,6 +62,7 @@ class _GeneratedQrPageState extends State<GeneratedQrPage> {
   bool _saved = false;
   bool _saving = false;
   bool _exporting = false;
+  bool _trialNoticeAcknowledged = false;
 
   @override
   void initState() {
@@ -128,11 +131,23 @@ class _GeneratedQrPageState extends State<GeneratedQrPage> {
   }
 
   Future<bool> _ensureExportAllowed() async {
-    if (widget.decorationMode != QrCenterDecorationMode.customImage ||
-        widget.customizationEntitlement.isUnlocked) {
+    if (widget.decorationMode != QrCenterDecorationMode.customImage) {
       return true;
     }
     final entitlement = widget.customizationEntitlement;
+    if (entitlement is TrialCustomizationEntitlement) {
+      final trial = entitlement as TrialCustomizationEntitlement;
+      if (trial.canStartTrial) await trial.startTrial();
+      if (!mounted) return false;
+    }
+    if (!_trialNoticeAcknowledged &&
+        entitlement is TrialCustomizationEntitlement &&
+        (entitlement as TrialCustomizationEntitlement).trialRemaining != null) {
+      final continued = await showCustomizationTrial(context, entitlement);
+      if (!mounted || !continued) return false;
+      _trialNoticeAcknowledged = true;
+    }
+    if (entitlement.isUnlocked) return true;
     void closeWhenUnlocked() {
       if (entitlement.isUnlocked && mounted) {
         Navigator.of(context).pop(true);
@@ -143,9 +158,11 @@ class _GeneratedQrPageState extends State<GeneratedQrPage> {
     try {
       return await showModalBottomSheet<bool>(
             context: context,
+            isScrollControlled: true,
             showDragHandle: true,
-            builder: (context) =>
-                CustomizationUnlockSheet(entitlement: entitlement),
+            builder: (context) => SingleChildScrollView(
+              child: CustomizationUnlockSheet(entitlement: entitlement),
+            ),
           ) ??
           false;
     } finally {
@@ -204,23 +221,39 @@ class _GeneratedQrPageState extends State<GeneratedQrPage> {
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              TextField(
-                controller: _contentController,
-                readOnly: true,
-                keyboardType: TextInputType.multiline,
-                minLines: 1,
-                maxLines: 5,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: const InputDecoration(
-                  labelText: 'QR content',
-                  border: OutlineInputBorder(),
+              if (const QrPayloadClassifier()
+                      .classify(widget.payload.value)
+                      .type ==
+                  QrContentType.wifi)
+                QrRawContent(
+                  payload: const QrPayloadClassifier().classify(
+                    widget.payload.value,
+                  ),
+                )
+              else
+                TextField(
+                  controller: _contentController,
+                  readOnly: true,
+                  keyboardType: TextInputType.multiline,
+                  minLines: 1,
+                  maxLines: 5,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: const InputDecoration(
+                    labelText: 'QR content',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
               const SizedBox(height: 24),
               Center(
                 child: Semantics(
-                  label: 'QR code for ${widget.payload.value}',
+                  label:
+                      const QrPayloadClassifier()
+                              .classify(widget.payload.value)
+                              .type ==
+                          QrContentType.wifi
+                      ? 'Wi-Fi QR code. Contains network credentials.'
+                      : 'QR code for ${widget.payload.value}',
                   image: true,
                   child: SizedBox.square(
                     dimension: 320,
@@ -307,75 +340,132 @@ class _GeneratedQrPageState extends State<GeneratedQrPage> {
   }
 }
 
+Future<bool> showCustomizationTrial(
+  BuildContext context,
+  CustomizationEntitlement entitlement,
+) async {
+  final continued = await showModalBottomSheet<bool>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => SingleChildScrollView(
+      child: CustomizationUnlockSheet(
+        entitlement: entitlement,
+        title: 'Your free trial',
+        description:
+            'Enjoy all lifetime benefits during your free trial. '
+            'Unlock once to keep them after your trial ends.',
+        showContinue: true,
+      ),
+    ),
+  );
+  return continued == true && entitlement.isUnlocked;
+}
+
 class CustomizationUnlockSheet extends StatelessWidget {
-  const CustomizationUnlockSheet({required this.entitlement, super.key});
+  const CustomizationUnlockSheet({
+    required this.entitlement,
+    this.title = 'Custom QR lifetime',
+    this.description =
+        'Export QR codes with your own image or logo using a one-time purchase. '
+        'Includes more QR content types, barcode creation, and extended history.',
+    this.showContinue = false,
+    super.key,
+  });
 
   final CustomizationEntitlement entitlement;
+  final String title;
+  final String description;
+  final bool showContinue;
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: entitlement,
-      builder: (context, _) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Custom QR lifetime',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Export QR codes with your own image or logo using a one-time purchase.',
-              ),
-              if (entitlement.message case final message?) ...[
-                const SizedBox(height: 12),
-                Text(message),
-              ],
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed:
-                    entitlement.isBusy ||
-                        !entitlement.isStoreAvailable ||
-                        entitlement.price == null
-                    ? null
-                    : () => unawaited(entitlement.purchase()),
-                icon: entitlement.isBusy
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.lock_open_outlined),
-                label: Text(
-                  entitlement.price == null
-                      ? 'Lifetime unlock'
-                      : 'Unlock for ${entitlement.price}',
+      builder: (context, _) {
+        final trial = entitlement is TrialCustomizationEntitlement
+            ? (entitlement as TrialCustomizationEntitlement).trialRemaining
+            : null;
+        final lifetimeOwned = entitlement is TrialCustomizationEntitlement
+            ? (entitlement as TrialCustomizationEntitlement).hasLifetimeAccess
+            : entitlement.isUnlocked;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 8),
+                Text(
+                  showContinue && lifetimeOwned
+                      ? 'Your lifetime benefits are ready to use.'
+                      : showContinue && trial == null
+                      ? 'Your free trial has ended. Unlock once to keep your benefits.'
+                      : description,
                 ),
-              ),
-              TextButton(
-                onPressed: entitlement.isBusy || !entitlement.isStoreAvailable
-                    ? null
-                    : () => unawaited(entitlement.restore()),
-                child: const Text('Restore purchase'),
-              ),
-              if (kDebugMode && entitlement is DebugCustomizationEntitlement)
-                TextButton.icon(
-                  onPressed: entitlement.isBusy
+                if (trial != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Free trial: ${trialCountdown(trial)}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
+                if (entitlement.message case final message?) ...[
+                  const SizedBox(height: 12),
+                  Text(message),
+                ],
+                const SizedBox(height: 20),
+                FilledButton.icon(
+                  onPressed:
+                      lifetimeOwned ||
+                          entitlement.isBusy ||
+                          !entitlement.isStoreAvailable ||
+                          entitlement.price == null
                       ? null
-                      : () => unawaited(
-                          (entitlement as DebugCustomizationEntitlement)
-                              .unlockForTesting(),
-                        ),
-                  icon: const Icon(Icons.science_outlined),
-                  label: const Text('Unlock for testing'),
+                      : () => unawaited(entitlement.purchase()),
+                  icon: entitlement.isBusy
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.lock_open_outlined),
+                  label: Text(
+                    lifetimeOwned
+                        ? 'Lifetime customization unlocked'
+                        : entitlement.price == null
+                        ? 'Lifetime unlock'
+                        : 'Unlock for ${entitlement.price}',
+                  ),
                 ),
-            ],
+                TextButton(
+                  onPressed: entitlement.isBusy || !entitlement.isStoreAvailable
+                      ? null
+                      : () => unawaited(entitlement.restore()),
+                  child: const Text('Restore purchase'),
+                ),
+                if (kDebugMode && entitlement is DebugCustomizationEntitlement)
+                  TextButton.icon(
+                    onPressed: entitlement.isBusy
+                        ? null
+                        : () => unawaited(
+                            (entitlement as DebugCustomizationEntitlement)
+                                .unlockForTesting(),
+                          ),
+                    icon: const Icon(Icons.science_outlined),
+                    label: const Text('Unlock for testing'),
+                  ),
+                if (showContinue)
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text(trial != null ? 'Continue trial' : 'Close'),
+                  ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

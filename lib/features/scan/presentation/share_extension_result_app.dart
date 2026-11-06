@@ -1,3 +1,5 @@
+import '../domain/qr_payload_classifier.dart';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,6 +8,7 @@ import 'package:flutter/services.dart';
 import '../../secure_qr/application/secure_qr_loader.dart';
 import '../../secure_qr/domain/secure_qr_service.dart';
 import '../domain/scanned_code.dart';
+import '../data/offline_image_decoder.dart';
 import 'qr_scanner_page.dart';
 
 const _shareExtensionChannel = MethodChannel('dali_qr/share_extension');
@@ -41,9 +44,18 @@ List<ScannedCode> _codesFromRoute(String route) {
 }
 
 final class DaliQrShareExtensionApp extends StatelessWidget {
-  const DaliQrShareExtensionApp({required this.codes, super.key});
+  const DaliQrShareExtensionApp({
+    required this.codes,
+    this.secureQrService,
+    this.imageFallback,
+    super.key,
+  });
 
   final List<ScannedCode> codes;
+  final Future<List<ScannedCode>> Function()? imageFallback;
+
+  /// Optional preloaded service; otherwise uses the locally bundled suffix list.
+  final SecureQrService? secureQrService;
 
   @override
   Widget build(BuildContext context) {
@@ -53,24 +65,39 @@ final class DaliQrShareExtensionApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff315caa)),
         useMaterial3: true,
       ),
-      home: FutureBuilder<SecureQrService>(
-        future: SecureQrLoader.load(),
-        builder: (context, snapshot) {
-          final service = snapshot.data;
-          if (service == null) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          return _ShareResultPage(codes: codes, secureQrService: service);
-        },
-      ),
+      home: secureQrService != null
+          ? _ShareResultPage(
+              codes: codes,
+              secureQrService: secureQrService!,
+              imageFallback: imageFallback,
+            )
+          : FutureBuilder<SecureQrService>(
+              future: SecureQrLoader.load(),
+              builder: (context, snapshot) {
+                final service = snapshot.data;
+                if (service == null) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                return _ShareResultPage(
+                  codes: codes,
+                  secureQrService: service,
+                  imageFallback: imageFallback,
+                );
+              },
+            ),
     );
   }
 }
 
 final class _ShareResultPage extends StatefulWidget {
-  const _ShareResultPage({required this.codes, required this.secureQrService});
+  const _ShareResultPage({
+    required this.codes,
+    required this.secureQrService,
+    this.imageFallback,
+  });
+  final Future<List<ScannedCode>> Function()? imageFallback;
 
   final List<ScannedCode> codes;
   final SecureQrService secureQrService;
@@ -81,11 +108,46 @@ final class _ShareResultPage extends StatefulWidget {
 
 class _ShareResultPageState extends State<_ShareResultPage> {
   ScannedCode? _selectedCode;
+  late List<ScannedCode> _codes;
+  bool _readingFallback = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.codes.length == 1) _selectedCode = widget.codes.single;
+    _codes = widget.codes;
+    if (_codes.length == 1) _selectedCode = _codes.single;
+    if (_codes.isEmpty) {
+      _readingFallback = true;
+      unawaited(_loadFallback());
+    }
+  }
+
+  Future<void> _loadFallback() async {
+    List<ScannedCode> codes = const [];
+    try {
+      if (widget.imageFallback case final read?) {
+        codes = await read();
+      } else {
+        final bytes = await _shareExtensionChannel.invokeMethod<Uint8List>(
+          'readFallbackImage',
+        );
+        if (bytes != null) {
+          codes = await const OfflineImageDecoder().decodeBytes(
+            bytes,
+            source: ScanSource.sharedImage,
+          );
+        }
+      }
+    } on Object {
+      // Read-only extension must remain dismissible if fallback is unavailable.
+    }
+    if (mounted) {
+      setState(() {
+        _codes = orderScannedCodes(codes);
+        _selectedCode = _codes.length == 1 ? _codes.single : null;
+        _readingFallback = false;
+      });
+    }
   }
 
   Future<void> _finish() => _shareExtensionChannel.invokeMethod<void>('finish');
@@ -104,11 +166,13 @@ class _ShareResultPageState extends State<_ShareResultPage> {
           ),
         ],
       ),
-      body: widget.codes.isEmpty
+      body: _readingFallback
+          ? const Center(child: CircularProgressIndicator())
+          : _codes.isEmpty
           ? _EmptyResult(onDone: _finish)
           : selectedCode == null
           ? _ResultSelection(
-              codes: widget.codes,
+              codes: _codes,
               onSelected: (code) => setState(() => _selectedCode = code),
               onDone: _finish,
             )
@@ -116,10 +180,10 @@ class _ShareResultPageState extends State<_ShareResultPage> {
               code: selectedCode,
               secureQrService: widget.secureQrService,
               allowRouting: false,
-              scanAgainLabel: widget.codes.length > 1
+              scanAgainLabel: _codes.length > 1
                   ? 'Choose another result'
                   : 'Done',
-              onScanAgain: widget.codes.length > 1
+              onScanAgain: _codes.length > 1
                   ? () => setState(() => _selectedCode = null)
                   : _finish,
             ),
@@ -157,7 +221,7 @@ final class _ResultSelection extends StatelessWidget {
                 leading: const Icon(Icons.barcode_reader),
                 title: Text(code.format.label),
                 subtitle: Text(
-                  code.value,
+                  const QrPayloadClassifier().classify(code.value).previewText,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

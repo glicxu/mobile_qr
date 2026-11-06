@@ -1,0 +1,434 @@
+{
+  "date": "2026-10-29",
+  "device": "R58M44F3BGJ",
+  "model": "SM-G975U",
+  "api": 31,
+  "scope": "Production image analyzer, result UI, explicit Save, History and SQLite; injected gallery/camera-photo/shared-image paths; mocked clipboard and URL launcher",
+  "result": "passed",
+  "cases": [
+    {
+      "fixture": "qr_url",
+      "format": "qrCode",
+      "value": "https://example.com/qa",
+      "source": "camera",
+      "elapsedMs": 2380,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "qr_url",
+      "format": "qrCode",
+      "value": "https://example.com/qa",
+      "source": "gallery",
+      "elapsedMs": 408,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "qr_url",
+      "format": "qrCode",
+      "value": "https://example.com/qa",
+      "source": "sharedImage",
+      "elapsedMs": 391,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "upca_zero",
+      "format": "upcA",
+      "value": "012345678905",
+      "source": "camera",
+      "elapsedMs": 342,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "upca_zero",
+      "format": "upcA",
+      "value": "012345678905",
+      "source": "gallery",
+      "elapsedMs": 347,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "upca_zero",
+      "format": "upcA",
+      "value": "012345678905",
+      "source": "sharedImage",
+      "elapsedMs": 235,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "upce_example",
+      "format": "upcE",
+      "value": "04252614",
+      "source": "camera",
+      "elapsedMs": 333,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "upce_example",
+      "format": "upcE",
+      "value": "04252614",
+      "source": "gallery",
+      "elapsedMs": 250,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "upce_example",
+      "format": "upcE",
+      "value": "04252614",
+      "source": "sharedImage",
+      "elapsedMs": 262,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "ean8_example",
+      "format": "ean8",
+      "value": "96385074",
+      "source": "camera",
+      "elapsedMs": 215,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "ean8_example",
+      "format": "ean8",
+      "value": "96385074",
+      "source": "gallery",
+      "elapsedMs": 216,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "ean8_example",
+      "format": "ean8",
+      "value": "96385074",
+      "source": "sharedImage",
+      "elapsedMs": 242,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "ean13_upca_pair",
+      "format": "upcA",
+      "value": "012345678905",
+      "source": "camera",
+      "elapsedMs": 223,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "ean13_upca_pair",
+      "format": "upcA",
+      "value": "012345678905",
+      "source": "gallery",
+      "elapsedMs": 219,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "ean13_upca_pair",
+      "format": "upcA",
+      "value": "012345678905",
+      "source": "sharedImage",
+      "elapsedMs": 234,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "code128_short",
+      "format": "code128",
+      "value": "DALI-128",
+      "source": "camera",
+      "elapsedMs": 281,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "code128_short",
+      "format": "code128",
+      "value": "DALI-128",
+      "source": "gallery",
+      "elapsedMs": 178,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "code128_short",
+      "format": "code128",
+      "value": "DALI-128",
+      "source": "sharedImage",
+      "elapsedMs": 359,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "code39_short",
+      "format": "code39",
+      "value": "DALI39",
+      "source": "camera",
+      "elapsedMs": 199,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "code39_short",
+      "format": "code39",
+      "value": "DALI39",
+      "source": "gallery",
+      "elapsedMs": 311,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "code39_short",
+      "format": "code39",
+      "value": "DALI39",
+      "source": "sharedImage",
+      "elapsedMs": 328,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "code93_short",
+      "format": "code93",
+      "value": "DALI93",
+      "source": "camera",
+      "elapsedMs": 244,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "code93_short",
+      "format": "code93",
+      "value": "DALI93",
+      "source": "gallery",
+      "elapsedMs": 198,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "code93_short",
+      "format": "code93",
+      "value": "DALI93",
+      "source": "sharedImage",
+      "elapsedMs": 202,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "codabar_short",
+      "format": "codabar",
+      "value": "A123456A",
+      "source": "camera",
+      "elapsedMs": 193,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "codabar_short",
+      "format": "codabar",
+      "value": "A123456A",
+      "source": "gallery",
+      "elapsedMs": 225,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "codabar_short",
+      "format": "codabar",
+      "value": "A123456A",
+      "source": "sharedImage",
+      "elapsedMs": 322,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "itf14_zero",
+      "format": "itf14",
+      "value": "10012345000017",
+      "source": "camera",
+      "elapsedMs": 192,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "itf14_zero",
+      "format": "itf14",
+      "value": "10012345000017",
+      "source": "gallery",
+      "elapsedMs": 187,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "itf14_zero",
+      "format": "itf14",
+      "value": "10012345000017",
+      "source": "sharedImage",
+      "elapsedMs": 344,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "dataMatrix_short",
+      "format": "dataMatrix",
+      "value": "  KEEP-00123  ",
+      "source": "camera",
+      "elapsedMs": 217,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "dataMatrix_short",
+      "format": "dataMatrix",
+      "value": "  KEEP-00123  ",
+      "source": "gallery",
+      "elapsedMs": 221,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "dataMatrix_short",
+      "format": "dataMatrix",
+      "value": "  KEEP-00123  ",
+      "source": "sharedImage",
+      "elapsedMs": 338,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "pdf417_short",
+      "format": "pdf417",
+      "value": "  KEEP-00123  ",
+      "source": "camera",
+      "elapsedMs": 305,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "pdf417_short",
+      "format": "pdf417",
+      "value": "  KEEP-00123  ",
+      "source": "gallery",
+      "elapsedMs": 306,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "pdf417_short",
+      "format": "pdf417",
+      "value": "  KEEP-00123  ",
+      "source": "sharedImage",
+      "elapsedMs": 327,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "aztec_short",
+      "format": "aztec",
+      "value": "  KEEP-00123  ",
+      "source": "camera",
+      "elapsedMs": 264,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "aztec_short",
+      "format": "aztec",
+      "value": "  KEEP-00123  ",
+      "source": "gallery",
+      "elapsedMs": 192,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "aztec_short",
+      "format": "aztec",
+      "value": "  KEEP-00123  ",
+      "source": "sharedImage",
+      "elapsedMs": 179,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "ean13_book",
+      "format": "ean13",
+      "value": "9780306406157",
+      "source": "camera",
+      "elapsedMs": 1961,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "ean13_book",
+      "format": "ean13",
+      "value": "9780306406157",
+      "source": "gallery",
+      "elapsedMs": 478,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    },
+    {
+      "fixture": "ean13_book",
+      "format": "ean13",
+      "value": "9780306406157",
+      "source": "sharedImage",
+      "elapsedMs": 366,
+      "copied": true,
+      "saved": true,
+      "historyWrites": 1
+    }
+  ],
+  "limitations": [
+    "Not optical-camera capture or real image-picker UI.",
+    "Not native SEND intent delivery; separate real-share evidence records that path."
+  ]
+}

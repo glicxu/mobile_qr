@@ -1,0 +1,212 @@
+{
+  "date": "2026-10-29",
+  "device": "R9WN91CTWCJ",
+  "model": "SM-T290",
+  "api": 30,
+  "package": "com.dalifin.qr.test",
+  "scope": "User-assisted physical rear-camera capture of offline chart displayed on computer; production native live decoder",
+  "cases": [
+    {
+      "fixture": "qr_url",
+      "fixtureSha256": "5b340d4df5e60901f39d8cc8d30d6cdccf0b7234f6436e73f03b8c2f08409e78",
+      "format": "qrCode",
+      "source": "camera",
+      "expectedValue": "https://example.com/qa",
+      "result": "detected",
+      "evidence": [
+        "User reported optical scan succeeds.",
+        "ADB accessibility observation showed QR Code, Camera, expected full URL, Scan again and Save to Saved."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "dataMatrix_short",
+      "fixtureSha256": "67e5f852eee0bb5651a96bdb9eaee00c3c7be6b0e033545b1cee29a86ffde484",
+      "format": "dataMatrix",
+      "source": "camera",
+      "expectedValue": "  KEEP-00123  ",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "ADB accessibility confirmed the expected format, Camera source, and exact whitespace-bearing value where applicable."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "pdf417_short",
+      "fixtureSha256": "31f3f72fd792b28eb94bf54a1cd5c04410f08742cd7a41480c17703da6915491",
+      "format": "pdf417",
+      "source": "camera",
+      "expectedValue": "  KEEP-00123  ",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "ADB accessibility confirmed the expected format, Camera source, and exact whitespace-bearing value where applicable."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "aztec_short",
+      "fixtureSha256": "b598731a816c52f185cdf803e7decf2a703556c7226908faf00ee3c620905f41",
+      "format": "aztec",
+      "source": "camera",
+      "expectedValue": "  KEEP-00123  ",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "ADB accessibility confirmed the expected format, Camera source, and exact whitespace-bearing value where applicable."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "upca_zero",
+      "fixtureSha256": "73a276e8e50961a5ea1b9888a8bcb6c33e54c9a540eb87a5610c0cc889b5e45a",
+      "format": "upcA",
+      "source": "camera",
+      "expectedValue": "012345678905",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "Read-only ADB accessibility observation confirmed the expected format, Camera source, Scan again result screen and original decoded value."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "upce_example",
+      "fixtureSha256": "f06ebcce638c74b01d3b145a07485ddb9984ba54a369589e3bca502c95aa3352",
+      "format": "upcE",
+      "source": "camera",
+      "expectedValue": "04252614",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "Read-only ADB accessibility observation confirmed the expected format, Camera source, Scan again result screen and original decoded value."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "ean8_example",
+      "fixtureSha256": "0a994cb89348d6a151e7dcc853c4ce714a066d26581fb25173f60fc756cc9447",
+      "format": "ean8",
+      "source": "camera",
+      "expectedValue": "96385074",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "Read-only ADB accessibility observation confirmed the expected format, Camera source, Scan again result screen and original decoded value."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "ean13_book",
+      "fixtureSha256": "71dd1712a665077b6b59f51db9bef1a3bcaac6431ee7fbb9bcdb92bec88ba756",
+      "format": "ean13",
+      "source": "camera",
+      "expectedValue": "9780306406157",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "Read-only ADB accessibility observation confirmed the expected format, Camera source, Scan again result screen and original decoded value."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "code128_short",
+      "fixtureSha256": "ff919a646fa25b54c65de59d88d11407081bf062e7201523d1e27277f39007dc",
+      "format": "code128",
+      "source": "camera",
+      "expectedValue": "DALI-128",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "Read-only ADB accessibility observation confirmed the expected format, Camera source, Scan again result screen and original decoded value."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "code39_short",
+      "fixtureSha256": "81ed92dfa838e0eec8ee82cc3a11c009600f7652e6d7b0e6c6e240f967c2bf6c",
+      "format": "code39",
+      "source": "camera",
+      "expectedValue": "DALI39",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "Read-only ADB accessibility observation confirmed the expected format, Camera source, Scan again result screen and original decoded value."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "codabar_short",
+      "fixtureSha256": "914e1f305c91826ee089b38887cd5aed8b8f85838d7dc65ab01c4ed59ffa6023",
+      "format": "codabar",
+      "source": "camera",
+      "expectedValue": "A123456A",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "Read-only ADB accessibility observation confirmed the expected format, Camera source, Scan again result screen and original decoded value."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "itf14_zero",
+      "fixtureSha256": "afcd1c39fe93ed221582c50b951e4f168fb835b25389d28c26accf69aeeea07e",
+      "format": "itf14",
+      "source": "camera",
+      "expectedValue": "10012345000017",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "Read-only ADB accessibility observation confirmed the expected format, Camera source, Scan again result screen and original decoded value."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    },
+    {
+      "fixture": "code93_short",
+      "fixtureSha256": "c1a6b421e9057ca18997633f2a12089b84efe7f5a3665646ed5674051aa7e2c5",
+      "format": "code93",
+      "source": "camera",
+      "expectedValue": "DALI93",
+      "result": "detected",
+      "evidence": [
+        "User-assisted optical chart capture.",
+        "ADB accessibility confirmed the expected format, Camera source, and exact whitespace-bearing value where applicable."
+      ],
+      "copyVerified": false,
+      "saveVerified": false
+    }
+  ],
+  "limitations": [
+    "Partial live-camera validation; not a completed format/source release cell.",
+    "Copy, Save, picker, and routing are not established by a successful optical detection.",
+    "No optical latency measurement."
+  ],
+  "debugApkSha256": "bc5675a4812b66d16d7064edd49849a7f854bf8238c5f217b7387627440d1ae0",
+  "summary": {
+    "formatsDetected": 13,
+    "fixturesDetected": 13,
+    "liveDecoder": "Native mobile_scanner; still-image fallback is not used for these live detections.",
+    "scope": "One fixture per supported format on SM-T290/API30; not full release qualification."
+  },
+  "photoCaptureWorkflow": {
+    "status": "Removed at user request",
+    "manualTest": "Not completed; no camera photo was taken by the agent."
+  },
+  "temporaryGalleryFixture": {
+    "cleanupVerified": true,
+    "note": "Prepared synthetic gallery fixture was removed when the photo workflow was cancelled; gallery picker testing remains pending."
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-29",
+  "baselineCommit": "0487c2a",
+  "version": "1.2.0+2026102803",
+  "target": "integration_test/local_workflows_test.dart",
+  "device": {
+    "adbId": "R58M44F3BGJ",
+    "model": "SM-G975U",
+    "android": 12
+  },
+  "result": {
+    "passed": 13,
+    "failed": 0
+  },
+  "cases": [
+    "create, file, tag-search and delete a collection without deleting Saved codes",
+    "Saved list and search hide Wi-Fi credentials, malformed=false",
+    "Saved list and search hide Wi-Fi credentials, malformed=true",
+    "explicit capture rearm prevents double taps, counts, edits, and confirms export",
+    "unique sessions resume with committed rows and ignore repeat captures",
+    "batch UI rejects credentials without persisting or displaying their secret",
+    "batch controls fit on a narrow screen with large text",
+    "camera GS1 parsing stays local and opening requires confirmation",
+    "gallery GS1 parsing stays local and opening requires confirmation",
+    "read-only share view preserves the original GS1 URI",
+    "history displays candidates without rewriting stored records",
+    "Saved displays candidates without rewriting stored records",
+    "native batch storage is private and committed rows survive reopening"
+  ],
+  "scope": [
+    "Synthetic decoded GS1 result models; launcher rejects external launches.",
+    "In-memory collection flows and injected batch capture/export callbacks.",
+    "Actual native protected batch path and disk database close/reopen with exact value preservation; test session deleted."
+  ],
+  "notValidated": [
+    "Actual camera, gallery picker or OS share sheet",
+    "Target spreadsheet import",
+    "Airplane-mode capture or traffic monitoring",
+    "iOS compilation, protection or physical workflows",
+    "True process termination/relaunch recovery"
+  ],
+  "hostOnly": "Two scanner event-flood/pause-failure tests and rejecting HTTP-client overrides run only in host Flutter tests.",
+  "sourceSha256": {
+    "android/app/src/main/kotlin/com/dalifin/qr/MainActivity.kt": "3b86c17142e8cb5e01b5169a07670a3c8ec7d7eb965b425aa971aa7d681107bf",
+    "integration_test/local_workflows_test.dart": "ce07b5711ac2ac79a7918e59f1453c098d5920f3632ca3a5dbed89179d42e728",
+    "ios/Runner/AppDelegate.swift": "800615a9810e397ad8fda711d0f53249a146e19e03ec10792bb21092bb580996",
+    "lib/features/batch/application/batch_export.dart": "02299736cedb74aa22ec16921ad7fc80a9a49f139771d754f4135c73834ba73a",
+    "lib/features/batch/data/batch_database.dart": "bb2ee6edbb08c6f5d80c6d2e3bef8728ac337829aaa885e6b741d464498e89e6",
+    "lib/features/batch/data/local_batch_repository.dart": "6107d3fbec0464051cc6190a6a9fa1f0474e35bb4690f565f0f9c8ad88dbcb13",
+    "lib/features/batch/domain/batch_session.dart": "5d23845399fe3d305620e22d8b7d6cf70120adecc578963858226d6e86d9d733",
+    "lib/features/batch/presentation/batch_sessions_page.dart": "a7096c69f9b22a5d81025aa5a1192d2ae2b203cc4ce38858e820e8e6016fb96c",
+    "lib/features/history/application/history_controller.dart": "21207efe212e9583b2caf8aa457f4bbb3b432176c849cf621275e34f140d3418",
+    "lib/features/history/data/drift_qr_history_repository.dart": "2b13b1c1ae0b98e17f838d54d7802432a595f84e83b9ca0513168b06a3711be4",
+    "lib/features/history/data/drift_saved_organization_repository.dart": "1087c80ed57aa785a6f037faa5421520ae97892677a046145bd69a8742619240",
+    "lib/features/history/data/history_database.dart": "5faf2cbe7c27fb6a3b9ad8553b37a5b388b24547590058ec9326250e3145dae4",
+    "lib/features/history/data/history_database.g.dart": "3fa6d67d6e9b14a16407b6db0ec3828da063334fa96c250afe7cfdcecb1194c2",
+    "lib/features/history/domain/saved_organization.dart": "4a0390a25f1999c569184d2e395439fed72becf12790750cbbf6f6cb79196976",
+    "lib/features/history/presentation/history_page.dart": "49dbd4697a921898999eee880b3017b486a02d72e79725c352d8f625cbb2c030",
+    "lib/features/history/presentation/saved_page.dart": "2f62408b056dc549911516273719608c0e1515b6f0b9d9f1177bc712052ddc43",
+    "lib/features/lookup/domain/gs1_digital_link.dart": "3de02c4e4b59730bdd0606a3e38c6de8182ddeced913da81e0b036361cd9c8d5",
+    "lib/features/lookup/domain/identifier_recognizer.dart": "8b214bf9774d2c129614e58fb82f5dde752e668cb2077cc7bc1e529b82c4a491",
+    "lib/features/lookup/presentation/gs1_details.dart": "fb69ff5ff752f90c6df90279b2a15e8e0d10a33510ea64026550bdd796d4a5cb",
+    "lib/features/lookup/presentation/identifier_details.dart": "f7fb02bdafd611bed5c75316f561f74e76967eddfb78269e9895a1c8f114df07",
+    "lib/features/scan/presentation/qr_scanner_page.dart": "4f6cf411fa06b5859a19432bf7ea6c449737268176641917d12481f5f90d0c2a",
+    "lib/main.dart": "3afa5c9352a43c87c6a82d3c9594b9757e522dee7e6660f48efe08dbd36a1c78",
+    "test/batch_scanner_capture_test.dart": "ac896356bb496d6d12eb51f749ab1eb4dc3a8a728ad8aacb335a045658e3dd05",
+    "test/batch_session_page_test.dart": "f5b3f2909d3f018ac25637898351a0107fe6c46a899fc9cae1ca8d2fc014dac6",
+    "test/gs1_details_test.dart": "11db1efa784cde873e4600b838001a964493652ba3f29ef77e75cad5c0bfcaa7",
+    "test/saved_collections_page_test.dart": "403d457df8f468e2844f0b263c594bddf279ee7576b1cffe569684df00c1bce2"
+  }
+}

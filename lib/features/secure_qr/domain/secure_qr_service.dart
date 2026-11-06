@@ -5,6 +5,7 @@ import 'package:punycoder/punycoder.dart';
 
 import '../../create/domain/url_payload_policy.dart';
 import 'public_suffix_list.dart';
+import '../../scan/domain/authenticator_payload.dart';
 
 sealed class QrVerificationResult {
   const QrVerificationResult({required this.code});
@@ -44,7 +45,7 @@ final class SecureQrService {
 
   QrVerificationResult? calculateForPayload(String input) {
     // A passkey request is authenticated by the OS, not a comparison code.
-    if (input.toLowerCase().startsWith('fido:')) return null;
+    if (EphemeralCodePolicy.blocksPersistence(input)) return null;
     try {
       _urlPolicy.validate(input);
     } on UrlPayloadValidationException {

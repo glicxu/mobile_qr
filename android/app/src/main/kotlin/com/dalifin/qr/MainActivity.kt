@@ -7,12 +7,12 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.CalendarContract
 import android.provider.ContactsContract
-import android.provider.Settings
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
+import java.util.UUID
 
 class MainActivity : FlutterActivity() {
     private companion object {
@@ -23,9 +23,34 @@ class MainActivity : FlutterActivity() {
 
     private var inboundShareChannel: MethodChannel? = null
     private var pendingSharedImagePath: String? = null
+    private var pendingSharedImageError: Map<String, String>? = null
+    private lateinit var wifiJoinHandler: WifiJoinHandler
+
+    override fun getDartEntrypointArgs(): List<String> {
+        val arguments = super.getDartEntrypointArgs().orEmpty()
+        return if (intent?.action == Intent.ACTION_SEND) {
+            arguments + "--dali-shared-image"
+        } else arguments
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        wifiJoinHandler = WifiJoinHandler(this)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "dali_qr/local_storage")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "batchDatabasePath" && call.method != "paymentsDatabasePath") {
+                    result.notImplemented()
+                } else {
+                    try {
+                        val payments = call.method == "paymentsDatabasePath"
+                        val directory = File(noBackupFilesDir, if (payments) "dali_payments" else "dali_batch")
+                        check(directory.exists() || directory.mkdirs())
+                        result.success(File(directory, if (payments) "payments.sqlite" else "batch.sqlite").absolutePath)
+                    } catch (_: Exception) {
+                        result.error("storage_unavailable", "Protected local storage is unavailable.", null)
+                    }
+                }
+            }
         inboundShareChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             "dali_qr/inbound_share",
@@ -35,8 +60,9 @@ class MainActivity : FlutterActivity() {
                     result.notImplemented()
                     return@setMethodCallHandler
                 }
-                result.success(pendingSharedImagePath)
+                result.success(pendingSharedImagePath ?: pendingSharedImageError)
                 pendingSharedImagePath = null
+                pendingSharedImageError = null
             }
         }
         cleanupStaleSharedImages()
@@ -81,6 +107,18 @@ class MainActivity : FlutterActivity() {
             flutterEngine.dartExecutor.binaryMessenger,
             "dali_qr/routing",
         ).setMethodCallHandler { call, result ->
+            if (call.method == "wifiJoinCapabilities") {
+                result.success(wifiJoinHandler.capabilities())
+                return@setMethodCallHandler
+            }
+            if (call.method == "joinWifi") {
+                wifiJoinHandler.join(call, result)
+                return@setMethodCallHandler
+            }
+            if (call.method == "configureWifi") {
+                result.success(wifiJoinHandler.openSettings())
+                return@setMethodCallHandler
+            }
             try {
                 val intent = when (call.method) {
                     "authenticatePasskey" -> {
@@ -88,7 +126,6 @@ class MainActivity : FlutterActivity() {
                         require(Regex("FIDO:/[0-9]+").matches(uri))
                         Intent(Intent.ACTION_VIEW, Uri.parse(uri))
                     }
-                    "configureWifi" -> Intent(Settings.ACTION_WIFI_SETTINGS)
                     "addContact" -> Intent(
                         Intent.ACTION_INSERT,
                         ContactsContract.Contacts.CONTENT_URI,
@@ -148,16 +185,29 @@ class MainActivity : FlutterActivity() {
         receiveSharedImage(intent, notifyFlutter = true)
     }
 
+    @Deprecated("Activity result bridge for the system Wi-Fi approval flow")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (::wifiJoinHandler.isInitialized && wifiJoinHandler.onActivityResult(requestCode, resultCode, data)) return
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onDestroy() {
+        if (::wifiJoinHandler.isInitialized) wifiJoinHandler.dispose()
+        super.onDestroy()
+    }
+
     private fun receiveSharedImage(intent: Intent?, notifyFlutter: Boolean) {
         if (intent?.action != Intent.ACTION_SEND ||
-            intent.type?.startsWith("image/") != true
+            intent.type?.startsWith("image/") != true ||
+            intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
         ) {
             return
         }
 
-        val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM) ?: return
         var sharedImage: File? = null
+        pendingSharedImageError = null
         try {
+            val uri = requireNotNull(intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM))
             pendingSharedImagePath?.let { File(it).delete() }
             val destination = File.createTempFile(SHARED_CODE_PREFIX, ".image", cacheDir)
             sharedImage = destination
@@ -182,6 +232,12 @@ class MainActivity : FlutterActivity() {
         } catch (_: Exception) {
             sharedImage?.delete()
             pendingSharedImagePath = null
+            val error = mapOf(
+                "id" to UUID.randomUUID().toString(),
+                "error" to "The shared image could not be opened. Choose an accessible image smaller than 25 MB.",
+            )
+            pendingSharedImageError = error
+            if (notifyFlutter) notifyFlutterOfShare(error)
         }
     }
 
@@ -196,12 +252,17 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun notifyFlutterOfSharedImage(path: String) {
+        notifyFlutterOfShare(path)
+    }
+
+    private fun notifyFlutterOfShare(value: Any) {
         inboundShareChannel?.invokeMethod(
             "sharedImage",
-            path,
+            value,
             object : MethodChannel.Result {
                 override fun success(result: Any?) {
-                    if (pendingSharedImagePath == path) pendingSharedImagePath = null
+                    if (pendingSharedImagePath == value) pendingSharedImagePath = null
+                    if (pendingSharedImageError == value) pendingSharedImageError = null
                 }
 
                 override fun error(code: String, message: String?, details: Any?) = Unit

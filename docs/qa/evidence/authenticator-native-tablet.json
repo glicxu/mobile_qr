@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-29",
+  "device": "R9WN91CTWCJ",
+  "package": "com.dalifin.qr.scannerqa",
+  "model": "SM-T290",
+  "api": "30",
+  "scope": "Credential-free authenticator availability query, masked review cancellation, and absent-handler behavior. No authenticator provider launched.",
+  "handoffs": [],
+  "cases": [
+    {
+      "type": "authenticator",
+      "reviewCancelled": true,
+      "providerAvailable": false,
+      "providerLaunched": false,
+      "result": "passed"
+    }
+  ],
+  "testedApkSha256": "36d7b77de4e9a06258a81013b033814ee6258aaaf79126290eeaae94d1cb3b40",
+  "result": "passed",
+  "qaAppRemoved": true
+}

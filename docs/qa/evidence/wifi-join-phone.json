@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-29",
+  "device": "R58M44F3BGJ",
+  "package": "com.dalifin.qr.scannerqa",
+  "runId": "d84361e9",
+  "scope": "Production Wi-Fi review, native configuration validation, OS approval screen, duplicate guard and cancellation. No network approved.",
+  "systemScreens": [
+    {
+      "security": "wpa2",
+      "ssidObserved": true,
+      "action": "Back; network not accepted"
+    },
+    {
+      "security": "open",
+      "ssidObserved": true,
+      "action": "Back; network not accepted"
+    }
+  ],
+  "originalWifiState": "0",
+  "cases": [
+    {
+      "case": "nativeValidation",
+      "result": "passed",
+      "supportedSecurity": [
+        "open",
+        "wpa2"
+      ]
+    },
+    {
+      "case": "wpa2",
+      "ssid": "DALI-QR-QA-d84361e9-WPA2",
+      "result": "cancelled",
+      "duplicate": "busy",
+      "passwordRevealed": false
+    },
+    {
+      "case": "open",
+      "ssid": "DALI-QR-QA-d84361e9-OPEN",
+      "result": "cancelled",
+      "duplicate": "busy",
+      "passwordRevealed": false
+    },
+    {
+      "case": "wpa3",
+      "result": "unsupportedOnDevice"
+    }
+  ],
+  "testedApkSha256": "4da2bcfeeda23bc7036f2fcaa0407ef8d2b5cdb03ddd10fdf037b3368927753d",
+  "result": "passed",
+  "qaAppRemoved": true,
+  "restoredWifiState": "0"
+}

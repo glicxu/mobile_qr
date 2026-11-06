@@ -1,0 +1,15 @@
+{
+  "device": "R9WN91CTWCJ",
+  "page": "Create",
+  "qrContentTypesObserved": [
+    "Text or link",
+    "Wi-Fi network",
+    "Contact",
+    "Event",
+    "Location",
+    "Email",
+    "Phone",
+    "SMS"
+  ],
+  "result": "passed"
+}

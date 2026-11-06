@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>LSApplicationQueriesSchemes</key>
+    <array><string>otpauth</string></array>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Dali QR uses calendar access only when you choose to add a scanned event.</string>
 	<key>NSCalendarsUsageDescription</key>

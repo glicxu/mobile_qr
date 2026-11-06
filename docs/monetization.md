@@ -2,6 +2,40 @@
 
 ## 1. Strategy
 
+**Trial update (2026-11-06):** Users without lifetime access receive a free
+calendar-month trial of all lifetime benefits when they first use a paid creation option.
+The unlock screen appears when using a trial benefit; it and Settings show the remaining time and offer the existing
+one-time purchase and restore. No subscription or automatic charge is started.
+The trial expiry is stored locally per installation; reinstalling or clearing app
+data can reset it. After expiry, the existing free/paid boundaries apply and
+older history remains on the device. This supersedes the earlier no-trial
+recommendations below.
+
+**Payments visibility update (2026-11-06):** Payments is hidden from navigation
+and Settings for all users, regardless of ownership. Its implementation is kept
+for further work and planning; no Payments workspace is exposed in the app.
+
+**Creation benefits update (2026-11-06):** The existing lifetime unlock now
+includes barcode creation in every supported non-QR format and the dedicated
+Wi-Fi, contact, event, location, email, phone, and SMS QR creation forms. Existing
+owners receive these benefits automatically with the same entitlement and no
+additional purchase. Free users can fill in these forms; generating the output
+requires unlocking. Purchase or restore resumes generation with the entered
+details. Dismissing the unlock screen keeps the draft without generating or
+recording output. Basic text/link QR creation, including plain, Dali, and
+verification-code appearances, remains free, as do scanning and security checks.
+Custom logo export and extended history remain lifetime benefits. Payments keeps
+its separate entitlement. This update supersedes the broader free creation
+recommendations in the original plan below.
+
+**Payments package update (2026-10-30):** Payments has a separate management
+workspace and entitlement boundary. The [Payments Package](payments_package.md)
+document defines its scope and free/paid boundary. PAY1 local tools and sample
+exploration are implemented; production purchases, paid ownership and provider
+integrations remain unconfigured. The existing Customization purchase and
+free-core/security principles remain unchanged. The Initial Implementation
+section below describes the existing Customization billing implementation.
+
 Dali QR should avoid charging users for the fundamental functions that make the ecosystem useful.
 
 The core principle is:

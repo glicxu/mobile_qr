@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import '../../secure_qr/presentation/verification_prompt.dart';
 import '../application/qr_payload_router.dart';
 import '../domain/qr_payload_classifier.dart';
+import '../domain/link_inspection.dart';
+import 'wifi_join_dialog.dart';
 
 extension QrPayloadPresentation on ClassifiedQrPayload {
   IconData get icon => switch (type) {
+    QrContentType.authenticator => Icons.security,
     QrContentType.passkey => Icons.key,
     QrContentType.webUrl => Icons.language,
     QrContentType.email => Icons.email_outlined,
@@ -20,13 +23,14 @@ extension QrPayloadPresentation on ClassifiedQrPayload {
   };
 
   String get actionLabel => switch (action) {
+    QrRouteAction.setupAuthenticator => 'Open authenticator',
     QrRouteAction.authenticatePasskey => 'Continue with passkey',
     QrRouteAction.openUrl => 'Open',
     QrRouteAction.composeEmail => 'Compose email',
     QrRouteAction.call => 'Call number',
     QrRouteAction.composeSms => 'Compose message',
     QrRouteAction.openLocation => 'Open in maps',
-    QrRouteAction.configureWifi => 'Open Wi-Fi settings',
+    QrRouteAction.configureWifi => 'Join network',
     QrRouteAction.addContact => 'Add contact',
     QrRouteAction.addCalendarEvent => 'Add to calendar',
     QrRouteAction.openDeepLink => 'Open app link',
@@ -34,6 +38,8 @@ extension QrPayloadPresentation on ClassifiedQrPayload {
   };
 
   String get failureMessage => switch (action) {
+    QrRouteAction.setupAuthenticator =>
+      'No compatible authenticator could be opened. Import this setup code directly in your trusted authenticator.',
     QrRouteAction.authenticatePasskey =>
       'Could not start passkey sign-in. Try your phone’s system Camera or '
           'Code Scanner with a fresh QR code.',
@@ -59,6 +65,14 @@ class _QrSensitiveDetailState extends State<QrSensitiveDetail> {
   bool _visible = false;
 
   @override
+  void didUpdateWidget(covariant QrSensitiveDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.payload.rawPayload != widget.payload.rawPayload) {
+      _visible = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final label = widget.payload.sensitiveLabel;
     final value = widget.payload.sensitiveValue;
@@ -76,15 +90,78 @@ class _QrSensitiveDetailState extends State<QrSensitiveDetail> {
   }
 }
 
+/// Raw Wi-Fi codes contain passwords too, so expanding Details is not a reveal.
+final class QrRawContent extends StatefulWidget {
+  const QrRawContent({required this.payload, super.key});
+  final ClassifiedQrPayload payload;
+  @override
+  State<QrRawContent> createState() => _QrRawContentState();
+}
+
+class _QrRawContentState extends State<QrRawContent> {
+  bool _visible = false;
+  @override
+  void didUpdateWidget(covariant QrRawContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.payload.rawPayload != widget.payload.rawPayload) {
+      _visible = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authenticator = widget.payload.type == QrContentType.authenticator;
+    if (widget.payload.type != QrContentType.wifi && !authenticator) {
+      return SelectableText(widget.payload.rawPayload);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_visible)
+          SelectableText(widget.payload.rawPayload)
+        else
+          Text(
+            authenticator
+                ? 'Authenticator credentials hidden.'
+                : 'Wi-Fi credentials hidden.',
+          ),
+        TextButton.icon(
+          onPressed: () => setState(() => _visible = !_visible),
+          icon: Icon(_visible ? Icons.visibility_off : Icons.visibility),
+          label: Text(
+            authenticator
+                ? (_visible
+                      ? 'Hide authenticator code'
+                      : 'Reveal authenticator code')
+                : (_visible ? 'Hide Wi-Fi code' : 'Reveal Wi-Fi code'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 Future<void> routeQrPayload(
   BuildContext context,
   ClassifiedQrPayload payload, {
   String? comparisonCode,
 }) async {
   if (!payload.canRoute) return;
+  if (payload.action == QrRouteAction.configureWifi) {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) =>
+          WifiJoinDialog(payload: payload, comparisonCode: comparisonCode),
+    );
+    return;
+  }
 
-  if (payload.action != QrRouteAction.openUrl) {
-    if (comparisonCode != null && payload.type != QrContentType.passkey) {
+  if (payload.action == QrRouteAction.openUrl) {
+    final inspection = const LinkInspector().inspect(payload.rawPayload);
+    if (!inspection.canOpen) return;
+  } else {
+    if (comparisonCode != null && !payload.isEphemeral) {
       final outcome = await showVerificationPrompt(
         context,
         code: comparisonCode,
@@ -102,7 +179,7 @@ Future<void> routeQrPayload(
           icon: Icon(payload.icon),
           title: Text(payload.actionLabel),
           content: Text(
-            payload.type == QrContentType.passkey
+            payload.isEphemeral
                 ? '${payload.primaryText}\n\n${payload.details.join('\n\n')}'
                 : payload.primaryText,
           ),

@@ -16,8 +16,10 @@ This roadmap complements, rather than replaces:
 - [README and supported content](../README.md)
 - [Version 1.2 Improvements](next_version_improvements.md)
 - [Version 1.2 Implementation Plan](1.2_implementation_plan.md)
+- [Usage Expansion Implementation Plan](roadmap_implementation_plan.md)
 - [Secure QR design](secure_qr.md)
 - [Monetization](monetization.md)
+- [Payments Package — separate management and unlock proposal](payments_package.md)
 
 The README already documents QR and common 1D scanning, payload classification,
 confirmed OS routing, opt-in local history, and Saved functionality. The 1.2
@@ -26,6 +28,21 @@ Phase 1 therefore combines validation of that foundation with incremental
 expansion; it is not a claim that all listed capabilities are new or shipped.
 Product lookup, inventory workflows, and additional 2D formats remain outside
 the existing 1.2 scope. No dates, prices, or new entitlements are assigned here.
+
+Implementation update: the user subsequently requested a universal scanner,
+with Android completed first and iOS validation deferred. The working tree
+implements 13 formats, including Data Matrix, PDF417, and Aztec, with a bounded
+offline still-image fallback. See [current scanner scope and QA](qa/universal_scanner.md)
+for evidence and remaining release checks. Product-information lookup remains
+unavailable without a validated provider.
+
+The working tree also implements generation of all 13 formats, with QR as the
+default, plus a Wi-Fi creation form and user-approved network handoff. A
+first-time hotspot join is verified on the Android tablet. Already-saved
+Android networks use system settings for explicit selection; saving a profile
+again does not force a connection switch. See [generation QA](qa/barcode_generation.md)
+and [Wi-Fi scope and evidence](qa/wifi_join.md). These implementation results
+do not close the remaining release or iOS validation gates.
 
 ## 2. What codes provide
 
@@ -90,6 +107,11 @@ automatic external action. Preserve the distinction between Secure QR
 comparison/domain behavior and barcode checksums; neither proves site safety.
 
 ## 5. Phase 2 — Information assistant
+
+**Current constraint:** Online product lookup is deferred because no product
+provider is available. Keep product lookup unavailable until provider selection
+and live validation are complete. Offline identifier decoding/validation remains
+independently testable; book lookup and GS1 resolution have separate service gates.
 
 **Outcome:** Turn supported identifiers into useful, attributed information
 without making an account or network connection necessary for basic scanning.
@@ -180,3 +202,60 @@ Evaluate progress through fixture pass rates, successful user workflows,
 provider match/error rates, offline behavior, and data-preservation checks.
 Use synthetic fixtures and opt-in, non-payload diagnostics rather than collecting
 users' scan contents to measure success.
+
+## 9. Protocol support and structured creation expansion
+
+**Implementation update: 2026-10-29.** Guided creation and authenticator
+recognition are implemented in the working tree; release and provider-import
+validation remain distinct gates. Matter and provider-specific payment pilots remain deferred. On 2026-10-30,
+the user authorized the separate Payments local workspace: PAY1 is implemented
+with sample exploration and independent entitlement gates. Live purchases and
+provider integrations remain disabled. See [Payments](payments_package.md).
+As of 2026-11-06, Payments is hidden from navigation and Settings for all users
+pending further work and planning; its implementation is retained. Barcode
+creation and the guided QR creation forms now require the existing lifetime
+unlock. Basic text/link QR creation, scanning, and security checks remain free.
+Payload protocols are separate from the 13 supported symbol formats. A new
+Create form for an existing payload parser is not a new scanning protocol.
+
+| Order | Capability | Current baseline | Proposed next scope | Dependencies and limits |
+|---|---|---|---|---|
+| 1 | Contact / digital business card — vCard | Guided Create form and existing contact scanning/handoff implemented | Complete target-platform editor/prefill and release checks | Offline generation; do not infer contact authenticity |
+| 1 | Calendar invitation — VEVENT | Guided single timed-event Create form and existing calendar handoff implemented | Complete target-platform editor/prefill and release checks | Local/UTC times only; named timezones, recurrence and all-day handoff remain outside initial scope |
+| 1 | Location — `geo:` | Coordinate Create form, scanning and maps handoff implemented | Complete provider/platform checks | Generation needs no geocoding provider; opening maps needs an available handler |
+| 1 | Email, phone and SMS — `mailto:`, `tel:`, `sms:` | Guided Create forms and existing confirmed handoffs implemented | Complete native recipient/body/prefill checks on supported apps | Prepare a composer/dialer only; never send or call automatically |
+| 2 | Authenticator provisioning — `otpauth:` | TOTP/HOTP recognition, masked review and confirmed compatible-app route implemented | Verify actual provider import; Android availability/cancellation are tested | No built-in authenticator, automatic secret storage or account enrollment claim |
+| 3 | Smart-home commissioning — Matter | No dedicated support; feasibility findings recorded | Deferred by user, 2026-10-29 | Requires real hardware and documented commissioner integration before enablement |
+| 3 | Payment QR — EMV | No dedicated support; feasibility findings recorded | Deferred by user, 2026-10-29 | Requires a selected market/payment system/wallet; no universal payment or transfer-success claim |
+
+**Current delivery:** Contact, Event, Location, Email, Phone and SMS are now in
+the QR content-type dropdown, alongside Wi-Fi and Text or link. QR remains the
+default Code format and Text or link the default content type. Other barcode
+formats retain their current input and validation. Authenticator recognition
+is scan-only and excludes secret persistence/export. See
+[protocol scope and QA](qa/protocol_expansion.md) for evidence and remaining
+checks. These local features do not depend on a product-information provider.
+
+All generated structured payloads must round-trip through the scanner with
+their intended fields intact. Preserve literal values and use protocol-specific
+escaping rather than global trimming or punctuation normalization. The Wi-Fi
+test showed that straight and curly apostrophes identify different networks.
+Review content before confirmed external actions and preserve cancellation
+and unavailable-handler fallbacks.
+
+Authenticator secrets and Matter setup credentials require sensitive-data
+handling: masked review, no automatic history/Saved entry, and no telemetry or
+crash-log payloads. The initial authenticator scope does not mint random seeds
+and claim to enroll third-party accounts. Secret-bearing QR creation/export
+requires a separately specified workflow before enablement.
+
+Matter and payment work start as independent feasibility decisions, not feature
+commitments. Continue Android first; iOS compilation, signing and device
+validation remain pending. Product lookup stays unavailable until its existing
+provider gate is met.
+
+Protocol references:
+
+- [Authenticator provisioning URI format](https://github.com/google/google-authenticator/wiki/Key-Uri-Format)
+- [Matter setup and commissioning overview](https://csa-iot.org/all-solutions/matter/matter-faq/)
+- [EMV QR payment specifications and processing boundaries](https://www.emvco.com/emv-technologies/qr-codes/)

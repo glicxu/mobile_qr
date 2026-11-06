@@ -24,17 +24,60 @@ class HistoryEntries extends Table {
   Set<Column<Object>> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [HistoryEntries])
+@DataClassName('SavedCollectionRow')
+class SavedCollections extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get normalizedName => text().unique()();
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+class SavedCollectionItems extends Table {
+  TextColumn get collectionId =>
+      text().references(SavedCollections, #id, onDelete: KeyAction.cascade)();
+  TextColumn get entryId =>
+      text().references(HistoryEntries, #id, onDelete: KeyAction.cascade)();
+  @override
+  Set<Column<Object>> get primaryKey => {collectionId, entryId};
+}
+
+class SavedTags extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  @override
+  Set<Column<Object>> get primaryKey => {id};
+}
+
+class SavedTagItems extends Table {
+  TextColumn get tagId =>
+      text().references(SavedTags, #id, onDelete: KeyAction.cascade)();
+  TextColumn get entryId =>
+      text().references(HistoryEntries, #id, onDelete: KeyAction.cascade)();
+  @override
+  Set<Column<Object>> get primaryKey => {tagId, entryId};
+}
+
+@DriftDatabase(
+  tables: [
+    HistoryEntries,
+    SavedCollections,
+    SavedCollectionItems,
+    SavedTags,
+    SavedTagItems,
+  ],
+)
 final class HistoryDatabase extends _$HistoryDatabase {
   HistoryDatabase() : super(driftDatabase(name: 'dali_qr_history'));
 
   HistoryDatabase.forTesting(super.connection);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    beforeOpen: (_) => customStatement('PRAGMA foreign_keys = ON'),
     onCreate: (migrator) => migrator.createAll(),
     onUpgrade: (migrator, from, to) async {
       if (from < 2) {
@@ -58,6 +101,12 @@ final class HistoryDatabase extends _$HistoryDatabase {
       }
       if (from < 5) {
         await migrator.addColumn(historyEntries, historyEntries.codeFormat);
+      }
+      if (from < 6) {
+        await migrator.createTable(savedCollections);
+        await migrator.createTable(savedCollectionItems);
+        await migrator.createTable(savedTags);
+        await migrator.createTable(savedTagItems);
       }
     },
   );

@@ -9,10 +9,11 @@ abstract final class QrShare {
   static Future<void> sharePng({
     required Uint8List bytes,
     String? payload,
+    String fileName = 'dali-secure-qr.png',
     Rect? sharePositionOrigin,
   }) async {
     final directory = await getTemporaryDirectory();
-    final file = File('${directory.path}/dali-secure-qr.png');
+    final file = File('${directory.path}/$fileName');
     await file.writeAsBytes(bytes, flush: true);
     await SharePlus.instance.share(
       ShareParams(

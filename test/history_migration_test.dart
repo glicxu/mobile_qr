@@ -1,5 +1,6 @@
 import 'package:dali_qr/features/history/data/drift_qr_history_repository.dart';
 import 'package:dali_qr/features/history/data/history_database.dart';
+import 'package:dali_qr/features/history/domain/qr_history.dart';
 import 'package:dali_qr/features/scan/domain/scanned_code.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,10 +49,21 @@ void main() {
     final item = (await repository.watchRecent().first).single;
     expect(item.id, 'legacy');
     expect(item.rawPayload, 'https://example.com');
+    expect(item.activityKind, QrActivityKind.scanned);
+    expect(item.payloadKind, QrPayloadKind.url);
+    expect(item.displayHost, 'example.com');
+    expect(item.source, QrActivitySource.camera);
     expect(item.title, 'Legacy');
     expect(item.note, 'Kept');
     expect(item.isInHistory, isFalse);
-    expect(item.savedAtUtc, isNotNull);
+    expect(
+      item.savedAtUtc!.toUtc(),
+      DateTime.fromMillisecondsSinceEpoch(1786809600000, isUtc: true),
+    );
+    expect(
+      item.createdAtUtc.toUtc(),
+      DateTime.fromMillisecondsSinceEpoch(1786723200000, isUtc: true),
+    );
     expect(item.verificationCode, 'ABC-123');
     expect(item.registrableDomain, 'example.com');
     expect(item.qrPngBytes, [1, 2]);

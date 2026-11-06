@@ -1,4 +1,4 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 
 import 'package:dali_qr/features/create/presentation/image_crop_page.dart';
 import 'package:flutter/material.dart';
@@ -22,15 +22,15 @@ void main() {
     final testBytes = _createTestImageBytes(width: 300, height: 150);
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: ImageCropPage(imageBytes: testBytes),
-      ),
+      MaterialApp(home: ImageCropPage(imageBytes: testBytes)),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('Crop Center Image'), findsOneWidget);
     expect(
-      find.text('Pan and pinch to frame the center emblem area of your QR code.'),
+      find.text(
+        'Pan and pinch to frame the center emblem area of your QR code.',
+      ),
       findsOneWidget,
     );
     expect(find.byType(InteractiveViewer), findsOneWidget);
@@ -46,9 +46,7 @@ void main() {
     final testBytes = _createTestImageBytes(width: 400, height: 200);
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: ImageCropPage(imageBytes: testBytes),
-      ),
+      MaterialApp(home: ImageCropPage(imageBytes: testBytes)),
     );
     await tester.pumpAndSettle();
 

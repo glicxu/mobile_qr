@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-29",
+  "device": "R58M44F3BGJ",
+  "package": "com.dalifin.qr.scannerqa",
+  "model": "SM-G975U",
+  "api": "31",
+  "scope": "Credential-free authenticator availability query, masked review cancellation, and absent-handler behavior. No authenticator provider launched.",
+  "handoffs": [],
+  "protectedPackagesBefore": {
+    "com.dalifin.qr.test": true,
+    "com.dalifin.qr": true
+  },
+  "initialFlutterApkIdentity": "com.dalifin.qr.scannerqa",
+  "cases": [
+    {
+      "type": "authenticator",
+      "reviewCancelled": true,
+      "providerAvailable": true,
+      "providerLaunched": false,
+      "result": "passed"
+    }
+  ],
+  "testedApkSha256": "d327bbdc0092cf210a42b0438d59d36b5753a5a8ea64f3678d72be4b9ae3d801",
+  "result": "passed",
+  "qaAppRemoved": true,
+  "protectedPackagesAfter": {
+    "com.dalifin.qr.test": true,
+    "com.dalifin.qr": true
+  }
+}

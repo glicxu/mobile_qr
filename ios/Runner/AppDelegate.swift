@@ -4,6 +4,7 @@ import Contacts
 import ContactsUI
 import EventKit
 import EventKitUI
+import NetworkExtension
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate,
@@ -11,11 +12,13 @@ import EventKitUI
   private var qrClipboardChannel: FlutterMethodChannel?
   private var qrRoutingChannel: FlutterMethodChannel?
   private var inboundShareChannel: FlutterMethodChannel?
+  private var localStorageChannel: FlutterMethodChannel?
   private let eventStore = EKEventStore()
   private let sharedAppGroup = "group.com.dalifin.qr.shared"
   private let sharedImageKey = "pendingSharedImagePath"
   private let sharedCodePrefix = "dali_shared_code_"
   private let legacySharedQrPrefix = "dali_shared_qr_"
+  private var pendingWifiJoin: FlutterResult?
 
   override func application(
     _ application: UIApplication,
@@ -59,6 +62,35 @@ import EventKitUI
     }
     qrClipboardChannel = channel
 
+    let storageChannel = FlutterMethodChannel(name: "dali_qr/local_storage", binaryMessenger: registrar.messenger())
+    storageChannel.setMethodCallHandler { call, result in
+      guard call.method == "batchDatabasePath" || call.method == "paymentsDatabasePath" else { result(FlutterMethodNotImplemented); return }
+      let payments = call.method == "paymentsDatabasePath"
+      do {
+        let manager = FileManager.default
+        var directory = try manager.url(for: .applicationSupportDirectory, in: .userDomainMask,
+          appropriateFor: nil, create: true).appendingPathComponent(payments ? "DaliPayments" : "DaliBatch", isDirectory: true)
+        try manager.createDirectory(at: directory, withIntermediateDirectories: true,
+          attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try directory.setResourceValues(values)
+        let file = directory.appendingPathComponent(payments ? "payments.sqlite" : "batch.sqlite")
+        if !manager.fileExists(atPath: file.path) {
+          guard manager.createFile(atPath: file.path, contents: nil,
+            attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication, .posixPermissions: 0o600]) else {
+            throw NSError(domain: "DaliLocalStorage", code: 1)
+          }
+        }
+        try manager.setAttributes([.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication,
+          .posixPermissions: 0o600], ofItemAtPath: file.path)
+        result(file.path)
+      } catch {
+        result(FlutterError(code: "storage_unavailable", message: "Protected local storage is unavailable.", details: nil))
+      }
+    }
+    localStorageChannel = storageChannel
+
     let routingChannel = FlutterMethodChannel(
       name: "dali_qr/routing",
       binaryMessenger: registrar.messenger()
@@ -67,6 +99,10 @@ import EventKitUI
       guard let self else { result(false); return }
       let arguments = call.arguments as? [String: Any] ?? [:]
       switch call.method {
+      case "wifiJoinCapabilities":
+        result(["securityTypes": ["open", "wpa2"], "canOpenSettings": false])
+      case "joinWifi":
+        self.joinWifi(arguments, result: result)
       case "authenticatePasskey":
         guard let raw = arguments["uri"] as? String,
               raw.range(of: "^FIDO:/[0-9]+$", options: .regularExpression) != nil,
@@ -136,6 +172,47 @@ import EventKitUI
       result(self?.takePendingSharedImage())
     }
     inboundShareChannel = inboundChannel
+  }
+
+  private func joinWifi(_ arguments: [String: Any], result: @escaping FlutterResult) {
+    guard pendingWifiJoin == nil else { result("busy"); return }
+    guard UIApplication.shared.applicationState == .active,
+          let ssid = arguments["ssid"] as? String,
+          !ssid.isEmpty, ssid.utf8.count <= 32,
+          !ssid.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }),
+          let security = arguments["security"] as? String else { result("failed"); return }
+    let password = arguments["password"] as? String ?? ""
+    let configuration: NEHotspotConfiguration
+    switch security {
+    case "open":
+      guard password.isEmpty else { result("failed"); return }
+      configuration = NEHotspotConfiguration(ssid: ssid)
+    case "wpa2":
+      guard (8...63).contains(password.utf8.count),
+            password.unicodeScalars.allSatisfy({ (32...126).contains($0.value) }) else { result("failed"); return }
+      configuration = NEHotspotConfiguration(ssid: ssid, passphrase: password, isWEP: false)
+    default:
+      result("unsupported")
+      return
+    }
+    configuration.hidden = arguments["hidden"] as? Bool ?? false
+    configuration.joinOnce = false
+    pendingWifiJoin = result
+    NEHotspotConfigurationManager.shared.apply(configuration) { [weak self] error in
+      DispatchQueue.main.async {
+        guard let self, let callback = self.pendingWifiJoin else { return }
+        self.pendingWifiJoin = nil
+        guard let error = error as NSError? else { callback("accepted"); return }
+        if error.domain == NEHotspotConfigurationErrorDomain {
+          switch error.code {
+          case NEHotspotConfigurationError.userDenied.rawValue: callback("cancelled")
+          case NEHotspotConfigurationError.alreadyAssociated.rawValue: callback("alreadyAssociated")
+          case NEHotspotConfigurationError.pending.rawValue: callback("busy")
+          default: callback("failed")
+          }
+        } else { callback("failed") }
+      }
+    }
   }
 
   func notifySharedImageAvailable() {

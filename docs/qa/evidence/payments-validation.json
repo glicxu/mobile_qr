@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-30",
+  "scope": "PAY1 local workspace; live billing/provider integration disabled",
+  "analysis": "passed",
+  "hostTests": 318,
+  "builds": {
+    "release": {
+      "package": "com.dalifin.qr",
+      "sha256": "d569a9ff5f1a4216c2337adfdd7719d435552fb001139da7bb1051fd0d84722d",
+      "result": "passed"
+    },
+    "debug": {
+      "package": "com.dalifin.qr.test",
+      "sha256": "50813784d631b360eef0a3f5f097a48969ab887e615409e78a20e8c429ac6af6",
+      "result": "passed"
+    }
+  },
+  "devices": [
+    {
+      "serial": "R9WN91CTWCJ",
+      "update": "install -r; no app data cleared",
+      "installedApkSha256": "50813784d631b360eef0a3f5f097a48969ab887e615409e78a20e8c429ac6af6",
+      "protectedPackagesBefore": {
+        "com.dalifin.qr.test": true,
+        "com.dalifin.qr": false
+      },
+      "protectedPackagesAfter": {
+        "com.dalifin.qr.test": true,
+        "com.dalifin.qr": false
+      },
+      "result": "passed"
+    },
+    {
+      "serial": "R58M44F3BGJ",
+      "update": "install -r; no app data cleared",
+      "installedApkSha256": "50813784d631b360eef0a3f5f097a48969ab887e615409e78a20e8c429ac6af6",
+      "protectedPackagesBefore": {
+        "com.dalifin.qr.test": true,
+        "com.dalifin.qr": true
+      },
+      "protectedPackagesAfter": {
+        "com.dalifin.qr.test": true,
+        "com.dalifin.qr": true
+      },
+      "result": "passed"
+    }
+  ],
+  "result": "passed",
+  "tabletNormalUi": {
+    "normalPaymentsEntry": true,
+    "sampleWorkspaceVisible": true,
+    "syntheticSampleCardVisible": true
+  }
+}

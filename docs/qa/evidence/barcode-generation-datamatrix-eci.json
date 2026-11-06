@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-29",
+  "scope": "Preliminary UTF-8 ECI Data Matrix generator; superseded, not current behavior",
+  "finding": "ML Kit prepended U+001A from the ECI assignment; the fallback returned the correct value. The production generator now uses Data Matrix default Latin-1 and rejects unsupported text.",
+  "observations": [
+    {
+      "device": "phone",
+      "fixture": "dataMatrix_short",
+      "width": 272,
+      "height": 160,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "\u001a  KEEP-00123  "
+        },
+        {
+          "format": "dataMatrix",
+          "value": "  KEEP-00123  "
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "fixture": "dataMatrix_long",
+      "width": 480,
+      "height": 480,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "\u001aDALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        },
+        {
+          "format": "dataMatrix",
+          "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        }
+      ]
+    },
+    {
+      "device": "phone",
+      "fixture": "dataMatrix_unicode",
+      "width": 240,
+      "height": 240,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "\u001a  Caf\u00e9 \u4e2d\u6587\nend  "
+        },
+        {
+          "format": "dataMatrix",
+          "value": "  Caf\u00e9 \u4e2d\u6587\nend  "
+        }
+      ]
+    },
+    {
+      "device": "tablet",
+      "fixture": "dataMatrix_short",
+      "width": 272,
+      "height": 160,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "\u001a  KEEP-00123  "
+        },
+        {
+          "format": "dataMatrix",
+          "value": "  KEEP-00123  "
+        }
+      ]
+    },
+    {
+      "device": "tablet",
+      "fixture": "dataMatrix_long",
+      "width": 480,
+      "height": 480,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "\u001aDALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        },
+        {
+          "format": "dataMatrix",
+          "value": "DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:DALI-CANDIDATE:end"
+        }
+      ]
+    },
+    {
+      "device": "tablet",
+      "fixture": "dataMatrix_unicode",
+      "width": 240,
+      "height": 240,
+      "results": [
+        {
+          "format": "dataMatrix",
+          "value": "\u001a  Caf\u00e9 \u4e2d\u6587\nend  "
+        },
+        {
+          "format": "dataMatrix",
+          "value": "  Caf\u00e9 \u4e2d\u6587\nend  "
+        }
+      ]
+    }
+  ]
+}

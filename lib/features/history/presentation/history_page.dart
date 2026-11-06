@@ -3,12 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../create/presentation/generated_barcode_page.dart';
 import '../../create/application/qr_encoder.dart';
 import '../../create/data/dart_qr_encoder.dart';
 import '../../create/data/qr_png_renderer.dart';
 import '../../scan/domain/qr_payload_classifier.dart';
 import '../../scan/domain/scanned_code.dart';
 import '../../scan/presentation/qr_payload_action.dart';
+import '../../scan/presentation/qr_link_review.dart';
+import '../../lookup/domain/gs1_digital_link.dart';
+import '../../lookup/presentation/gs1_details.dart';
+import '../../lookup/domain/identifier_recognizer.dart';
+import '../../lookup/presentation/identifier_details.dart';
 import '../application/history_controller.dart';
 import '../application/qr_clipboard.dart';
 import '../domain/qr_history.dart';
@@ -255,7 +261,10 @@ class _HistoryPageState extends State<HistoryPage> {
                         _HistoryTile(
                           item: item,
                           onToggleSaved: () async {
-                            if (item.savedAtUtc == null) {
+                            if (item.savedAtUtc == null &&
+                                !_classifier
+                                    .classify(item.rawPayload)
+                                    .isEphemeral) {
                               await widget.controller.save(item.id);
                               _showMessage('Code saved.');
                             } else {
@@ -357,6 +366,11 @@ class _HistoryPageState extends State<HistoryPage> {
   Future<void> _showDetails(QrHistoryItem item) {
     final qrPngBytes = _qrBytesFor(item);
     final payload = _classifier.classify(item.rawPayload);
+    final digitalLink = const Gs1DigitalLinkParser().parse(item.rawPayload);
+    final identifier = const IdentifierRecognizer().recognize(
+      value: item.rawPayload,
+      format: item.codeFormat,
+    );
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -372,14 +386,14 @@ class _HistoryPageState extends State<HistoryPage> {
                 Text(
                   item.title ??
                       (item.activityKind == QrActivityKind.created
-                          ? 'Created QR'
+                          ? 'Created ${item.codeFormat == ScannedCodeFormat.qrCode ? 'QR' : item.codeFormat.label}'
                           : 'Scanned ${item.codeFormat.label}'),
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
                 if (item.title != null)
                   Text(
                     item.activityKind == QrActivityKind.created
-                        ? 'Created QR'
+                        ? 'Created ${item.codeFormat == ScannedCodeFormat.qrCode ? 'QR' : item.codeFormat.label}'
                         : 'Scanned ${item.codeFormat.label}',
                     style: Theme.of(sheetContext).textTheme.bodySmall,
                   ),
@@ -393,6 +407,15 @@ class _HistoryPageState extends State<HistoryPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (!payload.isEphemeral &&
+                            item.activityKind == QrActivityKind.created &&
+                            item.codeFormat != ScannedCodeFormat.qrCode) ...[
+                          StoredBarcodeButton(
+                            value: item.rawPayload,
+                            format: item.codeFormat,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                         if (qrPngBytes != null) ...[
                           Center(
                             child: SizedBox.square(
@@ -453,6 +476,14 @@ class _HistoryPageState extends State<HistoryPage> {
                           SelectableText(note),
                           const SizedBox(height: 16),
                         ],
+                        if (digitalLink != null) ...[
+                          Gs1Details(link: digitalLink),
+                          const SizedBox(height: 16),
+                        ],
+                        if (identifier != null) ...[
+                          IdentifierDetails(recognition: identifier),
+                          const SizedBox(height: 16),
+                        ],
                         Text(
                           'Raw content',
                           style: Theme.of(sheetContext).textTheme.labelLarge,
@@ -461,7 +492,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: SelectableText(item.rawPayload)),
+                            Expanded(child: QrRawContent(payload: payload)),
                             IconButton(
                               onPressed: () =>
                                   _copyText(item.rawPayload, 'Payload copied'),
@@ -470,6 +501,11 @@ class _HistoryPageState extends State<HistoryPage> {
                             ),
                           ],
                         ),
+                        if (payload.linkInspection case final inspection?
+                            when identifier == null || payload.canRoute) ...[
+                          const SizedBox(height: 12),
+                          QrLinkReview(inspection: inspection),
+                        ],
                         if (payload.canRoute) ...[
                           const SizedBox(height: 12),
                           FilledButton.icon(
@@ -493,7 +529,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   alignment: WrapAlignment.end,
                   spacing: 4,
                   children: [
-                    if (item.savedAtUtc == null)
+                    if (item.savedAtUtc == null && !payload.isEphemeral)
                       TextButton.icon(
                         onPressed: () async {
                           await widget.controller.save(item.id);
@@ -615,6 +651,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Uint8List? _qrBytesFor(QrHistoryItem item) {
     if (item.codeFormat != ScannedCodeFormat.qrCode) return null;
+    if (_classifier.classify(item.rawPayload).isEphemeral) return null;
     if (item.qrPngBytes case final bytes?) return bytes;
     try {
       return _pngRenderer
@@ -841,30 +878,40 @@ final class _HistoryTile extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           child: Icon(
-            created || item.codeFormat == ScannedCodeFormat.qrCode
+            item.codeFormat == ScannedCodeFormat.qrCode
                 ? Icons.qr_code_2
                 : Icons.view_week_outlined,
           ),
         ),
         title: Text(
-          item.title ?? item.displayHost ?? item.rawPayload,
+          const QrPayloadClassifier().classify(item.rawPayload).isEphemeral
+              ? const QrPayloadClassifier().classify(item.rawPayload).title
+              : item.title ??
+                    item.displayHost ??
+                    const QrPayloadClassifier()
+                        .classify(item.rawPayload)
+                        .previewText,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          '${created ? 'Created QR' : 'Scanned ${item.codeFormat.label}'} · $time',
+          '${created ? 'Created ${item.codeFormat == ScannedCodeFormat.qrCode ? 'QR' : item.codeFormat.label}' : 'Scanned ${item.codeFormat.label}'} · $time',
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              onPressed: onToggleSaved,
-              tooltip: isSaved ? 'Remove from saved' : 'Save code',
-              icon: Icon(
-                isSaved ? Icons.bookmark : Icons.bookmark_border_outlined,
-                color: isSaved ? Theme.of(context).colorScheme.primary : null,
+            if (!const QrPayloadClassifier()
+                    .classify(item.rawPayload)
+                    .isEphemeral ||
+                isSaved)
+              IconButton(
+                onPressed: onToggleSaved,
+                tooltip: isSaved ? 'Remove from saved' : 'Save code',
+                icon: Icon(
+                  isSaved ? Icons.bookmark : Icons.bookmark_border_outlined,
+                  color: isSaved ? Theme.of(context).colorScheme.primary : null,
+                ),
               ),
-            ),
             IconButton(
               onPressed: () async {
                 if (await confirmDelete()) await onDelete();

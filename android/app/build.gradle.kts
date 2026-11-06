@@ -1,5 +1,6 @@
 import java.io.FileInputStream
 import java.util.Properties
+import java.util.Base64
 
 plugins {
     id("com.android.application")
@@ -10,6 +11,12 @@ plugins {
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 val hasReleaseSigning = keystorePropertiesFile.exists()
+val scannerQaBuild = (project.findProperty("dart-defines") as? String)
+    ?.split(",")?.any { encoded ->
+        runCatching {
+            String(Base64.getDecoder().decode(encoded), Charsets.UTF_8) == "DALI_SCANNER_QA_BUILD=true"
+        }.getOrDefault(false)
+    } == true
 if (hasReleaseSigning) {
     FileInputStream(keystorePropertiesFile).use(keystoreProperties::load)
 }
@@ -45,7 +52,8 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".test"
+            // Isolate fresh-install/offline QA from the user's normal test data.
+            applicationIdSuffix = if (scannerQaBuild) ".scannerqa" else ".test"
             versionNameSuffix = "-test"
         }
         release {

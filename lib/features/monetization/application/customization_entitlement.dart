@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,12 +29,74 @@ abstract interface class HiddenCustomizationEntitlement {
   Future<void> unlockFromAbout();
 }
 
+abstract interface class TrialCustomizationEntitlement {
+  bool get hasLifetimeAccess;
+  bool get canStartTrial;
+  Duration? get trialRemaining;
+  Future<void> startTrial();
+}
+
+/// A locally persisted calendar-month trial, started only once per installation.
+final class CustomizationTrial {
+  CustomizationTrial._(this.end, this._now);
+
+  static const preferenceKey = 'customization_trial_end_utc';
+  final DateTime end;
+  final DateTime Function() _now;
+
+  static Future<CustomizationTrial> open(
+    SharedPreferences preferences, {
+    DateTime Function()? now,
+  }) async {
+    final clock = now ?? DateTime.now;
+    final saved = preferences.getInt(preferenceKey);
+    if (saved != null) {
+      return CustomizationTrial._(
+        DateTime.fromMillisecondsSinceEpoch(saved, isUtc: true),
+        clock,
+      );
+    }
+    final start = clock().toUtc();
+    final firstOfNextMonth = DateTime.utc(start.year, start.month + 1);
+    final lastDay = DateTime.utc(start.year, start.month + 2, 0).day;
+    final end = DateTime.utc(
+      firstOfNextMonth.year,
+      firstOfNextMonth.month,
+      start.day > lastDay ? lastDay : start.day,
+      start.hour,
+      start.minute,
+      start.second,
+      start.millisecond,
+      start.microsecond,
+    );
+    if (!await preferences.setInt(preferenceKey, end.millisecondsSinceEpoch)) {
+      throw StateError('Could not save the trial expiration.');
+    }
+    return CustomizationTrial._(end, clock);
+  }
+
+  Duration get remaining {
+    final value = end.difference(_now().toUtc());
+    return value.isNegative ? Duration.zero : value;
+  }
+}
+
+String trialCountdown(Duration remaining) {
+  final minutes = (remaining.inSeconds + 59) ~/ 60;
+  final days = minutes ~/ (24 * 60);
+  final hours = (minutes ~/ 60) % 24;
+  final mins = minutes % 60;
+  return '${days}d ${hours}h ${mins}m remaining';
+}
+
 final class StoreCustomizationEntitlement extends ChangeNotifier
+    with WidgetsBindingObserver
     implements
         CustomizationEntitlement,
+        TrialCustomizationEntitlement,
         DebugCustomizationEntitlement,
         HiddenCustomizationEntitlement {
-  StoreCustomizationEntitlement._(this._preferences, this._store);
+  StoreCustomizationEntitlement._(this._preferences, this._store, this._now);
 
   static const productId = 'dali_secure_qr_lifetime';
   static const legacyAppleProductId = 'dali_secure_qr_custom_lifetime';
@@ -46,7 +109,11 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
 
   final SharedPreferences _preferences;
   final InAppPurchase _store;
+  final DateTime Function()? _now;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
+  CustomizationTrial? _trial;
+  Timer? _trialTimer;
+  Timer? _trialExpiryTimer;
   ProductDetails? _product;
   bool _isUnlocked = false;
   bool _isStoreAvailable = false;
@@ -55,17 +122,32 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
 
   static Future<StoreCustomizationEntitlement> open({
     InAppPurchase? store,
+    DateTime Function()? now,
   }) async {
     final controller = StoreCustomizationEntitlement._(
       await SharedPreferences.getInstance(),
       store ?? InAppPurchase.instance,
+      now,
     );
     await controller._initialize();
     return controller;
   }
 
   @override
-  bool get isUnlocked => _isUnlocked;
+  bool get isUnlocked => _isUnlocked || (trialRemaining != null);
+
+  @override
+  bool get hasLifetimeAccess => _isUnlocked;
+
+  @override
+  bool get canStartTrial => !_isUnlocked && _trial == null;
+
+  @override
+  Duration? get trialRemaining {
+    if (_isUnlocked) return null;
+    final remaining = _trial?.remaining;
+    return remaining == null || remaining == Duration.zero ? null : remaining;
+  }
 
   @override
   bool get isStoreAvailable => _isStoreAvailable;
@@ -86,6 +168,11 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
             (_preferences.getBool(_hiddenUnlockedPreference) ?? false)) ||
         (kDebugMode &&
             (_preferences.getBool(_testUnlockedPreference) ?? false));
+    if (!_isUnlocked &&
+        _preferences.containsKey(CustomizationTrial.preferenceKey)) {
+      _trial = await CustomizationTrial.open(_preferences, now: _now);
+      _scheduleTrialUpdates();
+    }
     if (kDebugMode) {
       debugPrint('Customization unlock status: unlocked=$_isUnlocked');
     }
@@ -111,6 +198,28 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
     await _loadProductDetails(notify: false);
     _isBusy = false;
     notifyListeners();
+  }
+
+  @override
+  Future<void> startTrial() async {
+    if (!canStartTrial) return;
+    _trial = await CustomizationTrial.open(_preferences, now: _now);
+    _scheduleTrialUpdates();
+    notifyListeners();
+  }
+
+  void _scheduleTrialUpdates() {
+    final remaining = trialRemaining;
+    if (remaining == null) return;
+    _trialTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      notifyListeners();
+      if (trialRemaining == null) _trialTimer?.cancel();
+    });
+    _trialExpiryTimer = Timer(remaining, () {
+      _trialTimer?.cancel();
+      notifyListeners();
+    });
+    WidgetsBinding.instance.addObserver(this);
   }
 
   Future<void> _loadProductDetails({required bool notify}) async {
@@ -199,6 +308,7 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
     }
     await _preferences.setBool(_testUnlockedPreference, true);
     _isUnlocked = true;
+    _stopTrialTimers();
     _message = 'Lifetime customization unlocked for testing.';
     notifyListeners();
   }
@@ -210,6 +320,7 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
     }
     await _preferences.setBool(_hiddenUnlockedPreference, true);
     _isUnlocked = true;
+    _stopTrialTimers();
     _message = 'Lifetime customization unlocked.';
     notifyListeners();
   }
@@ -244,6 +355,7 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
       }
     }
     _isUnlocked = unlocked;
+    if (unlocked) _stopTrialTimers();
     _isBusy = false;
     _message =
         message ??
@@ -253,7 +365,21 @@ final class StoreCustomizationEntitlement extends ChangeNotifier
 
   @override
   void dispose() {
+    _stopTrialTimers();
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_subscription?.cancel());
     super.dispose();
+  }
+
+  void _stopTrialTimers() {
+    _trialTimer?.cancel();
+    _trialExpiryTimer?.cancel();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _trial != null && !_isUnlocked) {
+      notifyListeners();
+    }
   }
 }

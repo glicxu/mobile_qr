@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-29",
+  "device": "R58M44F3BGJ",
+  "package": "com.dalifin.qr.scannerqa",
+  "model": "SM-G975U",
+  "api": "31",
+  "scope": "Synthetic native QR round trips and confirmed action handoffs. No records saved, messages sent, calls placed or authenticator accounts added.",
+  "handoffs": [
+    {
+      "type": "contact",
+      "component": "com.samsung.android.app.contacts/com.samsung.android.contacts.editor.ContactEditorActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "event",
+      "component": "android/com.android.internal.app.ResolverActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "location",
+      "component": "com.google.android.apps.maps/com.google.android.maps.MapsActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "email",
+      "component": "com.google.android.gm/.ComposeActivityGmailExternal",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "phone",
+      "component": "android/com.android.internal.app.ResolverActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    },
+    {
+      "type": "sms",
+      "component": "com.google.android.apps.messaging/.ui.conversation.LaunchConversationActivity",
+      "action": "Observed; QA app reordered to front; no commit buttons pressed"
+    }
+  ],
+  "cases": [
+    {
+      "type": "authenticator",
+      "reviewCancelled": true,
+      "providerAvailable": true,
+      "providerLaunched": false,
+      "result": "passed"
+    },
+    {
+      "type": "contact",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "event",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "location",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "email",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "phone",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "sms",
+      "exactPayload": true,
+      "exactInterpretedFields": true,
+      "result": "passed"
+    },
+    {
+      "type": "contact_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "event_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "location_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "email_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "phone_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    },
+    {
+      "type": "sms_handoff",
+      "result": "returned",
+      "userDataCommitted": false
+    }
+  ],
+  "testedApkSha256": "7aa4a137367ef3bf24fb8c3f1da291f94f1a1628704ff96dc398166b96488f4f",
+  "result": "passed",
+  "qaAppRemoved": true
+}

@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-29",
+  "device": "R9WN91CTWCJ",
+  "scenario": "Corrected exact-Unicode private QR, hotspot profile forgotten by user, normal saved-network approval flow",
+  "userReportedSwitchedToHotspot": true,
+  "osReportsExactTargetSsidAndCompletedSupplicant": true,
+  "osReportsValidatedWifiNetwork": true,
+  "probeSentByAppOrQa": false,
+  "credentialsRecorded": false,
+  "privateSsidRecorded": false
+}

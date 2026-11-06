@@ -1,0 +1,687 @@
+{
+  "schemaVersion": 1,
+  "generator": {
+    "name": "bwip-js",
+    "version": "4.11.4",
+    "source": "https://github.com/metafloor/bwip-js"
+  },
+  "fixtures": [
+    {
+      "id": "qr_url",
+      "file": "qr_url.png",
+      "symbolFormat": "qrCode",
+      "encodedValue": "https://example.com/qa",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "qrCode",
+            "value": "https://example.com/qa"
+          }
+        ],
+        "ios": [
+          {
+            "format": "qrCode",
+            "value": "https://example.com/qa"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "qrcode",
+        "text": "https://example.com/qa",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "eclevel": "M"
+      },
+      "sha256": "5b340d4df5e60901f39d8cc8d30d6cdccf0b7234f6436e73f03b8c2f08409e78"
+    },
+    {
+      "id": "qr_whitespace",
+      "file": "qr_whitespace.png",
+      "symbolFormat": "qrCode",
+      "encodedValue": "  exact payload\n",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "qrCode",
+            "value": "  exact payload\n"
+          }
+        ],
+        "ios": [
+          {
+            "format": "qrCode",
+            "value": "  exact payload\n"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "qrcode",
+        "text": "  exact payload\n",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "eclevel": "M"
+      },
+      "sha256": "9d02973b9a22852c58a1d537b2c950b4e733c0e6aef081ba12add0d93b2b6f43"
+    },
+    {
+      "id": "upca_zero",
+      "file": "upca_zero.png",
+      "symbolFormat": "upcA",
+      "encodedValue": "012345678905",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "upcA",
+            "value": "012345678905"
+          },
+          {
+            "format": "ean13",
+            "value": "0012345678905"
+          }
+        ],
+        "ios": [
+          {
+            "format": "upcA",
+            "value": "012345678905"
+          },
+          {
+            "format": "ean13",
+            "value": "0012345678905"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "upca",
+        "text": "012345678905",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "73a276e8e50961a5ea1b9888a8bcb6c33e54c9a540eb87a5610c0cc889b5e45a"
+    },
+    {
+      "id": "upca_other",
+      "file": "upca_other.png",
+      "symbolFormat": "upcA",
+      "encodedValue": "036000291452",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "upcA",
+            "value": "036000291452"
+          },
+          {
+            "format": "ean13",
+            "value": "0036000291452"
+          }
+        ],
+        "ios": [
+          {
+            "format": "upcA",
+            "value": "036000291452"
+          },
+          {
+            "format": "ean13",
+            "value": "0036000291452"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "upca",
+        "text": "036000291452",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "94298926e2046af437b1d99502a99a1ddb48d486a44a4d543dd9b4d50020121d"
+    },
+    {
+      "id": "upce_example",
+      "file": "upce_example.png",
+      "symbolFormat": "upcE",
+      "encodedValue": "04252614",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "upcE",
+            "value": "04252614"
+          }
+        ],
+        "ios": [
+          {
+            "format": "upcE",
+            "value": "04252614"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "upce",
+        "text": "04252614",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "f06ebcce638c74b01d3b145a07485ddb9984ba54a369589e3bca502c95aa3352"
+    },
+    {
+      "id": "upce_other",
+      "file": "upce_other.png",
+      "symbolFormat": "upcE",
+      "encodedValue": "01234565",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "upcE",
+            "value": "01234565"
+          }
+        ],
+        "ios": [
+          {
+            "format": "upcE",
+            "value": "01234565"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "upce",
+        "text": "01234565",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "3ef038371200d9d97d8e03185a012dc6bf446824979ad6faf2c1443e00f9b251"
+    },
+    {
+      "id": "ean8_example",
+      "file": "ean8_example.png",
+      "symbolFormat": "ean8",
+      "encodedValue": "96385074",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "ean8",
+            "value": "96385074"
+          }
+        ],
+        "ios": [
+          {
+            "format": "ean8",
+            "value": "96385074"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "ean8",
+        "text": "96385074",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "0a994cb89348d6a151e7dcc853c4ce714a066d26581fb25173f60fc756cc9447"
+    },
+    {
+      "id": "ean8_zero",
+      "file": "ean8_zero.png",
+      "symbolFormat": "ean8",
+      "encodedValue": "00000000",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "ean8",
+            "value": "00000000"
+          }
+        ],
+        "ios": [
+          {
+            "format": "ean8",
+            "value": "00000000"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "ean8",
+        "text": "00000000",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "57272babc473054c126b00cf10f678dc7ccd3e5ca292f162b7ac9f3ae9304a60"
+    },
+    {
+      "id": "ean13_upca_pair",
+      "file": "ean13_upca_pair.png",
+      "symbolFormat": "ean13",
+      "encodedValue": "0012345678905",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "ean13",
+            "value": "0012345678905"
+          },
+          {
+            "format": "upcA",
+            "value": "012345678905"
+          }
+        ],
+        "ios": [
+          {
+            "format": "ean13",
+            "value": "0012345678905"
+          },
+          {
+            "format": "upcA",
+            "value": "012345678905"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "ean13",
+        "text": "0012345678905",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "73a276e8e50961a5ea1b9888a8bcb6c33e54c9a540eb87a5610c0cc889b5e45a"
+    },
+    {
+      "id": "ean13_book",
+      "file": "ean13_book.png",
+      "symbolFormat": "ean13",
+      "encodedValue": "9780306406157",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "ean13",
+            "value": "9780306406157"
+          }
+        ],
+        "ios": [
+          {
+            "format": "ean13",
+            "value": "9780306406157"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "ean13",
+        "text": "9780306406157",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "71dd1712a665077b6b59f51db9bef1a3bcaac6431ee7fbb9bcdb92bec88ba756"
+    },
+    {
+      "id": "code128_short",
+      "file": "code128_short.png",
+      "symbolFormat": "code128",
+      "encodedValue": "DALI-128",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "code128",
+            "value": "DALI-128"
+          }
+        ],
+        "ios": [
+          {
+            "format": "code128",
+            "value": "DALI-128"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "code128",
+        "text": "DALI-128",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "ff919a646fa25b54c65de59d88d11407081bf062e7201523d1e27277f39007dc"
+    },
+    {
+      "id": "code128_url",
+      "file": "code128_url.png",
+      "symbolFormat": "code128",
+      "encodedValue": "https://example.com/barcode",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "code128",
+            "value": "https://example.com/barcode"
+          }
+        ],
+        "ios": [
+          {
+            "format": "code128",
+            "value": "https://example.com/barcode"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "code128",
+        "text": "https://example.com/barcode",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "3aaf2ca85228e4a422e8f84d6448c9b2f4852412dfa0c18d5e7ca3b94bd0cb92"
+    },
+    {
+      "id": "code128_whitespace",
+      "file": "code128_whitespace.png",
+      "symbolFormat": "code128",
+      "encodedValue": "  KEEP ZERO 00123  ",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "code128",
+            "value": "  KEEP ZERO 00123  "
+          }
+        ],
+        "ios": [
+          {
+            "format": "code128",
+            "value": "  KEEP ZERO 00123  "
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "code128",
+        "text": "  KEEP ZERO 00123  ",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "adafd94bd1581a2b6a3fa2aba6fc9858c33e2d355ca22ac9c87beacff5b6a1eb"
+    },
+    {
+      "id": "code39_short",
+      "file": "code39_short.png",
+      "symbolFormat": "code39",
+      "encodedValue": "DALI39",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "code39",
+            "value": "DALI39"
+          }
+        ],
+        "ios": [
+          {
+            "format": "code39",
+            "value": "DALI39"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "code39",
+        "text": "DALI39",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "81ed92dfa838e0eec8ee82cc3a11c009600f7652e6d7b0e6c6e240f967c2bf6c"
+    },
+    {
+      "id": "code39_long",
+      "file": "code39_long.png",
+      "symbolFormat": "code39",
+      "encodedValue": "ORDER-00123-ABC",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "code39",
+            "value": "ORDER-00123-ABC"
+          }
+        ],
+        "ios": [
+          {
+            "format": "code39",
+            "value": "ORDER-00123-ABC"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "code39",
+        "text": "ORDER-00123-ABC",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "4b3718f134e292e4fc37d0927e353db7d35b7507d0e453d75fa775d53f4f061e"
+    },
+    {
+      "id": "code93_short",
+      "file": "code93_short.png",
+      "symbolFormat": "code93",
+      "encodedValue": "DALI93",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "code93",
+            "value": "DALI93"
+          }
+        ],
+        "ios": [
+          {
+            "format": "code93",
+            "value": "DALI93"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "code93",
+        "text": "DALI93",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20,
+        "includecheck": true
+      },
+      "sha256": "c1a6b421e9057ca18997633f2a12089b84efe7f5a3665646ed5674051aa7e2c5"
+    },
+    {
+      "id": "code93_long",
+      "file": "code93_long.png",
+      "symbolFormat": "code93",
+      "encodedValue": "ORDER-0093/ABC",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "code93",
+            "value": "ORDER-0093/ABC"
+          }
+        ],
+        "ios": [
+          {
+            "format": "code93",
+            "value": "ORDER-0093/ABC"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "code93",
+        "text": "ORDER-0093/ABC",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20,
+        "includecheck": true
+      },
+      "sha256": "b836906f238d56989f036d63439987b851593bf1dcf52ca57cb9a6fc67a7f484"
+    },
+    {
+      "id": "codabar_short",
+      "file": "codabar_short.png",
+      "symbolFormat": "codabar",
+      "encodedValue": "A123456A",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "codabar",
+            "value": "A123456A"
+          }
+        ],
+        "ios": [
+          {
+            "format": "codabar",
+            "value": "A123456A"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "rationalizedCodabar",
+        "text": "A123456A",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "914e1f305c91826ee089b38887cd5aed8b8f85838d7dc65ab01c4ed59ffa6023"
+    },
+    {
+      "id": "codabar_long",
+      "file": "codabar_long.png",
+      "symbolFormat": "codabar",
+      "encodedValue": "B1234567890-12B",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "codabar",
+            "value": "B1234567890-12B"
+          }
+        ],
+        "ios": [
+          {
+            "format": "codabar",
+            "value": "B1234567890-12B"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "rationalizedCodabar",
+        "text": "B1234567890-12B",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "f5205dceae0c4efb3711b68e37b6bf1ceb111df6cfe0384f11b5bd4e6eee1949"
+    },
+    {
+      "id": "itf14_zero",
+      "file": "itf14_zero.png",
+      "symbolFormat": "itf14",
+      "encodedValue": "10012345000017",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "itf14",
+            "value": "10012345000017"
+          }
+        ],
+        "ios": [
+          {
+            "format": "itf14",
+            "value": "10012345000017"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "itf14",
+        "text": "10012345000017",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "afcd1c39fe93ed221582c50b951e4f168fb835b25389d28c26accf69aeeea07e"
+    },
+    {
+      "id": "itf14_other",
+      "file": "itf14_other.png",
+      "symbolFormat": "itf14",
+      "encodedValue": "12345678901231",
+      "expectedNativeResults": {
+        "android": [
+          {
+            "format": "itf14",
+            "value": "12345678901231"
+          }
+        ],
+        "ios": [
+          {
+            "format": "itf14",
+            "value": "12345678901231"
+          }
+        ]
+      },
+      "nativeExpectationStatus": "provisional; verify on physical devices",
+      "generatorOptions": {
+        "bcid": "itf14",
+        "text": "12345678901231",
+        "scale": 3,
+        "padding": 16,
+        "backgroundcolor": "FFFFFF",
+        "includetext": false,
+        "height": 20
+      },
+      "sha256": "0e80dcdc93cd9a438f4d99c3aa0255eb2618fd008939f5829d76b949aba68141"
+    }
+  ]
+}

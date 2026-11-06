@@ -1,3 +1,5 @@
+import 'support/payments_test_access.dart';
+import 'package:dali_qr/features/payments/application/payments_entitlement.dart';
 import 'package:dali_qr/features/history/application/history_controller.dart';
 import 'package:dali_qr/features/history/data/drift_qr_history_repository.dart';
 import 'package:dali_qr/features/history/data/history_database.dart';
@@ -11,8 +13,72 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 void main() {
+  setUp(() {
+    PackageInfo.setMockInitialValues(
+      appName: 'Dali QR',
+      packageName: 'com.dalifin.qr',
+      version: '1.2.0',
+      buildNumber: '1',
+      buildSignature: '',
+    );
+  });
+  for (final customOwned in [false, true]) {
+    for (final paymentsOwned in [false, true]) {
+      testWidgets(
+        'Payments stays hidden with Custom=$customOwned and Payments=$paymentsOwned',
+        (tester) async {
+          final custom = _TestEntitlement(unlocked: customOwned);
+          final payments = TestPaymentsAccess(
+            paymentsOwned
+                ? PaymentsAccessState.owned
+                : PaymentsAccessState.locked,
+          );
+          final history = HistoryController(
+            DriftQrHistoryRepository(
+              HistoryDatabase.forTesting(NativeDatabase.memory()),
+            ),
+            _MemoryHistorySettings(),
+          );
+          await tester.runAsync(history.initialize);
+          await tester.pumpWidget(
+            DaliQrApp(
+              initialSharedLaunch: true,
+              secureQrService: SecureQrService(PublicSuffixList.parse('com')),
+              historyController: history,
+              customizationEntitlement: custom,
+              paymentsEntitlement: payments,
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Payments'), findsNothing);
+          expect(
+            tester
+                .widget<NavigationBar>(find.byType(NavigationBar))
+                .destinations
+                .length,
+            4,
+          );
+          await tester.tap(find.text('Settings'));
+          await tester.pumpAndSettle();
+          expect(find.byType(SettingsPage), findsOneWidget);
+          expect(find.text('Payments'), findsNothing);
+          expect(custom.isUnlocked, customOwned);
+          expect(payments.isOwned, paymentsOwned);
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.runAsync(() async {
+            history.dispose();
+            await Future<void>.delayed(const Duration(milliseconds: 30));
+          });
+          await tester.pumpAndSettle();
+          custom.dispose();
+          payments.dispose();
+        },
+      );
+    }
+  }
   testWidgets('generates and displays a QR code', (tester) async {
     String? copiedText;
     final messenger =
@@ -186,12 +252,18 @@ void main() {
     await tester.tap(find.text('Generate QR code'));
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('QR code for $wifiPayload'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Wi-Fi QR code. Contains network credentials.'),
+      findsOneWidget,
+    );
+    expect(find.text(wifiPayload), findsNothing);
+    await tester.tap(find.text('Reveal Wi-Fi code'));
+    await tester.pumpAndSettle();
+    expect(find.text(wifiPayload), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -350));
     await tester.pumpAndSettle();
     expect(find.text('041-AVZ'), findsOneWidget);
     expect(find.text('Content comparison code'), findsNothing);
-    expect(find.text(wifiPayload), findsOneWidget);
   });
 
   testWidgets('clears QR content from the text field clear button', (
@@ -249,6 +321,8 @@ void main() {
 }
 
 final class _TestEntitlement extends CustomizationEntitlement {
+  _TestEntitlement({this.unlocked = false});
+  final bool unlocked;
   @override
   bool get isBusy => false;
 
@@ -256,7 +330,7 @@ final class _TestEntitlement extends CustomizationEntitlement {
   bool get isStoreAvailable => false;
 
   @override
-  bool get isUnlocked => false;
+  bool get isUnlocked => unlocked;
 
   @override
   String? get message => null;

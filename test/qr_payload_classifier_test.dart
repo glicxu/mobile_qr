@@ -117,4 +117,126 @@ void main() {
     expect(result.primaryText, 'José 東京');
     expect(result.routeArguments['name'], 'José 東京');
   });
+
+  test('ambiguous Wi-Fi fields and incomplete escapes remain display-only', () {
+    for (final raw in [
+      'WIFI:S:First;S:Second;;',
+      'WIFI:S:Guest;P:first;P:second;;',
+      'WIFI:S:Guest;broken;;',
+      'WIFI:S:Guest;P:unfinished\\',
+      r'WIFI:S:Guest;P:bad\q;;',
+    ]) {
+      final result = classifier.classify(raw);
+      expect(result.type, QrContentType.wifi, reason: raw);
+      expect(result.sensitiveValue, raw);
+      expect(result.rawPayload, raw);
+      expect(result.canRoute, isFalse);
+    }
+    // Percent signs in Wi-Fi credentials are data, not URI escapes.
+    expect(
+      classifier.classify('WIFI:S:Guest;P:50%secret;;').sensitiveValue,
+      '50%secret',
+    );
+  });
+
+  test('incomplete, concatenated, or nested components remain display-only', () {
+    for (final raw in [
+      'BEGIN:VCARD\nFN:Jane',
+      'Preamble\nBEGIN:VCARD\nFN:Jane\nEND:VCARD',
+      'BEGIN:VCARD\nFN:Jane\nEND:VCARD\nBEGIN:VCARD\nFN:John\nEND:VCARD',
+      'BEGIN:VCARD\nFN:Jane\nFN:John\nEND:VCARD',
+      'BEGIN:VEVENT\nDTSTART:20261029T100000\nBEGIN:VALARM\nEND:VALARM\nEND:VEVENT',
+    ]) {
+      final result = classifier.classify(raw);
+      expect(result.type, QrContentType.text, reason: raw);
+      expect(result.canRoute, isFalse);
+      expect(result.rawPayload, raw);
+    }
+    expect(
+      classifier.classify('BEGIN:VCARD\nTEL:\nEMAIL: \nEND:VCARD').canRoute,
+      isFalse,
+    );
+  });
+
+  test('impossible dates and unsupported calendar semantics do not route', () {
+    for (final fields in [
+      'DTSTART:20260230T100000',
+      'DTSTART:20261029T250000',
+      'DTSTART:20261029Z',
+      'DTSTART;TZID=America/New_York:20261029T100000',
+      'DTSTART;TZI\n D=America/New_York:20261029T100000',
+      'DTSTART:20261029T100000\nDTSTART:20261030T100000',
+      'DTSTART:20261029T100000\nDTEND:20261028T100000',
+      'DTSTART:20261029T100000\nDTEND:invalid',
+      'DTSTART:20261029T100000Z\nDTEND:20261029T110000',
+      'DTSTART:20261029\nDTEND:20261030T100000',
+      'DTSTART:20261029T100000\nRRULE:FREQ=DAILY',
+      'DTSTART:20261029T100000\nDURATION:PT2H',
+    ]) {
+      final raw = 'BEGIN:VEVENT\n$fields\nEND:VEVENT';
+      expect(classifier.classify(raw).canRoute, isFalse, reason: raw);
+    }
+  });
+
+  test(
+    'a single wrapped UTC event and folded contact names remain supported',
+    () {
+      final event = classifier.classify(
+        'BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\n'
+        'DTSTART:20261029T100000Z\nDTEND:20261029T110000Z\nEND:VEVENT\nEND:VCALENDAR',
+      );
+      expect(event.action, QrRouteAction.addCalendarEvent);
+      expect(
+        event.routeArguments['startMillis'],
+        DateTime.utc(2026, 10, 29, 10).millisecondsSinceEpoch,
+      );
+      final contact = classifier.classify(
+        'BEGIN:VCARD\r\nFN:Jane\r\n  Smith\r\nEND:VCARD',
+      );
+      expect(contact.primaryText, 'Jane Smith');
+      final escaped = classifier.classify(
+        r'BEGIN:VCARD'
+        '\n'
+        r'FN:Literal \\n text'
+        '\nEND:VCARD',
+      );
+      expect(escaped.primaryText, r'Literal \n text');
+    },
+  );
+
+  test(
+    'out-of-range and nonnumeric location coordinates remain display-only',
+    () {
+      for (final raw in [
+        'geo:91,0',
+        'geo:0,-181',
+        'geo:NaN,0',
+        'geo:1',
+        'geo:1,2,3,4',
+      ]) {
+        expect(classifier.classify(raw).canRoute, isFalse, reason: raw);
+      }
+      expect(
+        classifier.classify('geo:0,0?q=Seattle').action,
+        QrRouteAction.openLocation,
+      );
+    },
+  );
+  test(
+    'all-day dates are interpreted without silently creating timed events',
+    () {
+      final result = classifier.classify(
+        'BEGIN:VEVENT\nSUMMARY:Holiday\n'
+        'DTSTART;VALUE=DATE:20261225\nDTEND;VALUE=DATE:20261226\nEND:VEVENT',
+      );
+      expect(result.type, QrContentType.calendarEvent);
+      expect(result.primaryText, 'Holiday');
+      expect(
+        result.details,
+        contains('All-day calendar handoff is not supported.'),
+      );
+      expect(result.canRoute, isFalse);
+      expect(result.routeArguments, isEmpty);
+    },
+  );
 }

@@ -1,0 +1,141 @@
+{
+  "date": "2026-10-29",
+  "platform": "android",
+  "deviceModel": "SM-G975U",
+  "osVersion": "12",
+  "apiLevel": 31,
+  "appVersion": "1.2.0+2026102803",
+  "buildMode": "debug integration-test target",
+  "baseRevision": "0487c2a03c3940d2ba5487db492f2d2f520aa02c",
+  "workingTree": true,
+  "mobileScannerVersion": "7.4.0",
+  "command": "flutter test integration_test/scanner_fixture_test.dart -d <device-id> --reporter expanded",
+  "scope": "Native still-image analyzeImage plus domain extraction; not end-to-end source/UI QA",
+  "testCount": 23,
+  "result": "passed",
+  "fixtureObservations": [
+    {
+      "fixture": "qr_url",
+      "format": "qrCode",
+      "value": "https://example.com/qa"
+    },
+    {
+      "fixture": "qr_whitespace",
+      "format": "qrCode",
+      "value": "  exact payload\n"
+    },
+    {
+      "fixture": "upca_zero",
+      "format": "upcA",
+      "value": "012345678905"
+    },
+    {
+      "fixture": "upca_other",
+      "format": "upcA",
+      "value": "036000291452"
+    },
+    {
+      "fixture": "upce_example",
+      "format": "upcE",
+      "value": "04252614"
+    },
+    {
+      "fixture": "upce_other",
+      "format": "upcE",
+      "value": "01234565"
+    },
+    {
+      "fixture": "ean8_example",
+      "format": "ean8",
+      "value": "96385074"
+    },
+    {
+      "fixture": "ean8_zero",
+      "format": "ean8",
+      "value": "00000000"
+    },
+    {
+      "fixture": "ean13_upca_pair",
+      "format": "upcA",
+      "value": "012345678905"
+    },
+    {
+      "fixture": "ean13_book",
+      "format": "ean13",
+      "value": "9780306406157"
+    },
+    {
+      "fixture": "code128_short",
+      "format": "code128",
+      "value": "DALI-128"
+    },
+    {
+      "fixture": "code128_url",
+      "format": "code128",
+      "value": "https://example.com/barcode"
+    },
+    {
+      "fixture": "code128_whitespace",
+      "format": "code128",
+      "value": "  KEEP ZERO 00123  "
+    },
+    {
+      "fixture": "code39_short",
+      "format": "code39",
+      "value": "DALI39"
+    },
+    {
+      "fixture": "code39_long",
+      "format": "code39",
+      "value": "ORDER-00123-ABC"
+    },
+    {
+      "fixture": "code93_short",
+      "format": "code93",
+      "value": "DALI93"
+    },
+    {
+      "fixture": "code93_long",
+      "format": "code93",
+      "value": "ORDER-0093/ABC"
+    },
+    {
+      "fixture": "codabar_short",
+      "format": "codabar",
+      "value": "A123456A"
+    },
+    {
+      "fixture": "codabar_long",
+      "format": "codabar",
+      "value": "B1234567890-12B"
+    },
+    {
+      "fixture": "itf14_zero",
+      "format": "itf14",
+      "value": "10012345000017"
+    },
+    {
+      "fixture": "itf14_other",
+      "format": "itf14",
+      "value": "12345678901231"
+    }
+  ],
+  "additionalCases": [
+    {
+      "name": "blank image has no results",
+      "result": "passed"
+    },
+    {
+      "name": "multiple symbols are sorted and duplicate values collapse",
+      "result": "passed"
+    }
+  ],
+  "inputSha256": {
+    "test/fixtures/barcodes/manifest.json": "630bc99af7e1a3beae511896ec0267adb0864533aeeb1bd421e1ba10a5c458bb",
+    "integration_test/scanner_fixture_test.dart": "247d0c528f01c4aae26064c23462f3c2d8bc2f9e9b849c3362bdaec67a1b87b9",
+    "integration_test/barcode_fixture_data.g.dart": "764e1dd6e8a536f341252dcc941bc75264b75bfc2d94833f1f9e45e95e4ff0d5",
+    "lib/features/scan/data/mobile_scanner_code_adapter.dart": "917048e0ab66920ccd4f4b45f88c9ea23ef813cfd3d822ffb2f43c13541c3016",
+    "lib/features/scan/domain/scanned_code.dart": "b77a5f408c5ce7cf24c9bbbecc735e2d5a22ddfce2eb1a24ba3b6d4137b895f9",
+    "pubspec.lock": "b01c5702e896d6255f1a31b1b9b13aa251f43f2970bec9324669f883ffa94f65"
+  }
+}

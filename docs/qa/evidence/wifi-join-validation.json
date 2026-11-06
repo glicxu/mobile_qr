@@ -1,0 +1,99 @@
+{
+  "date": "2026-10-29",
+  "scope": "Wi-Fi QR creation, masked review and explicit system network handoff. Android first.",
+  "host": {
+    "testsPassed": 282,
+    "analysis": "No issues found",
+    "formatCheck": "Changed Dart files formatted"
+  },
+  "native": {
+    "devices": 2,
+    "casesPerDevice": 4,
+    "openAndWpa2": "Real system approval screen observed; cancelled without adding a network",
+    "wpa3": "Unsupported on both test devices; not validated",
+    "credentialHandoff": "Explicit exported system-app component only",
+    "evidence": [
+      "wifi-join-tablet.json",
+      "wifi-join-phone.json"
+    ]
+  },
+  "creation": {
+    "form": "Create > QR content type > Wi-Fi network",
+    "profiles": [
+      "WPA/WPA2 Personal",
+      "WPA3 Personal",
+      "open"
+    ],
+    "exactEscapedPayloadPngRoundTrip": true,
+    "privateHotspotQr": "Prepared and independently decoded locally; credentials and image excluded from evidence"
+  },
+  "artifacts": {
+    "debug": {
+      "path": "build/app/outputs/flutter-apk/app-debug.apk",
+      "package": "com.dalifin.qr.test",
+      "sha256": "497626c14a36dbbabb2558269db77ea383e2c30c08f9a82547ba3aff7220c4cf",
+      "bytes": 218079305
+    },
+    "release": {
+      "path": "build/app/outputs/flutter-apk/app-release.apk",
+      "package": "com.dalifin.qr",
+      "sha256": "d0418f39f84c7a57ea90d49019d6f7361ceeb612880503c992f64bcb1be96d51",
+      "bytes": 90664176
+    }
+  },
+  "installed": [
+    {
+      "device": "R9WN91CTWCJ",
+      "package": "com.dalifin.qr.test",
+      "sha256MatchesBuiltDebug": true
+    },
+    {
+      "device": "R58M44F3BGJ",
+      "package": "com.dalifin.qr.test",
+      "sha256MatchesBuiltDebug": true
+    }
+  ],
+  "sourceSha256": {
+    "lib/main.dart": "09d307bd659752e307c62bf8f8268bac857fbfac756c1bc70248c93b9791078a",
+    "lib/features/create/domain/wifi_qr_payload.dart": "b8bd39d792ac6f80eaf9ff07274ebca52fc57265d00121253e0b80348de03bbd",
+    "lib/features/create/presentation/wifi_qr_fields.dart": "1b13ba0ad59a145a39330a7e88eea4548d23e8be99117db94519ac273fed0f32",
+    "lib/features/create/presentation/generated_qr_page.dart": "075e1020ca69004c7a0fad2674d18e211f640be1d10c1142f6365a1b6ef1bc80",
+    "lib/features/scan/domain/wifi_network.dart": "5bc90fd24b842e587cded9a539c37d27d2e30ad3372c33576dca7c5f5a71e816",
+    "lib/features/scan/domain/qr_payload_classifier.dart": "630df3b84e965ceb511ec6311cdd643e7d20be3cd82a5d13b97e188a7f5e4df8",
+    "lib/features/scan/application/qr_payload_router.dart": "430e4f67bf0356bb87403c5257b06114d8c4962d3cf804083ba2be70d6a67ffa",
+    "lib/features/scan/presentation/wifi_join_dialog.dart": "533c34b6b5876b65c49891ab0550adc13625cc15d3a53e248e0ce925929e4576",
+    "lib/features/scan/presentation/qr_payload_action.dart": "ba57a15fe8f2e44d75f20b1a098d1a4543ab059ca005307d7709d5146b53f519",
+    "android/app/src/main/kotlin/com/dalifin/qr/WifiJoinHandler.kt": "5daff8b21e75acd1f573a0434f7c0912c0c9a5b56be435902f7b3f67d603985d",
+    "android/app/src/main/kotlin/com/dalifin/qr/MainActivity.kt": "fe7b2128da957bd9c5f9f9c10adfd46c1c6a35c27d7e58b34b765c9f58426584",
+    "android/app/src/main/AndroidManifest.xml": "65fb0f65b8a125236497d8b7f08cd05df38f8cef60f1d9bf63dcb241434966b1",
+    "ios/Runner/AppDelegate.swift": "1becf3cd43aeb56f2df2226ea5589a4f97a54ab3d1f95bcb568c47f6c8ba694d",
+    "ios/Runner/Runner.entitlements": "1084f0ec48d0465049aeec8b6a8d5f5bd4de12299b90289f09cbe19a9ba0865f",
+    "ios/Runner.xcodeproj/project.pbxproj": "2319fc04e0b0946f0b1ac319a442716e84bb030daef61aa587944773949fe858",
+    "test/wifi_join_test.dart": "b8a10ec9622005108436253c36f7bc3ac90ad1ca3bba3c4be03006c3d6381875",
+    "test/wifi_qr_creation_test.dart": "e096aa644fa607f92a1670589252f2daa13b92e2d66eb2254437852c7d26bc86",
+    "test/barcode_creation_flow_test.dart": "b7d068f9e2065acf20f8e8d0938b63e4a03aa3ecd9434f87e7c94ccce14bea67",
+    "test/widget_test.dart": "52ae1aab686e8c457d558f9d8ea23d75c4ff5fb9433b71ca3d7e2cc1e1201d56",
+    "integration_test/wifi_join_test.dart": "a6b3acc7eb31d2c9a7ddf51b1ee6c18224cbb389c9f31a594ed6590a1b472335",
+    "tool/qa_wifi_join.py": "2a3e40a2649d0ad7ea45e59d3683dca84d3cabd6a75e32d8570d9cbb53ef0f6a",
+    "pubspec.lock": "f8da36d07a33b73c48ebab2a17049109a71b084ed80a9137c0a80941e5e1e79e"
+  },
+  "pending": [
+    "Phone first-time real network association",
+    "Updated already-saved automatic settings handoff: host-tested; native settings action previously verified, combined live flow pending",
+    "Wrong password, absent AP and captive portal behavior",
+    "Additional Android OS/OEM coverage",
+    "iOS Xcode compile, entitlement provisioning and physical iPhone validation"
+  ],
+  "published": false,
+  "liveDiagnosis": {
+    "date": "2026-10-29",
+    "initialObservation": "User reported join failure on both Android devices. App result observed on both: already saved, not generic failure. Neither associated with the encoded target name.",
+    "cause": "Prepared private QR used U+0027 apostrophe; actual hotspot name observed in Android Settings uses U+2019. These are distinct SSIDs.",
+    "correction": "Regenerated private QR with exact observed Unicode name; independently decoded and compared exactly. No app normalization or credential change.",
+    "connectionVerified": true,
+    "regression": "Four Wi-Fi creation tests passed, including new synthetic curly-apostrophe SSID PNG/parser/native-arguments round trip.",
+    "credentialsRecorded": false,
+    "existingNetworkBehavior": "Corrected SSID decoded exactly, but Android returned already-saved and retained home connection. User forgot only the hotspot profile; subsequent QR approval connected successfully. App now opens system settings automatically for already-saved networks and replaces repeat Join with Select network in Wi-Fi settings."
+  },
+  "liveConnectionEvidence": "wifi-join-live-tablet.json"
+}

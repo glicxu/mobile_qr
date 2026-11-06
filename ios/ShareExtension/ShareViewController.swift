@@ -1,18 +1,15 @@
 import Flutter
 import UIKit
 import Vision
+import ImageIO
 
 final class ShareViewController: UIViewController {
-  private struct DetectedCode: Encodable {
-    let value: String
-    let format: String
-  }
-
   private let imageTypeIdentifier = "public.image"
   private let maxSharedImageBytes = 25 * 1024 * 1024
   private var hasStarted = false
   private var flutterEngine: FlutterEngine?
   private var flutterChannel: FlutterMethodChannel?
+  private var fallbackImageData: Data?
 
   private let spinner = UIActivityIndicatorView(style: .medium)
   private let statusLabel = UILabel()
@@ -92,21 +89,13 @@ final class ShareViewController: UIViewController {
       }
 
       let observations = request.results as? [VNBarcodeObservation] ?? []
-      var seen = Set<String>()
-      let codes = observations.compactMap { observation -> DetectedCode? in
-        guard
-          let value = observation.payloadStringValue?.trimmingCharacters(
-            in: .whitespacesAndNewlines
-          ),
-          !value.isEmpty
-        else { return nil }
-        let format = self.storageKey(for: observation.symbology.rawValue)
-        let key = "\(format)\u{0}\(value)"
-        guard seen.insert(key).inserted else { return nil }
-        return DetectedCode(value: value, format: format)
-      }
+      let codes = SharedCodePolicy.extract(observations.map {
+        SharedCodePolicy.Input(symbology: $0.symbology, value: $0.payloadStringValue)
+      })
+      self.fallbackImageData = codes.isEmpty ? self.fallbackThumbnail(imageData) : nil
       self.showFlutterResults(codes)
     }
+    request.symbologies = SharedCodePolicy.formats.map { $0.symbology }
 
     DispatchQueue.global(qos: .userInitiated).async { [weak self] in
       do {
@@ -117,21 +106,19 @@ final class ShareViewController: UIViewController {
     }
   }
 
-  private func storageKey(for rawValue: String) -> String {
-    let value = rawValue.lowercased()
-    if value.contains("qr") { return "qrCode" }
-    if value.contains("upce") { return "upcE" }
-    if value.contains("ean8") { return "ean8" }
-    if value.contains("ean13") { return "ean13" }
-    if value.contains("code128") { return "code128" }
-    if value.contains("code39") { return "code39" }
-    if value.contains("code93") { return "code93" }
-    if value.contains("codabar") { return "codabar" }
-    if value.contains("itf14") || value.contains("i2of5") { return "itf14" }
-    return "unknown"
+  private func fallbackThumbnail(_ data: Data) -> Data? {
+    guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+    let options: [CFString: Any] = [
+      kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceCreateThumbnailWithTransform: true,
+      kCGImageSourceThumbnailMaxPixelSize: 1280,
+    ]
+    guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary),
+          let png = UIImage(cgImage: image).pngData(), png.count <= 4 * 1024 * 1024 else { return nil }
+    return png
   }
 
-  private func showFlutterResults(_ codes: [DetectedCode]) {
+  private func showFlutterResults(_ codes: [SharedCodePolicy.Code]) {
     guard
       let json = try? JSONEncoder().encode(codes)
     else {
@@ -177,6 +164,13 @@ final class ShareViewController: UIViewController {
         binaryMessenger: engine.binaryMessenger
       )
       channel.setMethodCallHandler { [weak self] call, result in
+        if call.method == "readFallbackImage" {
+          if let bytes = self?.fallbackImageData {
+            self?.fallbackImageData = nil
+            result(FlutterStandardTypedData(bytes: bytes))
+          } else { result(nil) }
+          return
+        }
         guard call.method == "finish" else {
           result(FlutterMethodNotImplemented)
           return
@@ -216,6 +210,7 @@ final class ShareViewController: UIViewController {
   }
 
   @objc private func finish() {
+    fallbackImageData = nil
     flutterChannel?.setMethodCallHandler(nil)
     flutterEngine?.destroyContext()
     extensionContext?.completeRequest(returningItems: nil)

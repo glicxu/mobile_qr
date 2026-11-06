@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-29",
+  "device": "R58M44F3BGJ",
+  "package": "com.dalifin.qr.scannerqa",
+  "model": "SM-G975U",
+  "api": "31",
+  "scope": "Credential-free authenticator availability query, masked review cancellation, and absent-handler behavior. No authenticator provider launched.",
+  "handoffs": [],
+  "cases": [
+    {
+      "type": "authenticator",
+      "reviewCancelled": true,
+      "providerAvailable": true,
+      "providerLaunched": false,
+      "result": "passed"
+    }
+  ],
+  "testedApkSha256": "99661d9cfe71f6ae5feb7e185187cdebe9f1d5ee8dd417b026d1986933233ea6",
+  "result": "passed",
+  "qaAppRemoved": true
+}
