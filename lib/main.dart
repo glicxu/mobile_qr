@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'features/create/application/qr_encoder.dart';
 import 'features/create/application/qr_png_validator.dart';
@@ -65,8 +67,17 @@ class DaliQrApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const testBuild = bool.fromEnvironment('DALI_TEST_BUILD');
     return MaterialApp(
       title: 'Dali QR',
+      debugShowCheckedModeBanner: !testBuild,
+      builder: (context, child) => testBuild
+          ? Banner(
+              message: 'TEST',
+              location: BannerLocation.topEnd,
+              child: child ?? const SizedBox.shrink(),
+            )
+          : child ?? const SizedBox.shrink(),
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff315caa)),
         useMaterial3: true,
@@ -153,7 +164,6 @@ class _DaliQrHomeState extends State<DaliQrHome> {
               _imageOnlyLaunch = true;
               _sharedImagePath = null;
               _selectedIndex = 1;
-              _scanSession++;
             });
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
@@ -331,7 +341,7 @@ class _DaliQrHomeState extends State<DaliQrHome> {
               },
             ),
             1 => QrScannerPage(
-              key: ValueKey(_scanSession),
+              scanSession: _scanSession,
               secureQrService: service,
               onBatchRequested: () async {
                 await Navigator.of(context).push<void>(
@@ -1045,6 +1055,27 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   int _packageTapCount = 0;
 
+  Future<void> _openStore() async {
+    final uri = defaultTargetPlatform == TargetPlatform.iOS
+        ? Uri.parse('https://apps.apple.com/app/id6803730362')
+        : Uri.parse(
+            'https://play.google.com/store/apps/details?id=com.dalifin.qr',
+          );
+    var opened = false;
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } on Object {
+      // Show a helpful message if the store cannot be opened.
+    }
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open the app store. Please try again.'),
+        ),
+      );
+    }
+  }
+
   Future<void> _handlePackageTap() async {
     final entitlement = widget.customizationEntitlement;
     if (entitlement.isUnlocked ||
@@ -1122,6 +1153,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   );
                 },
               ),
+              if (!kIsWeb &&
+                  (defaultTargetPlatform == TargetPlatform.android ||
+                      defaultTargetPlatform == TargetPlatform.iOS)) ...[
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: _openStore,
+                  icon: const Icon(Icons.system_update_alt),
+                  label: const Text('Check for updates'),
+                ),
+                Text(
+                  'Opens the app store to check for an available update.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
             ],
           ),
         ),

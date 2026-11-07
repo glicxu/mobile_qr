@@ -525,6 +525,9 @@ void registerScannerEdgeFlows() {
         ),
       );
       await tester.pumpAndSettle();
+      final originalController = tester
+          .widget<MobileScanner>(find.byType(MobileScanner))
+          .controller;
       tester.widget<MobileScanner>(find.byType(MobileScanner)).onDetect!(
         const BarcodeCapture(
           barcodes: [
@@ -550,6 +553,10 @@ void registerScannerEdgeFlows() {
                 .controller!
                 .value
                 .isRunning,
+      );
+      expect(
+        tester.widget<MobileScanner>(find.byType(MobileScanner)).controller,
+        same(originalController),
       );
       tester.widget<MobileScanner>(find.byType(MobileScanner)).onDetect!(
         const BarcodeCapture(

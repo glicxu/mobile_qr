@@ -7,10 +7,13 @@ import 'package:dali_qr/features/secure_qr/domain/public_suffix_list.dart';
 import 'package:dali_qr/features/secure_qr/domain/secure_qr_service.dart';
 import 'package:dali_qr/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:url_launcher_platform_interface/link.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -201,6 +204,65 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     access.dispose();
   });
+
+  for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+    testWidgets('check for updates opens the correct store on $platform', (
+      tester,
+    ) async {
+      final previous = UrlLauncherPlatform.instance;
+      final launcher = _StoreLauncher();
+      UrlLauncherPlatform.instance = launcher;
+      debugDefaultTargetPlatformOverride = platform;
+      final access = _TrialAccess();
+      addTearDown(() {
+        UrlLauncherPlatform.instance = previous;
+        debugDefaultTargetPlatformOverride = null;
+        access.dispose();
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SettingsPage(
+            customizationEntitlement: access,
+            packageInfo: Future.value(
+              PackageInfo(
+                appName: 'Dali QR',
+                packageName: 'com.dalifin.qr',
+                version: '1',
+                buildNumber: '1',
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Check for updates'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.text('Check for updates'));
+      await tester.pumpAndSettle();
+      expect(
+        launcher.url,
+        platform == TargetPlatform.iOS
+            ? 'https://apps.apple.com/app/id6803730362'
+            : 'https://play.google.com/store/apps/details?id=com.dalifin.qr',
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      debugDefaultTargetPlatformOverride = null;
+    });
+  }
+}
+
+final class _StoreLauncher extends UrlLauncherPlatform {
+  String? url;
+  @override
+  LinkDelegate? get linkDelegate => null;
+  @override
+  Future<bool> launchUrl(String url, LaunchOptions options) async {
+    this.url = url;
+    return true;
+  }
 }
 
 final class _UnavailableStore implements InAppPurchase {

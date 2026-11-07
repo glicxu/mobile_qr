@@ -37,6 +37,7 @@ final class QrScannerPage extends StatefulWidget {
     this.imageAnalyzer,
     this.scannerController,
     this.startCamera = true,
+    this.scanSession = 0,
     this.imageError,
     this.imagePathPicker,
     super.key,
@@ -59,6 +60,7 @@ final class QrScannerPage extends StatefulWidget {
   final CodeImageAnalyzer? imageAnalyzer;
   final MobileScannerController? scannerController;
   final bool startCamera;
+  final int scanSession;
   final String? imageError;
   final Future<String?> Function(ImageSource source)? imagePathPicker;
 
@@ -108,6 +110,9 @@ class _QrScannerPageState extends State<QrScannerPage> {
     }
     if (widget.sharedImagePath != oldWidget.sharedImagePath) {
       _scheduleSharedImage(widget.sharedImagePath);
+    }
+    if (widget.scanSession != oldWidget.scanSession) {
+      unawaited(_scanAgain());
     }
   }
 
@@ -447,11 +452,19 @@ class _QrScannerPageState extends State<QrScannerPage> {
             ),
         ],
       ),
-      body: decodedCode != null
-          ? _buildResult(context, decodedCode)
-          : _detectedCodes.isNotEmpty
-          ? _buildResultSelection(context)
-          : _buildScanner(),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Offstage(
+            offstage: decodedCode != null || _detectedCodes.isNotEmpty,
+            child: _buildScanner(),
+          ),
+          if (decodedCode != null)
+            _buildResult(context, decodedCode)
+          else if (_detectedCodes.isNotEmpty)
+            _buildResultSelection(context),
+        ],
+      ),
     );
   }
 
